@@ -2398,7 +2398,7 @@ function submitOrder() {
     window.open('https://wa.me/' + CONFIG.whatsapp + '?text=' + encodeURIComponent(msg), '_blank');
     cart = []; saveCart();
     checkoutFormVisible = false; checkoutPrefillAddr = null;
-    updateCartUI(); closeModal('cart-modal');
+    closeCartSheet(); closeModal('cart-modal'); updateCartUI();
     toast('تم تحويلك للواتساب لإرسال الطلب! ✅', 'success');
     if (btn) { btn.innerHTML = orig; btn.disabled = false; btn.style.opacity = '1'; }
   }, 800);
