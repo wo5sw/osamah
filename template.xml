@@ -154,8 +154,8 @@ header.hide-header{transform:translateY(-100%);}
 .stars{color:var(--star);font-size:13px;letter-spacing:-1px;}
 .rating-count{font-size:12px;color:var(--link);cursor:pointer;}
 .rating-count:hover{color:var(--link-hover);}
-.card-foot{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;margin-top:auto;flex-wrap:wrap;}
-.price-area{flex:1;min-width:0;}
+.card-foot{display:flex;flex-direction:column;gap:6px;margin-top:auto;}
+.price-area{min-width:0;}
 .price-row{display:flex;align-items:baseline;gap:4px;margin:0;flex-wrap:wrap;}
 .price-currency{font-size:11px;font-weight:500;color:var(--text);}
 .price{font-size:19px;font-weight:700;color:var(--text);letter-spacing:-0.3px;line-height:1.1;}
@@ -164,22 +164,22 @@ header.hide-header{transform:translateY(-100%);}
 .old-price-row{font-size:11px;color:var(--text-3);margin-top:2px;}
 .old-price-row .lbl{display:none;}
 .old-price{text-decoration:line-through;}
-.btn-quickadd{width:40px;height:40px;flex-shrink:0;border-radius:50%;background:var(--btn-yellow);border:1px solid var(--btn-yellow-border);color:var(--text);font-size:24px;font-weight:700;line-height:1;display:grid;place-items:center;box-shadow:var(--shadow-sm);transition:background var(--t),transform var(--t);font-family:'Cairo',sans-serif;}
+.btn-quickadd{width:40px;height:40px;flex-shrink:0;align-self:flex-start;border-radius:50%;background:var(--btn-yellow);border:1px solid var(--btn-yellow-border);color:var(--text);font-size:24px;font-weight:700;line-height:1;display:grid;place-items:center;box-shadow:var(--shadow-sm);transition:background var(--t),transform var(--t);font-family:'Cairo',sans-serif;}
 .btn-quickadd:hover{background:var(--btn-yellow-hover);transform:scale(1.08);}
 .btn-quickadd:active{transform:scale(.92);}
 
 /* INLINE CARD QUANTITY CONTROL */
-.cqw-wrap{flex-shrink:0;position:relative;height:40px;width:40px;z-index:1;}
-.cqw-btn{position:absolute;inset:0;border-radius:50%;background:var(--btn-yellow);border:1px solid var(--btn-yellow-border);color:var(--text);font-size:24px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:var(--shadow-sm);transition:opacity .16s,transform .16s;font-family:'Cairo',sans-serif;}
-.cqw-btn:hover{background:var(--btn-yellow-hover);}
+.cqw-wrap{flex-shrink:0;align-self:flex-start;position:relative;height:40px;width:40px;overflow:hidden;border-radius:40px;background:var(--btn-yellow);border:1px solid var(--btn-yellow-border);box-shadow:var(--shadow-sm);transition:width .24s cubic-bezier(.4,0,.2,1);}
+.cqw-wrap.has-qty{width:104px;}
+.cqw-btn{position:absolute;inset:0;border-radius:inherit;background:transparent;border:none;color:var(--text);font-size:24px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:opacity .16s,transform .16s;font-family:'Cairo',sans-serif;}
 .cqw-btn:active{transform:scale(.88);}
 .cqw-wrap.has-qty .cqw-btn{opacity:0;transform:scale(.2);pointer-events:none;}
-.cqw-pill{position:absolute;top:0;left:0;height:40px;width:104px;background:var(--btn-yellow);border:1px solid var(--btn-yellow-border);border-radius:40px;box-shadow:var(--shadow-sm);display:flex;align-items:center;direction:ltr;opacity:0;pointer-events:none;-webkit-clip-path:inset(0 100% 0 0 round 40px);clip-path:inset(0 100% 0 0 round 40px);transition:-webkit-clip-path .24s cubic-bezier(.4,0,.2,1),clip-path .24s cubic-bezier(.4,0,.2,1),opacity .14s;}
-.cqw-wrap.has-qty .cqw-pill{-webkit-clip-path:inset(0 0% 0 0 round 40px);clip-path:inset(0 0% 0 0 round 40px);opacity:1;pointer-events:auto;}
+.cqw-pill{position:absolute;top:0;left:0;height:40px;width:104px;display:flex;align-items:center;direction:ltr;opacity:0;pointer-events:none;transition:opacity .18s;}
+.cqw-wrap.has-qty .cqw-pill{opacity:1;pointer-events:auto;}
 .cqw-inc,.cqw-dec{flex-shrink:0;width:34px;height:40px;border:none;background:transparent;font-size:20px;font-weight:700;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:'Cairo',sans-serif;transition:background .12s;}
 .cqw-inc:active,.cqw-dec:active{background:rgba(0,0,0,.09);border-radius:40px;}
 .cqw-val{flex:1;text-align:center;font-size:15px;font-weight:800;color:var(--text);pointer-events:none;user-select:none;}
-@media(max-width:380px){.cqw-pill{width:92px;}.cqw-inc,.cqw-dec{width:30px;font-size:18px;}}
+@media(max-width:380px){.cqw-wrap.has-qty{width:92px;}.cqw-pill{width:92px;}.cqw-inc,.cqw-dec{width:30px;font-size:18px;}}
 .empty-state{grid-column:1/-1;background:#fff;border:1px solid var(--border);border-radius:var(--r-sm);text-align:center;padding:60px 20px;color:var(--text-2);}
 .empty-state .icon{font-size:54px;margin-bottom:12px;}
 .empty-state h3{font-size:18px;margin:0 0 8px;color:var(--text);font-weight:700;}
@@ -205,9 +205,9 @@ header.hide-header{transform:translateY(-100%);}
 .sticky-count{font-size:12px;color:var(--text-2);}
 .sticky-chevron{font-size:20px;color:var(--text-2);flex-shrink:0;transition:transform .24s cubic-bezier(.4,0,.2,1);line-height:1;}
 .sticky-bar.sheet-open .sticky-chevron{transform:rotate(180deg);}
-.btn-continue{background:var(--btn-yellow);border:1px solid var(--btn-yellow-border);color:var(--text);padding:11px 28px;border-radius:var(--r-pill);font-weight:800;font-size:14px;font-family:'Cairo',sans-serif;cursor:pointer;flex-shrink:0;transition:background var(--t),transform .12s;}
-.btn-continue:hover{background:var(--btn-yellow-hover);}
-.btn-continue:active{transform:scale(.95);}
+.btn-cart-toggle{display:flex;align-items:center;gap:6px;background:var(--btn-yellow);border:1px solid var(--btn-yellow-border);color:var(--text);padding:10px 20px;border-radius:var(--r-pill);font-weight:800;font-size:14px;font-family:'Cairo',sans-serif;cursor:pointer;flex-shrink:0;transition:background var(--t),transform .12s;}
+.btn-cart-toggle:hover{background:var(--btn-yellow-hover);}
+.btn-cart-toggle:active{transform:scale(.95);}
 /* CART REVIEW BOTTOM SHEET */
 .cart-sheet{display:none;position:fixed;inset:0;z-index:1000000;background:rgba(15,17,17,.5);align-items:flex-end;justify-content:center;opacity:0;transition:opacity .25s;}
 .cart-sheet.show{display:flex !important;opacity:1;}
@@ -230,6 +230,19 @@ header.hide-header{transform:translateY(-100%);}
 .btn-cs-checkout{width:100%;padding:14px;border-radius:var(--r-pill);background:var(--btn-orange);border:1px solid var(--btn-orange-border);color:var(--text);font-size:16px;font-weight:800;font-family:'Cairo',sans-serif;cursor:pointer;transition:background var(--t),transform .12s;display:flex;align-items:center;justify-content:center;gap:8px;}
 .btn-cs-checkout:hover{background:var(--btn-orange-hover);}
 .btn-cs-checkout:active{transform:scale(.97);}
+/* TWO-PAGE SHEET */
+.cs-pages{display:flex;flex-direction:row;width:200%;flex:1;min-height:0;transition:transform .34s cubic-bezier(.4,0,.2,1);}
+.cs-pages.on-step2{transform:translateX(-50%);}
+.cs-page{width:50%;display:flex;flex-direction:column;flex-shrink:0;min-height:0;overflow:hidden;}
+.cs-back{background:none;border:none;color:var(--amazon-blue,#007185);font-size:13px;font-weight:800;cursor:pointer;font-family:'Cairo',sans-serif;display:flex;align-items:center;gap:4px;padding:0;flex-shrink:0;}
+.cs-order-summary{background:var(--soft-2);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px;margin-bottom:14px;}
+.cs-order-summary-title{font-size:14px;font-weight:800;color:var(--text);margin-bottom:8px;}
+.cs-order-item{display:flex;justify-content:space-between;font-size:13px;color:var(--text);padding:5px 0;border-bottom:1px dashed var(--border);}
+.cs-order-item:last-child{border-bottom:none;padding-bottom:0;}
+.cs-order-total-row{display:flex;justify-content:space-between;font-size:16px;font-weight:800;color:var(--price-deal);padding-top:10px;margin-top:6px;border-top:2px solid var(--border);}
+.btn-cs-whatsapp{width:100%;padding:14px;border-radius:var(--r-pill);background:#25d366;border:1px solid #1da851;color:#fff;font-size:16px;font-weight:800;font-family:'Cairo',sans-serif;cursor:pointer;transition:background var(--t),transform .12s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-cs-whatsapp:hover{background:#1da851;}
+.btn-cs-whatsapp:active{transform:scale(.97);}
 
 /* ZOOM LIGHTBOX */
 #zoom-overlay{display:none;position:fixed;inset:0;background:rgba(15,17,17,.92);z-index:99900;justify-content:center;align-items:center;opacity:0;transition:opacity .25s;cursor:zoom-out;}
@@ -512,7 +525,7 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
   .price{font-size:14px;}
   .price-currency{font-size:10px;}
   .btn-quickadd{width:30px;height:30px;font-size:18px;}
-  .card-foot{gap:4px;}
+  .card-foot{gap:4px;} .cqw-wrap.has-qty{width:92px;} .cqw-pill{width:92px;}
   .time-badge{padding:0 6px;font-size:11px;}
   .h-search input{padding:0 10px;font-size:13px;}
   .h-search-btn{width:38px;}
@@ -660,8 +673,7 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
         <div class='sticky-count'><span id='sticky-count'>0 سلع</span></div>
       </div>
     </div>
-    <span class='sticky-chevron'>&#9650;</span>
-    <button class='btn-continue' onclick='event.stopPropagation();toggleCartSheet()'>المتابعة للدفع</button>
+    <button class='btn-cart-toggle' onclick='event.stopPropagation();toggleCartSheet()'><span class='sticky-chevron'>&#9650;</span> السلة</button>
   </div>
 </div>
 
@@ -669,12 +681,27 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
 <div class='cart-sheet' id='cart-sheet' onclick='sheetBackdropClose(event)'>
   <div class='cart-sheet-panel'>
     <div class='cs-handle'><div class='cs-handle-bar'/></div>
-    <div class='cs-head'>
-      <h3>&#128722; مراجعة مشترياتك</h3>
-      <button class='cs-close' onclick='closeCartSheet()'>&#10005;</button>
+    <div class='cs-pages' id='cs-pages'>
+      <!-- STEP 1: Cart review -->
+      <div class='cs-page'>
+        <div class='cs-head'>
+          <h3>&#128722; مراجعة مشترياتك</h3>
+          <button class='cs-close' onclick='closeCartSheet()'>&#10005;</button>
+        </div>
+        <div class='cs-body' id='cs-body'/>
+        <div class='cs-footer' id='cs-footer'/>
+      </div>
+      <!-- STEP 2: Checkout -->
+      <div class='cs-page'>
+        <div class='cs-head'>
+          <button class='cs-back' onclick='goToCartStep1()'>&#8592; رجوع</button>
+          <h3>&#128203; إتمام الطلب</h3>
+          <button class='cs-close' onclick='closeCartSheet()'>&#10005;</button>
+        </div>
+        <div class='cs-body' id='cs-checkout-body'/>
+        <div class='cs-footer' id='cs-checkout-footer'/>
+      </div>
     </div>
-    <div class='cs-body' id='cs-body'/>
-    <div class='cs-footer' id='cs-footer'/>
   </div>
 </div>
 
@@ -2085,6 +2112,8 @@ function openCartSheet() {
   var sheet = document.getElementById('cart-sheet');
   if (!sheet) return;
   if (sheet.classList.contains('show')) return;
+  var pages = document.getElementById('cs-pages');
+  if (pages) pages.classList.remove('on-step2');
   renderCartSheet();
   sheet.classList.add('animating');
   sheet.style.display = 'flex';
@@ -2101,6 +2130,8 @@ function closeCartSheet() {
   sheet.classList.remove('show'); sheet.classList.remove('animating');
   var bar = document.getElementById('sticky-bar');
   if (bar) bar.classList.remove('sheet-open');
+  var pages = document.getElementById('cs-pages');
+  if (pages) pages.classList.remove('on-step2');
   document.body.style.overflow = '';
   setTimeout(function() { if (!sheet.classList.contains('show')) sheet.style.display = 'none'; }, 340);
 }
@@ -2141,18 +2172,69 @@ function renderCartSheet() {
 
   footer.innerHTML = shipNote
     + '<div class="cs-totals"><span class="cs-total-label">الإجمالي شامل الشحن</span><span class="cs-total-val">' + total.toFixed(2) + ' ' + CONFIG.currency + '</span></div>'
-    + '<button class="btn-cs-checkout" onclick="goToCheckout()">المتابعة للدفع &#8203;&#128203;</button>';
+    + '<button class="btn-cs-checkout" onclick="goToCartStep2()">متابعة &#10145;</button>';
 }
 
-function goToCheckout() {
-  closeCartSheet();
-  setTimeout(function() { openModal('cart-modal'); }, 360);
+function goToCartStep2() {
+  var pages = document.getElementById('cs-pages');
+  if (!pages) return;
+  renderCheckoutStep();
+  pages.classList.add('on-step2');
 }
+
+function goToCartStep1() {
+  var pages = document.getElementById('cs-pages');
+  if (pages) pages.classList.remove('on-step2');
+}
+
+function renderCheckoutStep() {
+  var body = document.getElementById('cs-checkout-body');
+  var foot = document.getElementById('cs-checkout-footer');
+  if (!body || !foot) return;
+  var subtotal = cart.reduce(function(s,i){return s+i.price*i.qty;},0);
+  var shipping = subtotal >= CONFIG.freeShippingMin ? 0 : CONFIG.shippingFee;
+  var total    = subtotal + shipping;
+  var itemsList = cart.map(function(item, n) {
+    var label = escapeHtml(item.title);
+    if (item.variant && item.variant.trim()) label += ' – ' + escapeHtml(item.variant);
+    return '<div class="cs-order-item">'
+      + '<span>' + (n+1) + '. ' + label + ' ×' + item.qty + '</span>'
+      + '<span>' + (item.price*item.qty).toFixed(2) + ' ' + CONFIG.currency + '</span>'
+      + '</div>';
+  }).join('');
+  var shipRow = shipping === 0
+    ? '<div class="cs-order-item"><span>&#128666; الشحن</span><span style="color:var(--success);font-weight:800;">مجاني</span></div>'
+    : '<div class="cs-order-item"><span>الشحن</span><span>' + shipping.toFixed(2) + ' ' + CONFIG.currency + '</span></div>';
+  body.innerHTML = '<div class="cs-order-summary">'
+    + '<div class="cs-order-summary-title">&#128203; ملخص الطلب</div>'
+    + itemsList + shipRow
+    + '<div class="cs-order-total-row"><span>الإجمالي</span><span>' + total.toFixed(2) + ' ' + CONFIG.currency + '</span></div>'
+    + '</div>'
+    + '<h4 style="font-size:14px;font-weight:800;color:var(--text);margin:0 0 10px;">&#128204; بيانات التوصيل والدفع</h4>'
+    + (!currentUser ? '<div id="google-auth-container"></div><div class="guest-divider">&#10097; أو أكمل كزائر</div>' : renderUserCard())
+    + '<div class="form-row"><input class="pro-input" id="c-name" placeholder="الاسم الكامل *" style="margin:0" required/>'
+    + '<input class="pro-input" id="c-phone" placeholder="رقم الجوال *" type="tel" inputmode="tel" style="margin:0" required/></div>'
+    + '<div class="loc-wrap"><input class="pro-input" id="c-addr" placeholder="العنوان أو رابط الموقع *" required/>'
+    + '<button class="btn-location" type="button" onclick="getLocation()" title="&#128205;">&#128205;</button></div>'
+    + '<select class="pro-input" id="c-pay" required>'
+    + '<option value="" disabled selected>اختر وسيلة الدفع *</option>'
+    + '<option value="الدفع عند الاستلام">الدفع عند الاستلام</option>'
+    + '<option value="تحويل بنكي">تحويل بنكي</option>'
+    + '</select>'
+    + '<textarea class="pro-input" id="c-notes" placeholder="ملاحظات (اختياري)" rows="2"></textarea>';
+  foot.innerHTML = '<button class="btn-cs-whatsapp" id="btn-confirm-order" onclick="submitOrder()">&#128172; إرسال الطلب عبر واتساب</button>';
+  setTimeout(function() { renderGoogleButton(); prefillCheckoutForm(); }, 50);
+}
+
+function goToCheckout() { goToCartStep2(); }
 
 function updateCartUI() {
   updateCartBadge(); updateStickyBar(); refreshCardQtys();
   var sheet = document.getElementById('cart-sheet');
-  if (sheet && sheet.classList.contains('show')) renderCartSheet();
+  if (sheet && sheet.classList.contains('show')) {
+    var _pages = document.getElementById('cs-pages');
+    if (!_pages || !_pages.classList.contains('on-step2')) renderCartSheet();
+  }
   var modal = document.getElementById('cart-modal');
   if (modal && modal.classList.contains('show')) renderCartBody(cart.reduce(function(s,i) { return s + i.price*i.qty; }, 0));
 }
