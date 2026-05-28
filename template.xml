@@ -282,14 +282,31 @@ header.hide-header{transform:translateY(-100%);}
 .cart-item-info{flex:1;display:flex;flex-direction:column;gap:4px;min-width:0;}
 .cart-item-title{font-size:14px;font-weight:400;color:var(--text);line-height:1.4;}
 .cart-item-stock{font-size:12px;color:var(--success);font-weight:600;}
+.cart-item-unit{font-size:12px;color:var(--text-2);font-weight:600;margin-top:2px;}
 .cart-item-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:8px;flex-wrap:wrap;}
-.cart-item-price{font-size:16px;font-weight:700;color:var(--text);white-space:nowrap;}
-.cart-qty-ctrl{display:flex;align-items:center;gap:4px;}
-.qty-btn{width:28px;height:28px;border-radius:4px;background:var(--btn-yellow);border:1px solid var(--btn-yellow-border);color:var(--text);font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background var(--t);}
+.cart-item-price{font-size:16px;font-weight:800;color:var(--text);white-space:nowrap;}
+.cart-qty-ctrl{display:flex;align-items:center;gap:0;background:#fff;border:1px solid var(--btn-yellow-border);border-radius:var(--r-pill);overflow:hidden;box-shadow:var(--shadow-sm);}
+.qty-btn{width:32px;height:32px;border-radius:0;background:var(--btn-yellow);border:none;color:var(--text);font-size:17px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background var(--t),transform .12s;font-family:'Cairo',sans-serif;}
 .qty-btn:hover{background:var(--btn-yellow-hover);}
-.qty-val{font-size:14px;font-weight:600;min-width:22px;text-align:center;}
+.qty-btn:active{transform:scale(.82);}
+.qty-val{font-size:14px;font-weight:800;min-width:36px;text-align:center;color:var(--text);user-select:none;animation:qtyPop .18s ease;}
+@keyframes qtyPop{0%{transform:scale(.7);opacity:.4;}100%{transform:scale(1);opacity:1;}}
 .btn-remove{background:#fff;color:var(--link);border:1px solid var(--border-strong);border-radius:var(--r-sm);padding:4px 10px;cursor:pointer;font-size:12px;font-family:'Cairo',sans-serif;transition:var(--t);}
 .btn-remove:hover{background:#f0f8ff;color:var(--link-hover);}
+/* CART RECOMMENDED PRODUCTS */
+.cart-reco{margin:18px 2px 6px;}
+.cart-reco-head{font-size:15px;font-weight:800;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.cart-reco-scroll{display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:thin;}
+.cart-reco-scroll::-webkit-scrollbar{height:5px;}
+.cart-reco-scroll::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:10px;}
+.reco-card{flex:0 0 auto;width:132px;background:#fff;border:1px solid var(--border);border-radius:var(--r-sm);padding:8px;scroll-snap-align:start;display:flex;flex-direction:column;transition:box-shadow var(--t),transform var(--t);}
+.reco-card:hover{box-shadow:var(--shadow-md,0 4px 14px rgba(0,0,0,.1));transform:translateY(-2px);}
+.reco-card img{width:100%;height:100px;object-fit:contain;background:#fff;border-radius:6px;cursor:pointer;}
+.reco-title{font-size:12px;color:var(--text);line-height:1.3;margin:6px 0 4px;height:31px;overflow:hidden;cursor:pointer;}
+.reco-price{font-size:13px;font-weight:800;color:var(--price-deal);margin-bottom:7px;}
+.reco-add{margin-top:auto;width:100%;padding:7px;border-radius:var(--r-pill);background:var(--btn-yellow);border:1px solid var(--btn-yellow-border);color:var(--text);font-size:12px;font-weight:700;font-family:'Cairo',sans-serif;cursor:pointer;transition:background var(--t),transform .12s;}
+.reco-add:hover{background:var(--btn-yellow-hover);}
+.reco-add:active{transform:scale(.94);}
 .cart-summary{background:#fff;padding:16px 18px;border-top:1px solid var(--border);flex-shrink:0;}
 .summary-row{display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px;color:var(--text);}
 .summary-row .free-tag{color:var(--success);font-weight:700;}
@@ -1958,6 +1975,31 @@ function updateCartItemRow(cid, item) {
   if (pEl)  pEl.textContent = (item.price * item.qty).toFixed(2) + ' ' + CONFIG.currency;
 }
 
+function cartRecommendationsHTML() {
+  if (!products || !products.length) return '';
+  var inCart = {};
+  cart.forEach(function(i) { inCart[i.id] = true; });
+  var pool = products.filter(function(p) { return !inCart[p.id]; });
+  if (!pool.length) return '';
+  var picks = pool.slice(0, 12);
+  var cards = picks.map(function(p) {
+    var v   = (p.variants && p.variants[0]) ? p.variants[0] : p;
+    var img = (v.image || p.image || 'https://placehold.co/300x300/f5f5f5/aaaaaa?text=No+Image').replace(/"/g,'&quot;');
+    var isMultiV = p.variants && p.variants.length > 1;
+    var addBtn = isMultiV
+      ? '<button class="reco-add" onclick="openDrawer(\'' + p.id + '\')">اختر الخيار</button>'
+      : '<button class="reco-add" onclick="recoAdd(\'' + p.id + '\')">+ أضف للسلة</button>';
+    return '<div class="reco-card">'
+      + '<img loading="lazy" decoding="async" src="' + img + '" onclick="openDrawer(\'' + p.id + '\')" onerror="this.src=\'https://placehold.co/300x300/f5f5f5/aaaaaa?text=Image+Error\'" alt="' + escapeHtml(p.title) + '"/>'
+      + '<div class="reco-title" onclick="openDrawer(\'' + p.id + '\')">' + escapeHtml(p.title) + '</div>'
+      + '<div class="reco-price">' + formatPrice(v.price) + ' ' + CONFIG.currency + '</div>'
+      + addBtn + '</div>';
+  }).join('');
+  return '<div class="cart-reco"><div class="cart-reco-head">✨ قد يعجبك أيضاً</div><div class="cart-reco-scroll">' + cards + '</div></div>';
+}
+
+function recoAdd(pid) { cardQtyInc(null, pid); }
+
 function updateCartBadge() {
   var total = cart.reduce(function(s,i) { return s + i.qty; }, 0);
   var b = document.getElementById('cart-badge'); if (b) b.textContent = total;
@@ -2018,9 +2060,12 @@ function renderCartBody(subtotal) {
       + '<div class="cart-item-info"><div class="cart-item-title">' + escapeHtml(item.title) + '</div>'
       + vTag
       + '<div class="cart-item-stock">✓ متوفّر في المخزون</div>'
-      + '<div class="cart-item-bottom"><span class="cart-item-price" data-cid="' + item.cid + '">' + (item.price*item.qty).toFixed(2) + ' ' + CONFIG.currency + '</span>'
-      + '<div class="cart-qty-ctrl" data-cid="' + item.cid + '">' + qtyCtrlHTML(item) + '</div></div></div></div>';
-  }).join('');
+      + '<div class="cart-item-unit">' + formatPrice(item.price) + ' ' + CONFIG.currency + ' / للقطعة</div>'
+      + '<div class="cart-item-bottom">'
+      + '<div class="cart-qty-ctrl" data-cid="' + item.cid + '">' + qtyCtrlHTML(item) + '</div>'
+      + '<span class="cart-item-price" data-cid="' + item.cid + '">' + (item.price*item.qty).toFixed(2) + ' ' + CONFIG.currency + '</span>'
+      + '</div></div></div>';
+  }).join('') + cartRecommendationsHTML();
 
   var shipping = subtotal >= CONFIG.freeShippingMin ? 0 : CONFIG.shippingFee;
   var total    = subtotal + shipping;
