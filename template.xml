@@ -2025,7 +2025,7 @@ function removeFromCart(cid) { cart = cart.filter(function(i) { return i.cid !==
 function changeQty(cid, delta) {
   var item = cart.find(function(i) { return i.cid === cid; }); if (!item) return;
   item.qty = Math.max(1, item.qty + delta);
-  saveCart(); updateCartItemRow(cid, item); updateCartTotals(); updateCartBadge(); updateStickyBar(); refreshCardQtys();
+  saveCart(); updateCartItemRow(cid, item); updateCartTotals(); updateCartBadge(); updateStickyBar(); updateSheetTotals(); refreshCardQtys();
 }
 
 function qtyCtrlHTML(item) {
@@ -2035,10 +2035,29 @@ function qtyCtrlHTML(item) {
 }
 
 function updateCartItemRow(cid, item) {
-  var ctrl  = document.querySelector('.cart-qty-ctrl[data-cid="' + cid + '"]');
-  var pEl   = document.querySelector('.cart-item-price[data-cid="' + cid + '"]');
-  if (ctrl) ctrl.innerHTML  = qtyCtrlHTML(item);
-  if (pEl)  pEl.textContent = (item.price * item.qty).toFixed(2) + ' ' + CONFIG.currency;
+  var ctrls = document.querySelectorAll('.cart-qty-ctrl[data-cid="' + cid + '"]');
+  var pEls  = document.querySelectorAll('.cart-item-price[data-cid="' + cid + '"]');
+  var lineTxt = (item.price * item.qty).toFixed(2) + ' ' + CONFIG.currency;
+  for (var c = 0; c < ctrls.length; c++) ctrls[c].innerHTML = qtyCtrlHTML(item);
+  for (var e = 0; e < pEls.length; e++)  pEls[e].textContent = lineTxt;
+}
+
+function updateSheetTotals() {
+  var sheet = document.getElementById('cart-sheet');
+  if (!sheet || !sheet.classList.contains('show')) return;
+  var foot = document.getElementById('cs-footer');
+  if (!foot) return;
+  var subtotal = cart.reduce(function(s,i) { return s + i.price * i.qty; }, 0);
+  var shipping = subtotal >= CONFIG.freeShippingMin ? 0 : CONFIG.shippingFee;
+  var total    = subtotal + shipping;
+  var need     = CONFIG.freeShippingMin - subtotal;
+  var valEl = foot.querySelector('.cs-total-val');
+  if (valEl) valEl.textContent = total.toFixed(2) + ' ' + CONFIG.currency;
+  var note = foot.querySelector('.cs-ship-note');
+  if (note) {
+    if (shipping === 0) { note.className = 'cs-ship-note'; note.innerHTML = '🚚 مؤهّل للشحن المجاني!'; }
+    else { note.className = 'cs-ship-note needs-more'; note.innerHTML = 'أضف <b>' + need.toFixed(2) + ' ' + CONFIG.currency + '</b> للحصول على شحن مجاني'; }
+  }
 }
 
 function cartRecommendationsHTML() {
