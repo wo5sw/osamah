@@ -167,6 +167,19 @@ header.hide-header{transform:translateY(-100%);}
 .btn-quickadd{width:40px;height:40px;flex-shrink:0;border-radius:50%;background:var(--btn-yellow);border:1px solid var(--btn-yellow-border);color:var(--text);font-size:24px;font-weight:700;line-height:1;display:grid;place-items:center;box-shadow:var(--shadow-sm);transition:background var(--t),transform var(--t);font-family:'Cairo',sans-serif;}
 .btn-quickadd:hover{background:var(--btn-yellow-hover);transform:scale(1.08);}
 .btn-quickadd:active{transform:scale(.92);}
+
+/* INLINE CARD QUANTITY CONTROL */
+.cqw-wrap{flex-shrink:0;position:relative;height:40px;width:40px;z-index:1;}
+.cqw-btn{position:absolute;inset:0;border-radius:50%;background:var(--btn-yellow);border:1px solid var(--btn-yellow-border);color:var(--text);font-size:24px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:var(--shadow-sm);transition:opacity .16s,transform .16s;font-family:'Cairo',sans-serif;}
+.cqw-btn:hover{background:var(--btn-yellow-hover);}
+.cqw-btn:active{transform:scale(.88);}
+.cqw-wrap.has-qty .cqw-btn{opacity:0;transform:scale(.2);pointer-events:none;}
+.cqw-pill{position:absolute;top:0;left:0;height:40px;width:104px;background:var(--btn-yellow);border:1px solid var(--btn-yellow-border);border-radius:40px;box-shadow:var(--shadow-sm);display:flex;align-items:center;direction:ltr;opacity:0;pointer-events:none;-webkit-clip-path:inset(0 100% 0 0 round 40px);clip-path:inset(0 100% 0 0 round 40px);transition:-webkit-clip-path .24s cubic-bezier(.4,0,.2,1),clip-path .24s cubic-bezier(.4,0,.2,1),opacity .14s;}
+.cqw-wrap.has-qty .cqw-pill{-webkit-clip-path:inset(0 0% 0 0 round 40px);clip-path:inset(0 0% 0 0 round 40px);opacity:1;pointer-events:auto;}
+.cqw-inc,.cqw-dec{flex-shrink:0;width:34px;height:40px;border:none;background:transparent;font-size:20px;font-weight:700;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:'Cairo',sans-serif;transition:background .12s;}
+.cqw-inc:active,.cqw-dec:active{background:rgba(0,0,0,.09);border-radius:40px;}
+.cqw-val{flex:1;text-align:center;font-size:15px;font-weight:800;color:var(--text);pointer-events:none;user-select:none;}
+@media(max-width:380px){.cqw-pill{width:92px;}.cqw-inc,.cqw-dec{width:30px;font-size:18px;}}
 .empty-state{grid-column:1/-1;background:#fff;border:1px solid var(--border);border-radius:var(--r-sm);text-align:center;padding:60px 20px;color:var(--text-2);}
 .empty-state .icon{font-size:54px;margin-bottom:12px;}
 .empty-state h3{font-size:18px;margin:0 0 8px;color:var(--text);font-weight:700;}
@@ -1716,24 +1729,72 @@ function renderProducts(list) {
       + '</div>'
       + '<h3 class="product-title" onclick="openDrawer(\'' + p.id + '\')">' + p.title + '</h3>'
       + ratingBlock
-      + '<div class="card-foot"><div class="price-area">' + priceBlock + '</div>'
-      + '<button class="btn-quickadd" onclick="quickAdd(event,\'' + p.id + '\')" aria-label="أضف للسلة">+</button></div>'
-      + '</div>';
+      + '<div class="card-foot"><div class="price-area">' + priceBlock + '</div>';
+    var isMultiV = p.variants && p.variants.length > 1;
+    if (isMultiV) {
+      html += '<button class="btn-quickadd" onclick="openDrawer(\'' + p.id + '\')" aria-label="أضف للسلة">+</button>';
+    } else {
+      html += '<div class="cqw-wrap" id="cqw-' + p.id + '">'
+        + '<button class="cqw-btn" onclick="cardQtyInc(event,\'' + p.id + '\')" aria-label="أضف للسلة">+</button>'
+        + '<div class="cqw-pill">'
+        + '<button class="cqw-inc" onclick="cardQtyInc(event,\'' + p.id + '\')" aria-label="زيادة">+</button>'
+        + '<span class="cqw-val" id="cqwv-' + p.id + '"></span>'
+        + '<button class="cqw-dec" onclick="cardQtyDec(event,\'' + p.id + '\')" aria-label="إنقاص">−</button>'
+        + '</div></div>';
+    }
+    html += '</div></div>';
   }
   grid.innerHTML = html;
+  refreshCardQtys();
 }
 
-function quickAdd(e, pid) {
+function cardQtyInc(e, pid) {
   if (e) e.stopPropagation();
   var p = productIndex[pid]; if (!p) return;
-  if (p.variants && p.variants.length > 1) { openDrawer(pid); return; }
-  var v = (p.variants && p.variants[0]) ? p.variants[0] : p;
-  var cid = p.id;
+  var cid = pid;
   var existing = cart.find(function(i) { return i.cid === cid; });
-  if (existing) existing.qty++;
-  else cart.push({ id: p.id, cid: cid, title: p.title, variant: '', price: v.price, image: v.image || p.image, imageFull: v.imageFull || p.imageFull, qty: 1 });
-  saveCart(); updateCartUI(); toast('تمت الإضافة للسلة ✅','success');
+  if (existing) { existing.qty++; }
+  else {
+    var v = (p.variants && p.variants[0]) ? p.variants[0] : p;
+    cart.push({ id: p.id, cid: cid, title: p.title, variant: '', price: v.price, image: v.image || p.image, imageFull: v.imageFull || p.imageFull, qty: 1 });
+    toast('تمت الإضافة للسلة ✅', 'success');
+  }
+  saveCart(); updateCartUI(); updateCardQty(pid);
 }
+
+function cardQtyDec(e, pid) {
+  if (e) e.stopPropagation();
+  var cid = pid;
+  var idx = cart.findIndex(function(i) { return i.cid === cid; });
+  if (idx === -1) return;
+  cart[idx].qty--;
+  if (cart[idx].qty <= 0) cart.splice(idx, 1);
+  saveCart(); updateCartUI(); updateCardQty(pid);
+}
+
+function updateCardQty(pid) {
+  var wrap = document.getElementById('cqw-' + pid);
+  var val  = document.getElementById('cqwv-' + pid);
+  if (!wrap) return;
+  var item = cart.find(function(i) { return i.cid === pid; });
+  var qty  = item ? item.qty : 0;
+  if (qty > 0) {
+    wrap.classList.add('has-qty');
+    if (val) val.textContent = qty;
+  } else {
+    wrap.classList.remove('has-qty');
+    if (val) val.textContent = '';
+  }
+}
+
+function refreshCardQtys() {
+  var wraps = document.querySelectorAll('.cqw-wrap');
+  for (var w = 0; w < wraps.length; w++) {
+    updateCardQty(wraps[w].id.replace('cqw-', ''));
+  }
+}
+
+function quickAdd(e, pid) { cardQtyInc(e, pid); }
 
 /* ============================================================
    PRODUCT DRAWER
@@ -1881,7 +1942,7 @@ function removeFromCart(cid) { cart = cart.filter(function(i) { return i.cid !==
 function changeQty(cid, delta) {
   var item = cart.find(function(i) { return i.cid === cid; }); if (!item) return;
   item.qty = Math.max(1, item.qty + delta);
-  saveCart(); updateCartItemRow(cid, item); updateCartTotals(); updateCartBadge(); updateStickyBar();
+  saveCart(); updateCartItemRow(cid, item); updateCartTotals(); updateCartBadge(); updateStickyBar(); refreshCardQtys();
 }
 
 function qtyCtrlHTML(item) {
@@ -1933,7 +1994,7 @@ function updateCartTotals() {
 }
 
 function updateCartUI() {
-  updateCartBadge(); updateStickyBar();
+  updateCartBadge(); updateStickyBar(); refreshCardQtys();
   var modal = document.getElementById('cart-modal');
   if (modal && modal.classList.contains('show')) renderCartBody(cart.reduce(function(s,i) { return s + i.price*i.qty; }, 0));
 }
