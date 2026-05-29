@@ -1411,7 +1411,11 @@ function confirmMapLocation() {
 
 /* Also support GPS button inside checkout form */
 function getLocation() {
-  var addrInput = document.getElementById('c-addr');
+  var sheetOnStep2 = (function() {
+    var sh = document.getElementById('cart-sheet'), pg = document.getElementById('cs-pages');
+    return sh && sh.classList.contains('show') && pg && pg.classList.contains('on-step2');
+  })();
+  var addrInput = document.getElementById(sheetOnStep2 ? 'cs-c-addr' : 'c-addr');
   if (!navigator.geolocation) { toast('المتصفح لا يدعم تحديد الموقع', 'warn'); return; }
   if (addrInput) addrInput.placeholder = 'جاري تحديد الموقع... ⏳';
   navigator.geolocation.getCurrentPosition(function(pos) {
@@ -2230,22 +2234,97 @@ function renderCheckoutStep() {
     + '<div class="cs-order-total-row"><span>الإجمالي</span><span>' + total.toFixed(2) + ' ' + CONFIG.currency + '</span></div>'
     + '</div>'
     + '<h4 style="font-size:14px;font-weight:800;color:var(--text);margin:0 0 10px;">&#128204; بيانات التوصيل والدفع</h4>'
-    + (!currentUser ? '<div id="google-auth-container"></div><div class="guest-divider">&#10097; أو أكمل كزائر</div>' : renderUserCard())
-    + '<div class="form-row"><input class="pro-input" id="c-name" placeholder="الاسم الكامل *" style="margin:0" required/>'
-    + '<input class="pro-input" id="c-phone" placeholder="رقم الجوال *" type="tel" inputmode="tel" style="margin:0" required/></div>'
-    + '<div class="loc-wrap"><input class="pro-input" id="c-addr" placeholder="العنوان أو رابط الموقع *" required/>'
+    + (!currentUser ? '<div id="cs-google-auth"></div><div class="guest-divider">&#10097; أو أكمل كزائر</div>' : renderUserCard())
+    + '<div class="form-row"><input class="pro-input" id="cs-c-name" placeholder="الاسم الكامل *" style="margin:0" required/>'
+    + '<input class="pro-input" id="cs-c-phone" placeholder="رقم الجوال *" type="tel" inputmode="tel" style="margin:0" required/></div>'
+    + '<div class="loc-wrap"><input class="pro-input" id="cs-c-addr" placeholder="العنوان أو رابط الموقع *" required/>'
     + '<button class="btn-location" type="button" onclick="getLocation()" title="&#128205;">&#128205;</button></div>'
-    + '<select class="pro-input" id="c-pay" required>'
+    + '<select class="pro-input" id="cs-c-pay" required>'
     + '<option value="" disabled selected>اختر وسيلة الدفع *</option>'
     + '<option value="الدفع عند الاستلام">الدفع عند الاستلام</option>'
     + '<option value="تحويل بنكي">تحويل بنكي</option>'
     + '</select>'
-    + '<textarea class="pro-input" id="c-notes" placeholder="ملاحظات (اختياري)" rows="2"></textarea>';
-  foot.innerHTML = '<button class="btn-cs-whatsapp" id="btn-confirm-order" onclick="submitOrder()">&#128172; إرسال الطلب عبر واتساب</button>';
-  setTimeout(function() { renderGoogleButton(); prefillCheckoutForm(); }, 50);
+    + '<textarea class="pro-input" id="cs-c-notes" placeholder="ملاحظات (اختياري)" rows="2"></textarea>';
+  foot.innerHTML = '<button class="btn-cs-whatsapp" id="cs-btn-confirm" onclick="submitOrderFromSheet()">&#128172; إرسال الطلب عبر واتساب</button>';
+  setTimeout(function() { renderGoogleButtonSheet(); prefillCheckoutStep(); }, 50);
 }
 
 function goToCheckout() { goToCartStep2(); }
+
+function renderGoogleButtonSheet() {
+  var container = document.getElementById('cs-google-auth');
+  if (!container) return;
+  if (currentUser) { container.innerHTML = ''; return; }
+  if (window.google && google.accounts && google.accounts.id) {
+    try {
+      google.accounts.id.initialize({ client_id: '360615303745-h45ri50dd4mlfarff2rbu2tivmho822u.apps.googleusercontent.com', callback: handleCredentialResponse });
+      google.accounts.id.renderButton(container, { theme:'outline', size:'large', shape:'pill', width:250 });
+    } catch(e) { container.innerHTML = '<span style="font-size:12px;color:var(--text-3)">تعذّر تحميل تسجيل الدخول</span>'; }
+  } else { container.innerHTML = '<span style="font-size:12px;color:var(--text-3)">جاري تحميل تسجيل الدخول…</span>'; }
+}
+
+function prefillCheckoutStep() {
+  if (currentUser) { var ni = document.getElementById('cs-c-name'); if (ni && !ni.value) ni.value = currentUser.name || ''; }
+  var addrSrc = checkoutPrefillAddr;
+  if (!addrSrc && savedAddresses.length > 0 && savedAddresses[selectedAddressIndex]) addrSrc = savedAddresses[selectedAddressIndex];
+  if (addrSrc) {
+    var n2 = document.getElementById('cs-c-name');  if (n2 && !n2.value && addrSrc.name)      n2.value = addrSrc.name;
+    var ph = document.getElementById('cs-c-phone'); if (ph && !ph.value && addrSrc.phone)     ph.value = addrSrc.phone;
+    var ad = document.getElementById('cs-c-addr');  if (ad && !ad.value && addrSrc.formatted) ad.value = addrSrc.formatted;
+  }
+}
+
+function submitOrderFromSheet() {
+  var name  = ((document.getElementById('cs-c-name')  || {}).value || '').trim();
+  var phone = ((document.getElementById('cs-c-phone') || {}).value || '').trim();
+  var addr  = ((document.getElementById('cs-c-addr')  || {}).value || '').trim();
+  var pay   = ((document.getElementById('cs-c-pay')   || {}).value || '');
+  var notes = ((document.getElementById('cs-c-notes') || {}).value || '').trim();
+
+  if (!name)  return toast('يرجى إدخال الاسم الكامل', 'warn');
+  if (!phone) return toast('يرجى إدخال رقم الجوال', 'warn');
+  if (!addr)  return toast('يرجى إدخال العنوان أو مشاركة الموقع', 'warn');
+  if (!pay)   return toast('يرجى اختيار وسيلة الدفع', 'warn');
+
+  var btn = document.getElementById('cs-btn-confirm');
+  var orig = btn ? btn.innerHTML : '';
+  if (btn) { btn.innerHTML = 'جاري المعالجة... ⏳'; btn.disabled = true; btn.style.opacity = '0.7'; }
+
+  setTimeout(function() {
+    var subtotal = cart.reduce(function(s,i) { return s + i.price * i.qty; }, 0);
+    var shipping = subtotal >= CONFIG.freeShippingMin ? 0 : CONFIG.shippingFee;
+    var total    = subtotal + shipping;
+    var emailStr = currentUser ? '\n✉️ *الإيميل:* ' + currentUser.email : '';
+
+    var lines = cart.map(function(i, n) {
+      var line = (n + 1) + '. *' + i.title + '*';
+      if (i.variant && i.variant.trim()) line += ' — ' + i.variant;
+      line += '\n   الكمية: ' + i.qty + ' × ' + i.price.toFixed(2) + ' ' + CONFIG.currency;
+      line += '\n   المجموع: *' + (i.price * i.qty).toFixed(2) + ' ' + CONFIG.currency + '*';
+      return line;
+    }).join('\n\n');
+
+    var msg = '🛒 *طلب جديد من ' + CONFIG.storeName + '*\n\n'
+      + '👤 *الاسم:* ' + name + '\n'
+      + '📞 *الجوال:* ' + phone + emailStr + '\n'
+      + '📍 *العنوان/الموقع:* ' + addr + '\n'
+      + '💳 *الدفع:* ' + pay + '\n\n'
+      + '*المنتجات:*\n' + lines + '\n\n'
+      + '📦 *الشحن:* ' + (shipping === 0 ? 'مجاني' : shipping.toFixed(2) + ' ' + CONFIG.currency) + '\n'
+      + '💰 *الإجمالي النهائي: ' + total.toFixed(2) + ' ' + CONFIG.currency + '*'
+      + (notes ? '\n\n📝 *ملاحظات:* ' + notes : '');
+
+    var order = { id: 'ORD-' + Date.now(), date: new Date().toLocaleDateString('ar-SA'), items: cart.slice(), total: total, status: 'جديد', name: name, phone: phone, addr: addr, pay: pay };
+    orderHistory.unshift(order); if (orderHistory.length > 20) orderHistory.pop(); saveHistory();
+
+    window.open('https://wa.me/' + CONFIG.whatsapp + '?text=' + encodeURIComponent(msg), '_blank');
+    cart = []; saveCart();
+    checkoutFormVisible = false; checkoutPrefillAddr = null;
+    closeCartSheet(); closeModal('cart-modal'); updateCartUI();
+    toast('تم تحويلك للواتساب لإرسال الطلب! ✅', 'success');
+    if (btn) { btn.innerHTML = orig; btn.disabled = false; btn.style.opacity = '1'; }
+  }, 800);
+}
 
 function updateCartUI() {
   updateCartBadge(); updateStickyBar(); refreshCardQtys();
