@@ -2168,7 +2168,13 @@ function openCartSheet() {
   sheet.classList.add('animating');
   sheet.style.display = 'flex';
   document.getElementById('sticky-bar').classList.add('sheet-open');
-  document.body.style.overflow = 'hidden';
+  if (!document.body.classList.contains('modal-open')) {
+    savedScrollY = window.scrollY || window.pageYOffset;
+    document.body.classList.add('modal-open');
+    document.body.style.position = 'fixed';
+    document.body.style.top = '-' + savedScrollY + 'px';
+    document.body.style.width = '100%';
+  }
   requestAnimationFrame(function() {
     requestAnimationFrame(function() { sheet.classList.add('show'); sheet.classList.remove('animating'); });
   });
@@ -2181,7 +2187,13 @@ function closeCartSheet() {
   var bar = document.getElementById('sticky-bar');
   if (bar) bar.classList.remove('sheet-open');
   cartSheetStep = 1;
-  document.body.style.overflow = '';
+  if (!document.querySelector('.modal.show')) {
+    document.body.classList.remove('modal-open');
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.width = '';
+    window.scrollTo(0, savedScrollY);
+  }
   setTimeout(function() { if (!sheet.classList.contains('show')) sheet.style.display = 'none'; }, 340);
 }
 
