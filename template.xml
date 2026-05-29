@@ -202,8 +202,8 @@ header.hide-header{transform:translateY(-100%);}
 .cart-summary-mini{display:flex;align-items:center;gap:10px;min-width:0;flex:1;}
 .cart-summary-mini .mini-thumb{width:42px;height:42px;border-radius:8px;flex-shrink:0;object-fit:contain;background:var(--soft-2);border:1px solid var(--border);}
 .sticky-total{font-size:18px;font-weight:800;color:var(--text);line-height:1.1;}
-.sticky-count{font-size:12px;color:var(--text-2);}
-.sticky-chevron{font-size:20px;color:var(--text-2);flex-shrink:0;transition:transform .24s cubic-bezier(.4,0,.2,1);line-height:1;}
+.sticky-count{font-size:12px;color:var(--text-2);display:flex;align-items:center;gap:4px;}
+.sticky-chevron{font-size:14px;color:var(--text-2);flex-shrink:0;transition:transform .24s cubic-bezier(.4,0,.2,1);line-height:1;}
 .sticky-bar.sheet-open .sticky-chevron{transform:rotate(180deg);}
 .btn-cart-toggle{display:flex;align-items:center;gap:6px;background:var(--btn-yellow);border:1px solid var(--btn-yellow-border);color:var(--text);padding:10px 20px;border-radius:var(--r-pill);font-weight:800;font-size:14px;font-family:'Cairo',sans-serif;cursor:pointer;flex-shrink:0;transition:background var(--t),transform .12s;}
 .btn-cart-toggle:hover{background:var(--btn-yellow-hover);}
@@ -687,10 +687,10 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
       <img alt='' class='mini-thumb' id='sticky-thumb' onerror='this.src="https://placehold.co/90x90/f5f5f5/aaaaaa?text=Img"' src=''/>
       <div>
         <div class='sticky-total'><span id='sticky-total-val'>0.00 ر.س</span></div>
-        <div class='sticky-count'><span id='sticky-count'>0 سلع</span></div>
+        <div class='sticky-count'><span id='sticky-count'>0 سلع</span> <span class='sticky-chevron'>&#9650;</span></div>
       </div>
     </div>
-    <button class='btn-cart-toggle' onclick='event.stopPropagation();toggleCartSheet()'><span class='sticky-chevron'>&#9650;</span> السلة</button>
+    <button class='btn-cart-toggle' onclick='event.stopPropagation();toggleCartSheet()'>متابعة</button>
   </div>
 </div>
 
