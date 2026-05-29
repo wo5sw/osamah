@@ -283,7 +283,9 @@ header.hide-header{transform:translateY(-100%);}
 .modal-close:hover{background:var(--price-deal);transform:rotate(90deg);}
 
 /* PRODUCT DRAWER */
-#product-modal .modal-panel{max-width:580px;}
+#product-modal .modal-panel{max-width:580px;position:relative;}
+.pm-close-btn{position:absolute;top:10px;left:10px;z-index:20;width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);border:1.5px solid rgba(255,255,255,.3);color:#fff;font-size:15px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .18s,transform .18s;}
+.pm-close-btn:hover{background:var(--price-deal);transform:rotate(90deg);}
 .drawer-slider{position:relative;height:340px;flex-shrink:0;background:#fff;border-bottom:1px solid var(--border);}
 .drawer-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;scrollbar-width:none;height:100%;}
 .drawer-track::-webkit-scrollbar{display:none;}
@@ -748,10 +750,7 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
 <!-- PRODUCT DRAWER -->
 <div class='modal' id='product-modal' onclick='backdropClose(event,&quot;product-modal&quot;)'>
   <div class='modal-panel'>
-    <div class='modal-head'>
-      <h2 id='drawer-title'>تفاصيل المنتج</h2>
-      <button class='modal-close' onclick='closeModal(&quot;product-modal&quot;)'>&#10005;</button>
-    </div>
+    <button class='pm-close-btn' onclick='closeModal(&quot;product-modal&quot;)'>&#10005;</button>
     <div class='drawer-slider'>
       <div class='drawer-track' id='drawer-track'/>
       <div class='drawer-dots' id='drawer-dots'/>
@@ -1904,7 +1903,7 @@ function openDrawer(id) {
   var hasVariants = p.variants && p.variants.length > 0;
   var firstV = hasVariants ? p.variants[0] : p;
   currentDrawerSelected = hasVariants ? { color: firstV.color } : {};
-  document.getElementById('drawer-title').textContent = 'تفاصيل المنتج';
+  // drawer-title removed
   renderDrawerSlider(firstV.images || p.images);
   var d = getVariantDiscount(firstV);
   var savings = firstV.oldPrice ? (firstV.oldPrice - firstV.price).toFixed(2) : 0;
