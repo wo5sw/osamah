@@ -235,9 +235,8 @@ header.hide-header{transform:translateY(-100%);}
 .btn-cs-checkout:hover{background:var(--btn-orange-hover);}
 .btn-cs-checkout:active{transform:scale(.97);}
 /* TWO-PAGE SHEET */
-.cs-pages{display:flex;flex-direction:row;width:200%;flex:1;min-height:0;transition:transform .34s cubic-bezier(.4,0,.2,1);}
-.cs-pages.on-step2{transform:translateX(-50%);}
-.cs-page{width:50%;display:flex;flex-direction:column;flex-shrink:0;min-height:0;overflow:hidden;}
+@keyframes csSwap{from{opacity:0;transform:translateX(var(--cs-dir,30px));}to{opacity:1;transform:translateX(0);}}
+.cs-animate{animation:csSwap .28s cubic-bezier(.4,0,.2,1);}
 .cs-back{background:none;border:none;color:var(--amazon-blue,#007185);font-size:13px;font-weight:800;cursor:pointer;font-family:'Cairo',sans-serif;display:flex;align-items:center;gap:4px;padding:0;flex-shrink:0;}
 .cs-order-summary{background:var(--soft-2);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px;margin-bottom:14px;}
 .cs-order-summary-title{font-size:14px;font-weight:800;color:var(--text);margin-bottom:8px;}
@@ -697,27 +696,13 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
 <div class='cart-sheet' id='cart-sheet' onclick='sheetBackdropClose(event)'>
   <div class='cart-sheet-panel'>
     <div class='cs-handle'><div class='cs-handle-bar'/></div>
-    <div class='cs-pages' id='cs-pages'>
-      <!-- STEP 1: Cart review -->
-      <div class='cs-page'>
-        <div class='cs-head'>
-          <h3>&#128722; مراجعة مشترياتك</h3>
-          <button class='cs-close' onclick='closeCartSheet()'>&#10005;</button>
-        </div>
-        <div class='cs-body' id='cs-body'/>
-        <div class='cs-footer' id='cs-footer'/>
-      </div>
-      <!-- STEP 2: Checkout -->
-      <div class='cs-page'>
-        <div class='cs-head'>
-          <button class='cs-back' onclick='goToCartStep1()'>&#8592; رجوع</button>
-          <h3>&#128203; إتمام الطلب</h3>
-          <button class='cs-close' onclick='closeCartSheet()'>&#10005;</button>
-        </div>
-        <div class='cs-body' id='cs-checkout-body'/>
-        <div class='cs-footer' id='cs-checkout-footer'/>
-      </div>
+    <div class='cs-head'>
+      <button class='cs-back' id='cs-back-btn' onclick='goToCartStep1()' style='display:none'>&#8592; رجوع</button>
+      <h3 id='cs-title'>&#128722; مراجعة مشترياتك</h3>
+      <button class='cs-close' onclick='closeCartSheet()'>&#10005;</button>
     </div>
+    <div class='cs-body' id='cs-body'/>
+    <div class='cs-footer' id='cs-footer'/>
   </div>
 </div>
 
@@ -1438,10 +1423,8 @@ function confirmMapLocation() {
 
 /* Also support GPS button inside checkout form */
 function getLocation() {
-  var sheetOnStep2 = (function() {
-    var sh = document.getElementById('cart-sheet'), pg = document.getElementById('cs-pages');
-    return sh && sh.classList.contains('show') && pg && pg.classList.contains('on-step2');
-  })();
+  var sh = document.getElementById('cart-sheet');
+  var sheetOnStep2 = sh && sh.classList.contains('show') && cartSheetStep === 2;
   var addrInput = document.getElementById(sheetOnStep2 ? 'cs-c-addr' : 'c-addr');
   if (!navigator.geolocation) { toast('المتصفح لا يدعم تحديد الموقع', 'warn'); return; }
   if (addrInput) addrInput.placeholder = 'جاري تحديد الموقع... ⏳';
@@ -2157,6 +2140,19 @@ function updateCartTotals() {
   if (te) te.textContent = tot.toFixed(2) + ' ' + CONFIG.currency;
 }
 
+var cartSheetStep = 1;
+
+function animateSheetSwap(dir) {
+  ['cs-body','cs-footer'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.style.setProperty('--cs-dir', dir > 0 ? '36px' : '-36px');
+    el.classList.remove('cs-animate');
+    void el.offsetWidth;
+    el.classList.add('cs-animate');
+  });
+}
+
 function toggleCartSheet() {
   var sheet = document.getElementById('cart-sheet');
   if (sheet && (sheet.classList.contains('show') || sheet.classList.contains('animating'))) closeCartSheet();
@@ -2168,8 +2164,7 @@ function openCartSheet() {
   var sheet = document.getElementById('cart-sheet');
   if (!sheet) return;
   if (sheet.classList.contains('show')) return;
-  var pages = document.getElementById('cs-pages');
-  if (pages) pages.classList.remove('on-step2');
+  cartSheetStep = 1;
   renderCartSheet();
   sheet.classList.add('animating');
   sheet.style.display = 'flex';
@@ -2186,8 +2181,7 @@ function closeCartSheet() {
   sheet.classList.remove('show'); sheet.classList.remove('animating');
   var bar = document.getElementById('sticky-bar');
   if (bar) bar.classList.remove('sheet-open');
-  var pages = document.getElementById('cs-pages');
-  if (pages) pages.classList.remove('on-step2');
+  cartSheetStep = 1;
   document.body.style.overflow = '';
   setTimeout(function() { if (!sheet.classList.contains('show')) sheet.style.display = 'none'; }, 340);
 }
@@ -2201,6 +2195,9 @@ function renderCartSheet() {
   var footer = document.getElementById('cs-footer');
   if (!body || !footer) return;
   if (!cart.length) { closeCartSheet(); return; }
+  cartSheetStep = 1;
+  var titleEl = document.getElementById('cs-title'); if (titleEl) titleEl.innerHTML = '&#128722; مراجعة مشترياتك';
+  var backEl  = document.getElementById('cs-back-btn'); if (backEl) backEl.style.display = 'none';
 
   body.innerHTML = cart.map(function(item) {
     var vTag = (item.variant && item.variant.trim())
@@ -2237,21 +2234,25 @@ function renderCartSheet() {
 }
 
 function goToCartStep2() {
-  var pages = document.getElementById('cs-pages');
-  if (!pages) return;
+  if (!cart.length) return;
+  cartSheetStep = 2;
   renderCheckoutStep();
-  pages.classList.add('on-step2');
+  animateSheetSwap(1);
 }
 
 function goToCartStep1() {
-  var pages = document.getElementById('cs-pages');
-  if (pages) pages.classList.remove('on-step2');
+  cartSheetStep = 1;
+  renderCartSheet();
+  animateSheetSwap(-1);
 }
 
 function renderCheckoutStep() {
-  var body = document.getElementById('cs-checkout-body');
-  var foot = document.getElementById('cs-checkout-footer');
+  var body = document.getElementById('cs-body');
+  var foot = document.getElementById('cs-footer');
   if (!body || !foot) return;
+  cartSheetStep = 2;
+  var titleEl = document.getElementById('cs-title'); if (titleEl) titleEl.innerHTML = '&#128203; إتمام الطلب';
+  var backEl  = document.getElementById('cs-back-btn'); if (backEl) backEl.style.display = '';
   var subtotal = cart.reduce(function(s,i){return s+i.price*i.qty;},0);
   var shipping = subtotal >= CONFIG.freeShippingMin ? 0 : CONFIG.shippingFee;
   var total    = subtotal + shipping;
@@ -2383,10 +2384,7 @@ function hidePayProcessing() {
 function updateCartUI() {
   updateCartBadge(); updateStickyBar(); refreshCardQtys();
   var sheet = document.getElementById('cart-sheet');
-  if (sheet && sheet.classList.contains('show')) {
-    var _pages = document.getElementById('cs-pages');
-    if (!_pages || !_pages.classList.contains('on-step2')) renderCartSheet();
-  }
+  if (sheet && sheet.classList.contains('show') && cartSheetStep === 1) renderCartSheet();
   var modal = document.getElementById('cart-modal');
   if (modal && modal.classList.contains('show')) renderCartBody(cart.reduce(function(s,i) { return s + i.price*i.qty; }, 0));
 }
