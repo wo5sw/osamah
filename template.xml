@@ -2212,7 +2212,7 @@ function renderCartSheet() {
       + '<div class="cart-qty-ctrl" data-cid="' + item.cid + '">' + qtyCtrlHTML(item) + '</div>'
       + '<span class="cart-item-price" data-cid="' + item.cid + '">' + (item.price*item.qty).toFixed(2) + ' ' + CONFIG.currency + '</span>'
       + '</div></div></div>';
-  }).join('') + cartRecommendationsHTML();
+  }).join('');
 
   var subtotal = cart.reduce(function(s,i) { return s + i.price * i.qty; }, 0);
   var shipping = subtotal >= CONFIG.freeShippingMin ? 0 : CONFIG.shippingFee;
