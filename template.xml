@@ -227,6 +227,10 @@ header.hide-header{transform:translateY(-100%);}
 .cs-totals{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;}
 .cs-total-label{font-size:14px;color:var(--text-2);}
 .cs-total-val{font-size:22px;font-weight:800;color:var(--price-deal);}
+.cs-bill{margin:6px 0 12px;}
+.cs-bill-row{display:flex;justify-content:space-between;font-size:13px;color:var(--text-2);padding:3px 0;}
+.cs-bill-row .free-tag2{color:var(--success);font-weight:800;}
+.cs-bill-row.cs-bill-total{font-size:17px;font-weight:800;color:var(--price-deal);border-top:1px solid var(--border);margin-top:5px;padding-top:8px;}
 .btn-cs-checkout{width:100%;padding:14px;border-radius:var(--r-pill);background:var(--btn-orange);border:1px solid var(--btn-orange-border);color:var(--text);font-size:16px;font-weight:800;font-family:'Cairo',sans-serif;cursor:pointer;transition:background var(--t),transform .12s;display:flex;align-items:center;justify-content:center;gap:8px;}
 .btn-cs-checkout:hover{background:var(--btn-orange-hover);}
 .btn-cs-checkout:active{transform:scale(.97);}
@@ -243,6 +247,18 @@ header.hide-header{transform:translateY(-100%);}
 .btn-cs-whatsapp{width:100%;padding:14px;border-radius:var(--r-pill);background:#25d366;border:1px solid #1da851;color:#fff;font-size:16px;font-weight:800;font-family:'Cairo',sans-serif;cursor:pointer;transition:background var(--t),transform .12s;display:flex;align-items:center;justify-content:center;gap:8px;}
 .btn-cs-whatsapp:hover{background:#1da851;}
 .btn-cs-whatsapp:active{transform:scale(.97);}
+/* SECURE PROCESSING OVERLAY */
+.pay-processing{display:none;position:fixed;inset:0;z-index:1000002;background:rgba(15,17,17,.7);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);align-items:center;justify-content:center;opacity:0;transition:opacity .25s;padding:20px;}
+.pay-processing.show{display:flex;opacity:1;}
+.pp-card{background:#fff;border-radius:18px;padding:32px 30px;display:flex;flex-direction:column;align-items:center;gap:14px;max-width:300px;width:100%;box-shadow:var(--shadow-lg);transform:scale(.88) translateY(10px);transition:transform .32s cubic-bezier(0,.9,.4,1);}
+.pay-processing.show .pp-card{transform:scale(1) translateY(0);}
+.pp-lock{font-size:36px;animation:ppPulse 1.4s ease-in-out infinite;}
+@keyframes ppPulse{0%,100%{transform:scale(1);opacity:.85;}50%{transform:scale(1.14);opacity:1;}}
+.pp-spinner{width:44px;height:44px;border:4px solid var(--soft-2);border-top-color:var(--btn-orange);border-radius:50%;animation:ppSpin .8s linear infinite;}
+@keyframes ppSpin{to{transform:rotate(360deg);}}
+.pp-title{font-size:16px;font-weight:800;color:var(--text);text-align:center;}
+.pp-sub{font-size:12px;color:var(--text-2);text-align:center;line-height:1.5;}
+.pp-secure{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--success);font-weight:800;margin-top:4px;}
 
 /* ZOOM LIGHTBOX */
 #zoom-overlay{display:none;position:fixed;inset:0;background:rgba(15,17,17,.92);z-index:99900;justify-content:center;align-items:center;opacity:0;transition:opacity .25s;cursor:zoom-out;}
@@ -702,6 +718,17 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
         <div class='cs-footer' id='cs-checkout-footer'/>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- SECURE PROCESSING OVERLAY -->
+<div class='pay-processing' id='pay-processing'>
+  <div class='pp-card'>
+    <div class='pp-lock'>&#128274;</div>
+    <div class='pp-spinner'/>
+    <div class='pp-title'>جاري المعالجة بشكل آمن...</div>
+    <div class='pp-sub'>يتم تجهيز طلبك وتحويلك إلى واتساب، لحظات من فضلك</div>
+    <div class='pp-secure'><span>&#128274;</span> اتصال آمن ومشفّر</div>
   </div>
 </div>
 
@@ -2055,8 +2082,14 @@ function updateSheetTotals() {
   var shipping = subtotal >= CONFIG.freeShippingMin ? 0 : CONFIG.shippingFee;
   var total    = subtotal + shipping;
   var need     = CONFIG.freeShippingMin - subtotal;
+  var subEl = foot.querySelector('.cs-sub-val');
+  if (subEl) subEl.textContent = subtotal.toFixed(2) + ' ' + CONFIG.currency;
+  var shipEl = foot.querySelector('.cs-ship-val');
+  if (shipEl) shipEl.innerHTML = shipping === 0 ? '<span class="free-tag2">مجاني</span>' : shipping.toFixed(2) + ' ' + CONFIG.currency;
   var valEl = foot.querySelector('.cs-total-val');
   if (valEl) valEl.textContent = total.toFixed(2) + ' ' + CONFIG.currency;
+  var subCountEl = foot.querySelector('.cs-bill-row span:first-child');
+  if (subCountEl) subCountEl.textContent = 'إجمالي السلع (' + cart.reduce(function(s,i){return s+i.qty;},0) + ')';
   var note = foot.querySelector('.cs-ship-note');
   if (note) {
     if (shipping === 0) { note.className = 'cs-ship-note'; note.innerHTML = '🚚 مؤهّل للشحن المجاني!'; }
@@ -2193,8 +2226,13 @@ function renderCartSheet() {
     ? '<div class="cs-ship-note">&#128666; مؤهّل للشحن المجاني!</div>'
     : '<div class="cs-ship-note needs-more">أضف <b>' + need.toFixed(2) + ' ' + CONFIG.currency + '</b> للحصول على شحن مجاني</div>';
 
+  var itemCount = cart.reduce(function(s,i){return s+i.qty;},0);
   footer.innerHTML = shipNote
-    + '<div class="cs-totals"><span class="cs-total-label">الإجمالي شامل الشحن</span><span class="cs-total-val">' + total.toFixed(2) + ' ' + CONFIG.currency + '</span></div>'
+    + '<div class="cs-bill">'
+    + '<div class="cs-bill-row"><span>إجمالي السلع (' + itemCount + ')</span><span class="cs-sub-val">' + subtotal.toFixed(2) + ' ' + CONFIG.currency + '</span></div>'
+    + '<div class="cs-bill-row"><span>رسوم التوصيل</span><span class="cs-ship-val">' + (shipping === 0 ? '<span class="free-tag2">مجاني</span>' : shipping.toFixed(2) + ' ' + CONFIG.currency) + '</span></div>'
+    + '<div class="cs-bill-row cs-bill-total"><span>أنت تدفع</span><span class="cs-total-val">' + total.toFixed(2) + ' ' + CONFIG.currency + '</span></div>'
+    + '</div>'
     + '<button class="btn-cs-checkout" onclick="goToCartStep2()">متابعة &#10145;</button>';
 }
 
@@ -2288,7 +2326,8 @@ function submitOrderFromSheet() {
 
   var btn = document.getElementById('cs-btn-confirm');
   var orig = btn ? btn.innerHTML : '';
-  if (btn) { btn.innerHTML = 'جاري المعالجة... ⏳'; btn.disabled = true; btn.style.opacity = '0.7'; }
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.7'; }
+  showPayProcessing();
 
   setTimeout(function() {
     var subtotal = cart.reduce(function(s,i) { return s + i.price * i.qty; }, 0);
@@ -2317,13 +2356,28 @@ function submitOrderFromSheet() {
     var order = { id: 'ORD-' + Date.now(), date: new Date().toLocaleDateString('ar-SA'), items: cart.slice(), total: total, status: 'جديد', name: name, phone: phone, addr: addr, pay: pay };
     orderHistory.unshift(order); if (orderHistory.length > 20) orderHistory.pop(); saveHistory();
 
+    hidePayProcessing();
     window.open('https://wa.me/' + CONFIG.whatsapp + '?text=' + encodeURIComponent(msg), '_blank');
     cart = []; saveCart();
     checkoutFormVisible = false; checkoutPrefillAddr = null;
     closeCartSheet(); closeModal('cart-modal'); updateCartUI();
     toast('تم تحويلك للواتساب لإرسال الطلب! ✅', 'success');
     if (btn) { btn.innerHTML = orig; btn.disabled = false; btn.style.opacity = '1'; }
-  }, 800);
+  }, 1500);
+}
+
+function showPayProcessing() {
+  var el = document.getElementById('pay-processing');
+  if (!el) return;
+  el.style.display = 'flex';
+  requestAnimationFrame(function() { requestAnimationFrame(function() { el.classList.add('show'); }); });
+}
+
+function hidePayProcessing() {
+  var el = document.getElementById('pay-processing');
+  if (!el) return;
+  el.classList.remove('show');
+  setTimeout(function() { if (!el.classList.contains('show')) el.style.display = 'none'; }, 300);
 }
 
 function updateCartUI() {
@@ -2474,6 +2528,7 @@ function submitOrder() {
     if (orderHistory.length > 20) orderHistory.pop();
     saveHistory();
 
+    hidePayProcessing();
     window.open('https://wa.me/' + CONFIG.whatsapp + '?text=' + encodeURIComponent(msg), '_blank');
     cart = []; saveCart();
     checkoutFormVisible = false; checkoutPrefillAddr = null;
