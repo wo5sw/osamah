@@ -253,6 +253,7 @@ header.hide-header{transform:translateY(-100%);}
 .cs-foot-texts{text-align:right;line-height:1.25;}
 .cs-foot-total{font-size:20px;font-weight:800;color:var(--text);}
 .cs-foot-count{font-size:12px;color:var(--text-2);display:flex;align-items:center;gap:3px;justify-content:flex-end;}
+.cs-pay-note{margin-top:10px;background:#eafaf0;border:1px solid #bdebcf;color:#1da851;font-size:12.5px;font-weight:700;line-height:1.6;padding:10px 12px;border-radius:12px;text-align:center;}
 /* TWO-PAGE SHEET */
 @keyframes csSwap{from{opacity:0;transform:translateX(var(--cs-dir,30px));}to{opacity:1;transform:translateX(0);}}
 .cs-animate{animation:csSwap .28s cubic-bezier(.4,0,.2,1);}
@@ -2316,18 +2317,14 @@ function renderCheckoutStep() {
     + itemsList + shipRow
     + '<div class="cs-order-total-row"><span>الإجمالي</span><span>' + total.toFixed(2) + ' ' + CONFIG.currency + '</span></div>'
     + '</div>'
-    + '<h4 style="font-size:14px;font-weight:800;color:var(--text);margin:0 0 10px;">&#128204; بيانات التوصيل والدفع</h4>'
+    + '<h4 style="font-size:14px;font-weight:800;color:var(--text);margin:0 0 10px;">&#128204; بيانات التوصيل</h4>'
     + (!currentUser ? '<div id="cs-google-auth"></div><div class="guest-divider">&#10097; أو أكمل كزائر</div>' : renderUserCard())
     + '<div class="form-row"><input class="pro-input" id="cs-c-name" placeholder="الاسم الكامل *" style="margin:0" required/>'
     + '<input class="pro-input" id="cs-c-phone" placeholder="رقم الجوال *" type="tel" inputmode="tel" style="margin:0" required/></div>'
     + '<div class="loc-wrap"><input class="pro-input" id="cs-c-addr" placeholder="العنوان أو رابط الموقع *" required/>'
     + '<button class="btn-location" type="button" onclick="getLocation()" title="&#128205;">&#128205;</button></div>'
-    + '<select class="pro-input" id="cs-c-pay" required>'
-    + '<option value="" disabled selected>اختر وسيلة الدفع *</option>'
-    + '<option value="الدفع عند الاستلام">الدفع عند الاستلام</option>'
-    + '<option value="تحويل بنكي">تحويل بنكي</option>'
-    + '</select>'
-    + '<textarea class="pro-input" id="cs-c-notes" placeholder="ملاحظات (اختياري)" rows="2"></textarea>';
+    + '<textarea class="pro-input" id="cs-c-notes" placeholder="ملاحظات (اختياري)" rows="2"></textarea>'
+    + '<div class="cs-pay-note">&#128172; يتم الاتفاق على الدفع عبر رسالة واتساب بعد إرسال الطلب</div>';
   foot.innerHTML = '<button class="btn-cs-whatsapp" id="cs-btn-confirm" onclick="submitOrderFromSheet()">&#128172; إرسال الطلب عبر واتساب</button>';
   setTimeout(function() { renderGoogleButtonSheet(); prefillCheckoutStep(); }, 50);
 }
@@ -2361,13 +2358,11 @@ function submitOrderFromSheet() {
   var name  = ((document.getElementById('cs-c-name')  || {}).value || '').trim();
   var phone = ((document.getElementById('cs-c-phone') || {}).value || '').trim();
   var addr  = ((document.getElementById('cs-c-addr')  || {}).value || '').trim();
-  var pay   = ((document.getElementById('cs-c-pay')   || {}).value || '');
   var notes = ((document.getElementById('cs-c-notes') || {}).value || '').trim();
 
   if (!name)  return toast('يرجى إدخال الاسم الكامل', 'warn');
   if (!phone) return toast('يرجى إدخال رقم الجوال', 'warn');
   if (!addr)  return toast('يرجى إدخال العنوان أو مشاركة الموقع', 'warn');
-  if (!pay)   return toast('يرجى اختيار وسيلة الدفع', 'warn');
 
   var btn = document.getElementById('cs-btn-confirm');
   var orig = btn ? btn.innerHTML : '';
@@ -2391,14 +2386,13 @@ function submitOrderFromSheet() {
     var msg = '🛒 *طلب جديد من ' + CONFIG.storeName + '*\n\n'
       + '👤 *الاسم:* ' + name + '\n'
       + '📞 *الجوال:* ' + phone + emailStr + '\n'
-      + '📍 *العنوان/الموقع:* ' + addr + '\n'
-      + '💳 *الدفع:* ' + pay + '\n\n'
+      + '📍 *العنوان/الموقع:* ' + addr + '\n\n'
       + '*المنتجات:*\n' + lines + '\n\n'
       + '📦 *الشحن:* ' + (shipping === 0 ? 'مجاني' : shipping.toFixed(2) + ' ' + CONFIG.currency) + '\n'
       + '💰 *الإجمالي النهائي: ' + total.toFixed(2) + ' ' + CONFIG.currency + '*'
       + (notes ? '\n\n📝 *ملاحظات:* ' + notes : '');
 
-    var order = { id: 'ORD-' + Date.now(), date: new Date().toLocaleDateString('ar-SA'), items: cart.slice(), total: total, status: 'جديد', name: name, phone: phone, addr: addr, pay: pay };
+    var order = { id: 'ORD-' + Date.now(), date: new Date().toLocaleDateString('ar-SA'), items: cart.slice(), total: total, status: 'جديد', name: name, phone: phone, addr: addr, pay: 'عبر واتساب' };
     orderHistory.unshift(order); if (orderHistory.length > 20) orderHistory.pop(); saveHistory();
 
     hidePayProcessing();
@@ -2482,7 +2476,7 @@ function renderCartBody(subtotal) {
     + addrPreviewHtml
     + (!checkoutFormVisible ? '<button class="btn-checkout" id="checkout-btn" onclick="showCheckoutFlow()">المتابعة للدفع</button>' : '')
     + '<div class="' + (checkoutFormVisible ? 'checkout-form show' : 'checkout-form') + '" id="checkout-form">'
-    + '<h4>بيانات التوصيل والدفع</h4>'
+    + '<h4>بيانات التوصيل</h4>'
     + (!currentUser ? '<div id="google-auth-container"></div><div class="guest-divider">أو أكمل كزائر</div>' : '')
     + '<div class="form-row">'
     + '<input class="pro-input" id="c-name" placeholder="الاسم الكامل *" style="margin:0" required/>'
@@ -2490,12 +2484,8 @@ function renderCartBody(subtotal) {
     + '</div>'
     + '<div class="loc-wrap"><input class="pro-input" id="c-addr" placeholder="العنوان أو رابط الموقع *" required/>'
     + '<button class="btn-location" type="button" onclick="getLocation()" title="مشاركة موقعي الحالي">📍</button></div>'
-    + '<select class="pro-input" id="c-pay" required>'
-    + '<option value="" disabled selected>اختر وسيلة الدفع *</option>'
-    + '<option value="الدفع عند الاستلام">الدفع عند الاستلام</option>'
-    + '<option value="تحويل بنكي">تحويل بنكي</option>'
-    + '</select>'
     + '<textarea class="pro-input" id="c-notes" placeholder="ملاحظات (اختياري)" rows="2"></textarea>'
+    + '<div class="cs-pay-note">💬 يتم الاتفاق على الدفع عبر رسالة واتساب بعد إرسال الطلب</div>'
     + '<button class="btn-confirm" id="btn-confirm-order" onclick="submitOrder()">إرسال الطلب عبر واتساب 💬</button>'
     + '</div>';
 
@@ -2529,13 +2519,11 @@ function submitOrder() {
   var name  = ((document.getElementById('c-name')  || {}).value || '').trim();
   var phone = ((document.getElementById('c-phone') || {}).value || '').trim();
   var addr  = ((document.getElementById('c-addr')  || {}).value || '').trim();
-  var pay   = ((document.getElementById('c-pay')   || {}).value || '');
   var notes = ((document.getElementById('c-notes') || {}).value || '').trim();
 
   if (!name)  return toast('يرجى إدخال الاسم الكامل', 'warn');
   if (!phone) return toast('يرجى إدخال رقم الجوال', 'warn');
   if (!addr)  return toast('يرجى إدخال العنوان أو مشاركة الموقع', 'warn');
-  if (!pay)   return toast('يرجى اختيار وسيلة الدفع', 'warn');
 
   var btn = document.getElementById('btn-confirm-order');
   var orig = btn ? btn.innerHTML : '';
@@ -2558,14 +2546,13 @@ function submitOrder() {
     var msg = '🛒 *طلب جديد من ' + CONFIG.storeName + '*\n\n'
       + '👤 *الاسم:* ' + name + '\n'
       + '📞 *الجوال:* ' + phone + emailStr + '\n'
-      + '📍 *العنوان/الموقع:* ' + addr + '\n'
-      + '💳 *الدفع:* ' + pay + '\n\n'
+      + '📍 *العنوان/الموقع:* ' + addr + '\n\n'
       + '*المنتجات:*\n' + lines + '\n\n'
       + '📦 *الشحن:* ' + (shipping === 0 ? 'مجاني' : shipping.toFixed(2) + ' ' + CONFIG.currency) + '\n'
       + '💰 *الإجمالي النهائي: ' + total.toFixed(2) + ' ' + CONFIG.currency + '*'
       + (notes ? '\n\n📝 *ملاحظات:* ' + notes : '');
 
-    var order = { id: 'ORD-' + Date.now(), date: new Date().toLocaleDateString('ar-SA'), items: cart.slice(), total: total, status: 'جديد', name: name, phone: phone, addr: addr, pay: pay };
+    var order = { id: 'ORD-' + Date.now(), date: new Date().toLocaleDateString('ar-SA'), items: cart.slice(), total: total, status: 'جديد', name: name, phone: phone, addr: addr, pay: 'عبر واتساب' };
     orderHistory.unshift(order);
     if (orderHistory.length > 20) orderHistory.pop();
     saveHistory();
