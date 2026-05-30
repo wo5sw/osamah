@@ -110,7 +110,7 @@ header.hide-header{transform:translateY(-100%);}
 .suggest-head{padding:12px 14px 2px;font-size:18px;font-weight:800;color:var(--text);}
 .h-sub{background:var(--header-bg);color:var(--text);display:flex;align-items:flex-start;padding:8px 10px 10px;overflow-x:auto;scrollbar-width:none;gap:4px;border-bottom:1px solid var(--header-line);}
 .h-sub::-webkit-scrollbar{display:none;}
-.sub-item{display:flex;flex-direction:column;align-items:center;gap:6px;padding:4px 4px 9px;border:none;width:80px;font-size:12px;font-weight:600;color:var(--text-2);text-align:center;white-space:normal;cursor:pointer;flex-shrink:0;position:relative;transition:color var(--t);}
+.sub-item{display:flex;flex-direction:column;align-items:center;gap:6px;padding:4px 4px 9px;border:none;width:80px;font-size:12px;font-weight:600;color:var(--text-2);text-align:center;white-space:normal;cursor:pointer;flex-shrink:0;position:relative;transition:color var(--t);text-decoration:none;background:none;}
 .sub-ic{width:58px;height:58px;border-radius:50%;background:var(--soft-2);border:1px solid var(--border);display:grid;place-items:center;overflow:hidden;font-size:26px;line-height:1;transition:border-color var(--t),box-shadow var(--t);}
 .sub-ic img{width:100%;height:100%;object-fit:cover;}
 .sub-item .sub-lbl{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.25;max-height:30px;}
@@ -642,7 +642,7 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
 
 <div class='suggest-head'>منتجات مقترحة لك</div>
 <div class='h-sub' id='sub-nav'>
-  <div class='sub-item active' data-cat='all' onclick='setCategory(&quot;الكل&quot;,this)'>
+  <div class='sub-item active' data-cat='all'>
     <span class='sub-ic'>🛒</span>
     <span class='sub-lbl'>الكل</span>
   </div>
@@ -1683,6 +1683,12 @@ function initStore() {
   var pre = document.getElementById('preloader');
   if (pre) { pre.style.opacity = '0'; setTimeout(function() { pre.style.display = 'none'; }, 350); }
   populateCategoryDropdown();
+  // Apply category from URL ?cat= param before rendering
+  var urlCatParam = (new URLSearchParams(location.search)).get('cat') || '';
+  if (urlCatParam && allCategories.has(urlCatParam)) {
+    currentCat = urlCatParam;
+    document.title = urlCatParam + ' — ' + CONFIG.storeName;
+  }
   renderSubNavCategories();
   applyAllFilters();
   updateCartUI();
@@ -1728,10 +1734,12 @@ function renderSubNavCategories() {
   var subNav = document.getElementById('sub-nav');
   if (!subNav) return;
   var refNode = subNav.querySelector('.sub-item.deals');
+  var urlCat = (new URLSearchParams(location.search)).get('cat') || '';
   var cats = Array.from(allCategories).sort();
   cats.forEach(function(c) {
-    var div = document.createElement('div');
-    div.className = 'sub-item'; div.dataset.cat = c;
+    var a = document.createElement('a');
+    a.className = 'sub-item' + (urlCat === c ? ' active' : ''); a.dataset.cat = c;
+    a.href = '?cat=' + encodeURIComponent(c);
     var ic = document.createElement('span'); ic.className = 'sub-ic';
     var iconUrl = categoryIcon(c);
     if (iconUrl) {
@@ -1740,11 +1748,20 @@ function renderSubNavCategories() {
       ic.appendChild(im);
     } else { ic.textContent = '🏷️'; }
     var lbl = document.createElement('span'); lbl.className = 'sub-lbl'; lbl.textContent = c;
-    div.appendChild(ic); div.appendChild(lbl);
-    div.onclick = function() { setCategory(c, div); };
-    subNav.insertBefore(div, refNode);
+    a.appendChild(ic); a.appendChild(lbl);
+    subNav.insertBefore(a, refNode);
   });
-  activeSubItemEl = document.querySelector('.sub-item[data-cat="all"]');
+  // Fix the "الكل" item to link to base URL
+  var allItem = subNav.querySelector('.sub-item[data-cat="all"]');
+  if (allItem) {
+    var allA = document.createElement('a');
+    allA.className = 'sub-item' + (!urlCat ? ' active' : '');
+    allA.dataset.cat = 'all';
+    allA.href = location.pathname;
+    allA.innerHTML = allItem.innerHTML;
+    allItem.replaceWith(allA);
+  }
+  activeSubItemEl = subNav.querySelector('.sub-item.active');
 }
 
 function setCategory(cat, el) {
