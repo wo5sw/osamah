@@ -331,6 +331,9 @@ header.hide-header{transform:translateY(-100%);}
 .pill{background:#fff;border:1px solid var(--border-strong);padding:7px 14px;border-radius:var(--r-sm);font-size:13px;cursor:pointer;color:var(--text);font-family:'Cairo',sans-serif;font-weight:500;transition:var(--t);}
 .pill:hover{border-color:var(--border-focus);background:#fff5e6;}
 .pill.active{border-color:var(--btn-orange);border-width:2px;padding:6px 13px;background:#fff5e6;box-shadow:0 0 0 2px rgba(255,164,28,.22);}
+.size-pills .pill{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 10px;min-width:52px;}
+.size-price{font-size:11px;color:var(--text-3);font-weight:400;}
+.size-pills .pill.active .size-price{color:var(--price-deal);font-weight:700;}
 .delivery-block{background:var(--soft-2);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px;margin:14px 0;font-size:13px;line-height:1.6;}
 .delivery-block strong{display:block;font-size:14px;color:var(--text);margin-bottom:4px;}
 .delivery-block .free{color:var(--success);font-weight:700;}
@@ -1602,8 +1605,14 @@ function fetchProducts() {
           var cleanText = sec.replace(/<br\s*\/?>/gi,'\n').replace(/<\/p>|<\/div>|<\/h[1-6]>/gi,'\n').replace(/<[^>]+>/g,'');
           var lines = cleanText.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l && !/^\.{3,}$/.test(l); });
 
-          var vPrice = null, vOldPrice = null, vColor = null, vDesc = [];
+          var vPrice = null, vOldPrice = null, vColor = null, vDesc = [], vSizes = null;
           lines.forEach(function(line) {
+            // Skip standalone section headers
+            if (/^(?:الحجم|الأحجام|المقاس|المقاسات|Size|Sizes)\s*[:\-.]?\s*$/i.test(line)) return;
+            if (/^(?:السعر|سعر|Price)\s*[:\-.]?\s*$/i.test(line)) return;
+            // SIZE=PRICE pairs e.g. 2yrs=330  S=99
+            var szm = line.match(/^([^\s=:،,؛]+)\s*=\s*(\d[\d.]*)\s*$/);
+            if (szm) { if (!vSizes) vSizes = []; vSizes.push({ label: szm[1].trim(), price: parsePrice(szm[2]) }); return; }
             var pm = line.match(/^(?:السعر|سعر|Price)\s*[:\-.]?\s*(\d[\d.]*)/i);
             if (pm) { vPrice = parsePrice(pm[1]); return; }
             var om = line.match(/^(?:السعر القديم|سعر قديم|السعر قبل|Old Price)\s*[:\-.]?\s*(\d[\d.]*)/i);
@@ -1616,10 +1625,12 @@ function fetchProducts() {
             if (clm) { vColor = clm[1].trim(); return; }
             vDesc.push(line);
           });
+          // If sizes provided, derive base price from first size
+          if (vSizes && vSizes.length > 0 && vPrice === null) vPrice = vSizes[0].price;
           if (!vColor) vColor = 'خيار ' + (sIdx + 1);
 
-          if (secImgs.length > 0 || vPrice !== null || vDesc.length > 0) {
-            variants.push({ color: vColor, price: vPrice, oldPrice: vOldPrice, desc: vDesc, images: secImgs.length ? secImgs : null, image: secImgs.length ? secImgs[0].thumb : null, imageMedium: secImgs.length ? secImgs[0].medium : null, imageFull: secImgs.length ? secImgs[0].full : null });
+          if (secImgs.length > 0 || vPrice !== null || vDesc.length > 0 || vSizes) {
+            variants.push({ color: vColor, price: vPrice, oldPrice: vOldPrice, sizes: vSizes || null, desc: vDesc, images: secImgs.length ? secImgs : null, image: secImgs.length ? secImgs[0].thumb : null, imageMedium: secImgs.length ? secImgs[0].medium : null, imageFull: secImgs.length ? secImgs[0].full : null });
           }
         });
 
@@ -1944,7 +1955,7 @@ function openDrawer(id) {
   currentDrawerProduct = p;
   var hasVariants = p.variants && p.variants.length > 0;
   var firstV = hasVariants ? p.variants[0] : p;
-  currentDrawerSelected = hasVariants ? { color: firstV.color } : {};
+  currentDrawerSelected = hasVariants ? { color: firstV.color, size: null, sizePrice: null } : { size: null, sizePrice: null };
   // drawer-title removed
   renderDrawerSlider(firstV.images || p.images);
   var d = getVariantDiscount(firstV);
@@ -1996,10 +2007,40 @@ function renderDrawerSlider(images) {
 }
 
 function buildOptionsHTML(p, activeColor) {
-  if (!p.variants || p.variants.length < 2) return '';
-  return '<div class="option-group"><div class="option-label">الخيار: <span id="sel-color-text">' + escapeHtml(activeColor||'') + '</span></div><div class="pills" id="color-pills">'
-    + p.variants.map(function(v) { return '<div class="pill ' + (v.color === activeColor ? 'active' : '') + '" onclick="selectColor(\'' + escapeHtml(p.id) + '\',\'' + v.color.replace(/'/g,"\\'") + '\',this)">' + escapeHtml(v.color) + '</div>'; }).join('')
+  var html = '';
+  if (p.variants && p.variants.length > 1) {
+    html += '<div class="option-group"><div class="option-label">الخيار: <span id="sel-color-text">' + escapeHtml(activeColor||'') + '</span></div><div class="pills" id="color-pills">'
+      + p.variants.map(function(v) { return '<div class="pill ' + (v.color === activeColor ? 'active' : '') + '" onclick="selectColor(\'' + escapeHtml(p.id) + '\',\'' + v.color.replace(/'/g,"\\'") + '\',this)">' + escapeHtml(v.color) + '</div>'; }).join('')
+      + '</div></div>';
+  }
+  var activeVariant = (p.variants && p.variants.length > 0) ? (p.variants.find(function(v) { return v.color === activeColor; }) || p.variants[0]) : null;
+  var sizes = activeVariant ? activeVariant.sizes : null;
+  if (sizes && sizes.length > 0) html += buildSizePillsHTML(p.id, sizes);
+  return html;
+}
+
+function buildSizePillsHTML(pid, sizes) {
+  return '<div class="option-group" id="size-group">'
+    + '<div class="option-label">المقاس: <span id="sel-size-text" style="color:var(--text-3)">اختر المقاس</span></div>'
+    + '<div class="pills size-pills" id="size-pills">'
+    + sizes.map(function(s) {
+        return '<div class="pill" onclick="selectSize(\'' + escapeHtml(pid) + '\',' + s.price + ',\'' + s.label.replace(/'/g,"\\'") + '\',this)">'
+          + escapeHtml(s.label) + '<span class="size-price"> ' + formatPrice(s.price) + '</span></div>';
+      }).join('')
     + '</div></div>';
+}
+
+function selectSize(pid, price, label, el) {
+  document.querySelectorAll('#size-pills .pill').forEach(function(e) { e.classList.remove('active'); });
+  el.classList.add('active');
+  var selText = document.getElementById('sel-size-text');
+  if (selText) { selText.textContent = label; selText.style.color = ''; }
+  currentDrawerSelected.size = label;
+  currentDrawerSelected.sizePrice = price;
+  var dp = document.querySelector('.drawer-price'); if (dp) dp.innerHTML = priceHTML(price, {});
+  var ob = document.getElementById('drawer-old-price-box'); if (ob) ob.innerHTML = '';
+  var cid = pid + (currentDrawerSelected.color ? '-' + currentDrawerSelected.color : '') + '-' + label;
+  updateDrawerAddBtn(cid);
 }
 
 function scrollToSlide(idx) {
@@ -2013,7 +2054,7 @@ function selectColor(pid, color, el) {
   var selText = document.getElementById('sel-color-text'); if (selText) selText.textContent = color;
   var p = productIndex[pid]; if (!p) return;
   var variant = p.variants.find(function(v) { return v.color === color; }); if (!variant) return;
-  currentDrawerSelected = { color: variant.color };
+  currentDrawerSelected = { color: variant.color, size: null, sizePrice: null };
   var dp = document.querySelector('.drawer-price'); if (dp) dp.innerHTML = priceHTML(variant.price,{deal:!!variant.oldPrice});
   var dv = getVariantDiscount(variant);
   var sv = variant.oldPrice ? (variant.oldPrice - variant.price).toFixed(2) : 0;
@@ -2025,6 +2066,13 @@ function selectColor(pid, color, el) {
     if (ds) ds.style.display = 'block';
     if (dc) dc.innerHTML = variant.desc.map(function(l) { return '<div>' + escapeHtml(l) + '</div>'; }).join('');
   } else { if (ds) ds.style.display = 'none'; }
+  // Refresh size picker for this color variant
+  var sizeGroup = document.getElementById('size-group');
+  if (variant.sizes && variant.sizes.length > 0) {
+    var newSizeHTML = buildSizePillsHTML(pid, variant.sizes);
+    if (sizeGroup) sizeGroup.outerHTML = newSizeHTML;
+    else { var db = document.querySelector('.delivery-block'); if (db) db.insertAdjacentHTML('beforebegin', newSizeHTML); }
+  } else { if (sizeGroup) sizeGroup.remove(); }
   var updCid = pid + (color ? '-' + color : '');
   updateDrawerAddBtn(updCid);
 }
@@ -2041,12 +2089,20 @@ function drawerToggleWishlist() {
 function addToCart(pid, buyNow) {
   var p = productIndex[pid]; if (!p) return;
   var finalPrice = p.price, varLabel = '', varImage = p.image, varImageFull = p.imageFull;
+  var activeVariant = null;
   if (p.variants && p.variants.length > 1) {
     if (!currentDrawerSelected.color) { toast('يرجى اختيار الخيار أولاً 🎨','warn'); return; }
-    var v = p.variants.find(function(vt) { return vt.color === currentDrawerSelected.color; });
-    if (v) { finalPrice = v.price; varLabel = v.color; varImage = v.image || p.image; varImageFull = v.imageFull || p.imageFull; }
+    activeVariant = p.variants.find(function(vt) { return vt.color === currentDrawerSelected.color; });
+    if (activeVariant) { finalPrice = activeVariant.price; varLabel = activeVariant.color; varImage = activeVariant.image || p.image; varImageFull = activeVariant.imageFull || p.imageFull; }
   } else if (p.variants && p.variants.length === 1) {
-    finalPrice = p.variants[0].price; varImage = p.variants[0].image || p.image; varImageFull = p.variants[0].imageFull || p.imageFull;
+    activeVariant = p.variants[0];
+    finalPrice = activeVariant.price; varImage = activeVariant.image || p.image; varImageFull = activeVariant.imageFull || p.imageFull;
+  }
+  var activeSizes = activeVariant ? activeVariant.sizes : null;
+  if (activeSizes && activeSizes.length > 0) {
+    if (!currentDrawerSelected.size) { toast('يرجى اختيار المقاس أولاً 📏','warn'); return; }
+    finalPrice = currentDrawerSelected.sizePrice;
+    varLabel = (varLabel ? varLabel + ' - ' : '') + currentDrawerSelected.size;
   }
   var cid = p.id + (varLabel ? '-' + varLabel : '');
   var existing = cart.find(function(i) { return i.cid === cid; });
