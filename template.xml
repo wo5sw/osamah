@@ -707,10 +707,10 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
       <img alt='' class='mini-thumb' id='sticky-thumb' onerror='this.src="https://placehold.co/90x90/f5f5f5/aaaaaa?text=Img"' src=''/>
       <div>
         <div class='sticky-total'><span id='sticky-total-val'>0.00 ر.س</span></div>
-        <div class='sticky-count'><span id='sticky-count'>0 سلع</span> <span class='sticky-chevron'>&#9650;</span></div>
+        <div class='sticky-count'><span id='sticky-count'>0 سلع</span></div>
       </div>
     </div>
-    <button class='btn-cart-toggle' onclick='event.stopPropagation();toggleCartSheet()'>متابعة</button>
+    <button class='btn-cart-toggle' onclick='event.stopPropagation();toggleCartSheet()'>متابعة <span class='sticky-chevron'>&#9650;</span></button>
   </div>
 </div>
 
@@ -1675,6 +1675,11 @@ function showFetchError() {
    INIT STORE
    ============================================================ */
 function initStore() {
+  // Limit catalog to the first 18 products
+  if (products.length > 18) {
+    products.slice(18).forEach(function(p) { delete productIndex[p.id]; });
+    products.length = 18;
+  }
   var pre = document.getElementById('preloader');
   if (pre) { pre.style.opacity = '0'; setTimeout(function() { pre.style.display = 'none'; }, 350); }
   populateCategoryDropdown();
@@ -2319,8 +2324,7 @@ function renderCheckoutStep() {
     + '</div>'
     + '<h4 style="font-size:14px;font-weight:800;color:var(--text);margin:0 0 10px;">&#128204; بيانات التوصيل</h4>'
     + (!currentUser ? '<div id="cs-google-auth"></div><div class="guest-divider">&#10097; أو أكمل كزائر</div>' : renderUserCard())
-    + '<div class="form-row"><input class="pro-input" id="cs-c-name" placeholder="الاسم الكامل *" style="margin:0" required/>'
-    + '<input class="pro-input" id="cs-c-phone" placeholder="رقم الجوال *" type="tel" inputmode="tel" style="margin:0" required/></div>'
+    + '<input class="pro-input" id="cs-c-name" placeholder="الاسم الكامل *" required/>'
     + '<div class="loc-wrap"><input class="pro-input" id="cs-c-addr" placeholder="العنوان أو رابط الموقع *" required/>'
     + '<button class="btn-location" type="button" onclick="getLocation()" title="&#128205;">&#128205;</button></div>'
     + '<textarea class="pro-input" id="cs-c-notes" placeholder="ملاحظات (اختياري)" rows="2"></textarea>'
@@ -2349,19 +2353,16 @@ function prefillCheckoutStep() {
   if (!addrSrc && savedAddresses.length > 0 && savedAddresses[selectedAddressIndex]) addrSrc = savedAddresses[selectedAddressIndex];
   if (addrSrc) {
     var n2 = document.getElementById('cs-c-name');  if (n2 && !n2.value && addrSrc.name)      n2.value = addrSrc.name;
-    var ph = document.getElementById('cs-c-phone'); if (ph && !ph.value && addrSrc.phone)     ph.value = addrSrc.phone;
     var ad = document.getElementById('cs-c-addr');  if (ad && !ad.value && addrSrc.formatted) ad.value = addrSrc.formatted;
   }
 }
 
 function submitOrderFromSheet() {
   var name  = ((document.getElementById('cs-c-name')  || {}).value || '').trim();
-  var phone = ((document.getElementById('cs-c-phone') || {}).value || '').trim();
   var addr  = ((document.getElementById('cs-c-addr')  || {}).value || '').trim();
   var notes = ((document.getElementById('cs-c-notes') || {}).value || '').trim();
 
   if (!name)  return toast('يرجى إدخال الاسم الكامل', 'warn');
-  if (!phone) return toast('يرجى إدخال رقم الجوال', 'warn');
   if (!addr)  return toast('يرجى إدخال العنوان أو مشاركة الموقع', 'warn');
 
   var btn = document.getElementById('cs-btn-confirm');
@@ -2384,15 +2385,14 @@ function submitOrderFromSheet() {
     }).join('\n\n');
 
     var msg = '🛒 *طلب جديد من ' + CONFIG.storeName + '*\n\n'
-      + '👤 *الاسم:* ' + name + '\n'
-      + '📞 *الجوال:* ' + phone + emailStr + '\n'
+      + '👤 *الاسم:* ' + name + emailStr + '\n'
       + '📍 *العنوان/الموقع:* ' + addr + '\n\n'
       + '*المنتجات:*\n' + lines + '\n\n'
       + '📦 *الشحن:* ' + (shipping === 0 ? 'مجاني' : shipping.toFixed(2) + ' ' + CONFIG.currency) + '\n'
       + '💰 *الإجمالي النهائي: ' + total.toFixed(2) + ' ' + CONFIG.currency + '*'
       + (notes ? '\n\n📝 *ملاحظات:* ' + notes : '');
 
-    var order = { id: 'ORD-' + Date.now(), date: new Date().toLocaleDateString('ar-SA'), items: cart.slice(), total: total, status: 'جديد', name: name, phone: phone, addr: addr, pay: 'عبر واتساب' };
+    var order = { id: 'ORD-' + Date.now(), date: new Date().toLocaleDateString('ar-SA'), items: cart.slice(), total: total, status: 'جديد', name: name, phone: '', addr: addr, pay: 'عبر واتساب' };
     orderHistory.unshift(order); if (orderHistory.length > 20) orderHistory.pop(); saveHistory();
 
     hidePayProcessing();
@@ -2478,10 +2478,7 @@ function renderCartBody(subtotal) {
     + '<div class="' + (checkoutFormVisible ? 'checkout-form show' : 'checkout-form') + '" id="checkout-form">'
     + '<h4>بيانات التوصيل</h4>'
     + (!currentUser ? '<div id="google-auth-container"></div><div class="guest-divider">أو أكمل كزائر</div>' : '')
-    + '<div class="form-row">'
-    + '<input class="pro-input" id="c-name" placeholder="الاسم الكامل *" style="margin:0" required/>'
-    + '<input class="pro-input" id="c-phone" placeholder="رقم الجوال *" type="tel" inputmode="tel" style="margin:0" required/>'
-    + '</div>'
+    + '<input class="pro-input" id="c-name" placeholder="الاسم الكامل *" required/>'
     + '<div class="loc-wrap"><input class="pro-input" id="c-addr" placeholder="العنوان أو رابط الموقع *" required/>'
     + '<button class="btn-location" type="button" onclick="getLocation()" title="مشاركة موقعي الحالي">📍</button></div>'
     + '<textarea class="pro-input" id="c-notes" placeholder="ملاحظات (اختياري)" rows="2"></textarea>'
@@ -2507,7 +2504,6 @@ function prefillCheckoutForm() {
   }
   if (addrSrc) {
     var ni2 = document.getElementById('c-name');  if (ni2 && !ni2.value && addrSrc.name)      ni2.value = addrSrc.name;
-    var pi  = document.getElementById('c-phone'); if (pi  && !pi.value  && addrSrc.phone)     pi.value  = addrSrc.phone;
     var ai  = document.getElementById('c-addr');  if (ai  && !ai.value  && addrSrc.formatted) ai.value  = addrSrc.formatted;
   }
 }
@@ -2517,12 +2513,10 @@ function prefillCheckoutForm() {
    ============================================================ */
 function submitOrder() {
   var name  = ((document.getElementById('c-name')  || {}).value || '').trim();
-  var phone = ((document.getElementById('c-phone') || {}).value || '').trim();
   var addr  = ((document.getElementById('c-addr')  || {}).value || '').trim();
   var notes = ((document.getElementById('c-notes') || {}).value || '').trim();
 
   if (!name)  return toast('يرجى إدخال الاسم الكامل', 'warn');
-  if (!phone) return toast('يرجى إدخال رقم الجوال', 'warn');
   if (!addr)  return toast('يرجى إدخال العنوان أو مشاركة الموقع', 'warn');
 
   var btn = document.getElementById('btn-confirm-order');
@@ -2544,15 +2538,14 @@ function submitOrder() {
     }).join('\n\n');
 
     var msg = '🛒 *طلب جديد من ' + CONFIG.storeName + '*\n\n'
-      + '👤 *الاسم:* ' + name + '\n'
-      + '📞 *الجوال:* ' + phone + emailStr + '\n'
+      + '👤 *الاسم:* ' + name + emailStr + '\n'
       + '📍 *العنوان/الموقع:* ' + addr + '\n\n'
       + '*المنتجات:*\n' + lines + '\n\n'
       + '📦 *الشحن:* ' + (shipping === 0 ? 'مجاني' : shipping.toFixed(2) + ' ' + CONFIG.currency) + '\n'
       + '💰 *الإجمالي النهائي: ' + total.toFixed(2) + ' ' + CONFIG.currency + '*'
       + (notes ? '\n\n📝 *ملاحظات:* ' + notes : '');
 
-    var order = { id: 'ORD-' + Date.now(), date: new Date().toLocaleDateString('ar-SA'), items: cart.slice(), total: total, status: 'جديد', name: name, phone: phone, addr: addr, pay: 'عبر واتساب' };
+    var order = { id: 'ORD-' + Date.now(), date: new Date().toLocaleDateString('ar-SA'), items: cart.slice(), total: total, status: 'جديد', name: name, phone: '', addr: addr, pay: 'عبر واتساب' };
     orderHistory.unshift(order);
     if (orderHistory.length > 20) orderHistory.pop();
     saveHistory();
