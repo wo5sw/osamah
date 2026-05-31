@@ -328,6 +328,9 @@ header.hide-header{transform:translateY(-100%);}
 .option-label{font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px;}
 .option-label span{color:var(--text-2);font-weight:400;margin-right:4px;}
 .pills{display:flex;flex-wrap:wrap;gap:8px;}
+.variant-meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);}
+.vmeta-tag{font-size:12.5px;background:var(--soft-2);border:1px solid var(--border);border-radius:20px;padding:4px 12px;color:var(--text-2);}
+.vmeta-tag b{color:var(--text);font-weight:700;}
 .pill{background:#fff;border:1px solid var(--border-strong);padding:7px 14px;border-radius:var(--r-sm);font-size:13px;cursor:pointer;color:var(--text);font-family:'Cairo',sans-serif;font-weight:500;transition:var(--t);}
 .pill:hover{border-color:var(--border-focus);background:#fff5e6;}
 .pill.active{border-color:var(--btn-orange);border-width:2px;padding:6px 13px;background:#fff5e6;box-shadow:0 0 0 2px rgba(255,164,28,.22);}
@@ -1605,9 +1608,9 @@ function fetchProducts() {
           var cleanText = sec.replace(/<br\s*\/?>/gi,'\n').replace(/<\/p>|<\/div>|<\/h[1-6]>/gi,'\n').replace(/<[^>]+>/g,'');
           var lines = cleanText.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l && !/^\.{3,}$/.test(l); });
 
-          var vPrice = null, vOldPrice = null, vColor = null, vDesc = [], vSizes = null;
+          var vPrice = null, vOldPrice = null, vColor = null, vShape = null, vSize = null, vDesc = [], vSizes = null;
           lines.forEach(function(line) {
-            // Skip standalone section headers
+            // Skip standalone empty headers
             if (/^(?:الحجم|الأحجام|المقاس|المقاسات|Size|Sizes)\s*[:\-.]?\s*$/i.test(line)) return;
             if (/^(?:السعر|سعر|Price)\s*[:\-.]?\s*$/i.test(line)) return;
             // SIZE=PRICE pairs e.g. 2yrs=330  S=99
@@ -1621,16 +1624,29 @@ function fetchProducts() {
             if (rm) { productRating = Math.max(0, Math.min(5, parseFloat(rm[1]))); return; }
             var cm = line.match(/^(?:عدد التقييمات|Reviews)\s*[:\-.]?\s*(\d+)/i);
             if (cm) { productRatingCount = parseInt(cm[1],10); return; }
-            var clm = line.match(/^(?:اللون|النوع|الاسم|الخيار|Color|Type|Variant)\s*[:\-.]?\s*(.*)/i);
-            if (clm) { vColor = clm[1].trim(); return; }
+            // Color / variant identifier
+            var clm = line.match(/^(?:اللون|Color)\s*[:\-.]?\s*(.+)/i);
+            if (clm && clm[1].trim()) { vColor = clm[1].trim(); return; }
+            // Shape
+            var shm = line.match(/^(?:الشكل|شكل|Shape)\s*[:\-.]?\s*(.+)/i);
+            if (shm && shm[1].trim()) { vShape = shm[1].trim(); return; }
+            // Size with value on the same line e.g. "الحجم: 250ml"
+            var hzm = line.match(/^(?:الحجم|الأحجام|المقاس|Size)\s*[:\-.]?\s*(.+)/i);
+            if (hzm && hzm[1].trim()) { vSize = hzm[1].trim(); return; }
+            // Variant name fallback (النوع / الاسم / الخيار)
+            var vnm = line.match(/^(?:النوع|الاسم|الخيار|Type|Variant)\s*[:\-.]?\s*(.*)/i);
+            if (vnm) { if (!vColor) vColor = vnm[1].trim(); return; }
             vDesc.push(line);
           });
           // If sizes provided, derive base price from first size
           if (vSizes && vSizes.length > 0 && vPrice === null) vPrice = vSizes[0].price;
-          if (!vColor) vColor = 'خيار ' + (sIdx + 1);
+          // Build a smart variant identifier from color + shape + size
+          if (!vColor) {
+            vColor = [vShape, vSize].filter(Boolean).join(' - ') || ('خيار ' + (sIdx + 1));
+          }
 
           if (secImgs.length > 0 || vPrice !== null || vDesc.length > 0 || vSizes) {
-            variants.push({ color: vColor, price: vPrice, oldPrice: vOldPrice, sizes: vSizes || null, desc: vDesc, images: secImgs.length ? secImgs : null, image: secImgs.length ? secImgs[0].thumb : null, imageMedium: secImgs.length ? secImgs[0].medium : null, imageFull: secImgs.length ? secImgs[0].full : null });
+            variants.push({ color: vColor, shape: vShape, size: vSize, price: vPrice, oldPrice: vOldPrice, sizes: vSizes || null, desc: vDesc, images: secImgs.length ? secImgs : null, image: secImgs.length ? secImgs[0].thumb : null, imageMedium: secImgs.length ? secImgs[0].medium : null, imageFull: secImgs.length ? secImgs[0].full : null });
           }
         });
 
@@ -1968,6 +1984,7 @@ function openDrawer(id) {
     '<h2 class="drawer-title">' + escapeHtml(p.title) + '</h2>' + ratingLine
     + '<div class="drawer-price-box"><div class="drawer-price">' + priceHTML(firstV.price,{deal:!!firstV.oldPrice}) + '</div>'
     + '<div id="drawer-old-price-box">' + (firstV.oldPrice ? '<div class="drawer-old-price">' + (d ? '<span class="disc">-' + d + '%</span>' : '') + '<span class="lbl">السعر القائمة:</span><span class="old">' + formatPrice(firstV.oldPrice) + ' ' + CONFIG.currency + '</span></div>' + (d > 0 ? '<div class="drawer-savings">💰 توفّر ' + savings + ' ' + CONFIG.currency + '</div>' : '') : '') + '</div></div>'
+    + variantMetaHTML(firstV)
     + buildOptionsHTML(p, firstV.color)
     + '<div class="delivery-block"><strong>التوصيل</strong>'
     + (isFree ? '<div><span class="free">شحن مجاني</span> للطلبات فوق ' + CONFIG.freeShippingMin + ' ' + CONFIG.currency + '</div>' : '<div>تكلفة الشحن: <b>' + CONFIG.shippingFee + ' ' + CONFIG.currency + '</b></div><div style="margin-top:4px;font-size:12px;color:var(--text-2)">أضف ' + (CONFIG.freeShippingMin - firstV.price).toFixed(2) + ' ' + CONFIG.currency + ' للحصول على شحن مجاني</div>')
@@ -2019,6 +2036,17 @@ function buildOptionsHTML(p, activeColor) {
   return html;
 }
 
+function variantMetaHTML(v) {
+  var tags = [];
+  if (v.color && v.color.indexOf('خيار') !== 0) tags.push({ label: 'اللون', val: v.color });
+  if (v.shape) tags.push({ label: 'الشكل', val: v.shape });
+  if (v.size)  tags.push({ label: 'الحجم',  val: v.size });
+  if (!tags.length) return '';
+  return '<div class="variant-meta" id="variant-meta">'
+    + tags.map(function(t) { return '<span class="vmeta-tag"><b>' + t.label + ':</b> ' + escapeHtml(t.val) + '</span>'; }).join('')
+    + '</div>';
+}
+
 function buildSizePillsHTML(pid, sizes) {
   return '<div class="option-group" id="size-group">'
     + '<div class="option-label">المقاس: <span id="sel-size-text" style="color:var(--text-3)">اختر المقاس</span></div>'
@@ -2061,6 +2089,10 @@ function selectColor(pid, color, el) {
   var ob = document.getElementById('drawer-old-price-box');
   if (ob) ob.innerHTML = variant.oldPrice ? '<div class="drawer-old-price">' + (dv ? '<span class="disc">-' + dv + '%</span>' : '') + '<span class="lbl">السعر القائمة:</span><span class="old">' + formatPrice(variant.oldPrice) + ' ' + CONFIG.currency + '</span></div>' + (dv > 0 ? '<div class="drawer-savings">💰 توفّر ' + sv + ' ' + CONFIG.currency + '</div>' : '') : '';
   if (variant.images && variant.images.length) renderDrawerSlider(variant.images);
+  // Refresh variant meta (color/shape/size tags)
+  var vmEl = document.getElementById('variant-meta');
+  var newMeta = variantMetaHTML(variant);
+  if (vmEl) { if (newMeta) vmEl.outerHTML = newMeta; else vmEl.remove(); }
   var ds = document.getElementById('drawer-desc-section'); var dc = document.getElementById('drawer-desc-content');
   if (variant.desc && variant.desc.length) {
     if (ds) ds.style.display = 'block';
@@ -2093,7 +2125,11 @@ function addToCart(pid, buyNow) {
   if (p.variants && p.variants.length > 1) {
     if (!currentDrawerSelected.color) { toast('يرجى اختيار الخيار أولاً 🎨','warn'); return; }
     activeVariant = p.variants.find(function(vt) { return vt.color === currentDrawerSelected.color; });
-    if (activeVariant) { finalPrice = activeVariant.price; varLabel = activeVariant.color; varImage = activeVariant.image || p.image; varImageFull = activeVariant.imageFull || p.imageFull; }
+    if (activeVariant) {
+      finalPrice = activeVariant.price;
+      varLabel = [activeVariant.color, activeVariant.shape, activeVariant.size].filter(Boolean).join(' - ');
+      varImage = activeVariant.image || p.image; varImageFull = activeVariant.imageFull || p.imageFull;
+    }
   } else if (p.variants && p.variants.length === 1) {
     activeVariant = p.variants[0];
     finalPrice = activeVariant.price; varImage = activeVariant.image || p.image; varImageFull = activeVariant.imageFull || p.imageFull;
