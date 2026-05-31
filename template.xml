@@ -301,8 +301,8 @@ header.hide-header{transform:translateY(-100%);}
 .modal-close:hover{background:var(--price-deal);transform:rotate(90deg);}
 
 /* PRODUCT DRAWER */
-#product-modal{flex-direction:column;align-items:center;justify-content:flex-end;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
-#product-modal .modal-panel{max-width:580px;position:relative;border-radius:22px 22px 0 0;transform:translateY(110%);transition:transform .32s cubic-bezier(0,.9,.4,1);height:auto;max-height:90vh;}
+#product-modal{z-index:1000001;flex-direction:column;align-items:center;justify-content:flex-end;background:rgba(15,17,17,.45);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);padding-top:20px;}
+#product-modal .modal-panel{max-width:580px;position:relative;border-radius:22px 22px 0 0;transform:translateY(110%);transition:transform .32s cubic-bezier(0,.9,.4,1);height:auto;max-height:calc(100vh - 90px);}
 #product-modal.show .modal-panel{transform:translateY(0);}
 .pm-close-float{flex-shrink:0;width:54px;height:54px;border-radius:50%;background:#1c1c1c;color:#fff;font-size:22px;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-bottom:14px;box-shadow:0 4px 16px rgba(0,0,0,.4);opacity:0;transform:scale(.5);transition:opacity .25s,transform .32s cubic-bezier(0,.9,.4,1);}
 #product-modal.show .pm-close-float{opacity:1;transform:scale(1);}
@@ -2721,6 +2721,7 @@ function openModal(id) {
   var m = document.getElementById(id); if (!m) return;
   if (id === 'history-modal') renderHistory();
   if (id === 'cart-modal') renderCartBody(cart.reduce(function(s,i) { return s+i.price*i.qty; }, 0));
+  if (id === 'product-modal') { var sb = document.getElementById('sticky-bar'); if (sb) sb.style.visibility = 'hidden'; }
   m.style.display = 'flex';
   requestAnimationFrame(function() { m.classList.add('show'); });
   if (!document.body.classList.contains('modal-open')) {
@@ -2735,7 +2736,7 @@ function openModal(id) {
 function closeModal(id) {
   var m = document.getElementById(id); if (!m) return;
   m.classList.remove('show');
-  if (id === 'product-modal') drawerOpen = false;
+  if (id === 'product-modal') { drawerOpen = false; var sb = document.getElementById('sticky-bar'); if (sb) sb.style.visibility = ''; }
   if (id === 'cart-modal') { checkoutFormVisible = false; checkoutPrefillAddr = null; }
   setTimeout(function() {
     m.style.display = 'none';
