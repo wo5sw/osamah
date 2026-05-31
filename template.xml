@@ -301,10 +301,11 @@ header.hide-header{transform:translateY(-100%);}
 .modal-close:hover{background:var(--price-deal);transform:rotate(90deg);}
 
 /* PRODUCT DRAWER */
-#product-modal{z-index:1000001;flex-direction:column;align-items:center;justify-content:flex-end;background:rgba(15,17,17,.45);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);padding-top:20px;}
+#product-modal{z-index:1000001;flex-direction:column;align-items:center;justify-content:flex-end;background:rgba(15,17,17,.5);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);padding-top:20px;}
+#product-modal::before{content:'';position:fixed;inset:0;background:rgba(15,17,17,.4);z-index:-1;pointer-events:none;}
 #product-modal .modal-panel{max-width:580px;position:relative;border-radius:22px 22px 0 0;transform:translateY(110%);transition:transform .32s cubic-bezier(0,.9,.4,1);height:auto;max-height:calc(100vh - 90px);}
 #product-modal.show .modal-panel{transform:translateY(0);}
-.pm-close-float{flex-shrink:0;width:54px;height:54px;border-radius:50%;background:#1c1c1c;color:#fff;font-size:22px;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-bottom:14px;box-shadow:0 4px 16px rgba(0,0,0,.4);opacity:0;transform:scale(.5);transition:opacity .25s,transform .32s cubic-bezier(0,.9,.4,1);}
+.pm-close-float{flex-shrink:0;width:54px;height:54px;border-radius:50%;background:#1c1c1c;color:#fff;font-size:22px;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-bottom:14px;box-shadow:0 4px 16px rgba(0,0,0,.5);opacity:0;transform:scale(.5);transition:opacity .25s,transform .32s cubic-bezier(0,.9,.4,1);}
 #product-modal.show .pm-close-float{opacity:1;transform:scale(1);}
 .pm-close-float:hover{background:var(--price-deal);}
 .drawer-slider{position:relative;height:320px;flex-shrink:0;background:#fff;border-bottom:1px solid var(--border);}
@@ -1944,6 +1945,9 @@ function openDrawer(id) {
   var p = productIndex[id]; if (!p) return;
   drawerOpen = true;
   currentDrawerProduct = p;
+  // Clamp panel height to actual visible area so the floating X is always shown
+  var panel = document.querySelector('#product-modal .modal-panel');
+  if (panel) { panel.style.maxHeight = (window.innerHeight - 80) + 'px'; }
   var hasVariants = p.variants && p.variants.length > 0;
   var firstV = hasVariants ? p.variants[0] : p;
   currentDrawerSelected = hasVariants ? { color: firstV.color, size: null, sizePrice: null } : { size: null, sizePrice: null };
