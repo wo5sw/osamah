@@ -141,9 +141,6 @@ header.hide-header{transform:translateY(-100%);}
 .disc-badge{position:absolute;top:8px;left:8px;background:var(--badge-orange);color:#fff;font-size:11px;font-weight:800;padding:4px 8px;border-radius:8px;z-index:2;line-height:1;box-shadow:var(--shadow-sm);}
 .new-badge{position:absolute;top:8px;left:8px;background:var(--price-deal);color:#fff;font-size:11px;font-weight:700;padding:4px 8px;border-radius:8px;z-index:2;letter-spacing:.3px;}
 .disc-badge + .new-badge{top:34px;}
-.wishlist-btn{position:absolute;top:8px;right:8px;background:rgba(255,255,255,.94);border:1px solid var(--border);border-radius:50%;width:30px;height:30px;display:grid;place-items:center;z-index:2;font-size:14px;transition:transform var(--t),border-color var(--t);}
-.wishlist-btn:hover{transform:scale(1.1);border-color:var(--border-strong);}
-.wishlist-btn.active{background:#fff;border-color:var(--price-deal);}
 .card-img-wrap{width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;cursor:pointer;background:#fff;overflow:hidden;border-radius:0;}
 .card-img-wrap img{width:88%;height:88%;object-fit:contain;transition:transform .2s ease;display:block;}
 .product-card:hover .card-img-wrap img{transform:scale(1.06);}
@@ -347,8 +344,6 @@ header.hide-header{transform:translateY(-100%);}
 .desc-content div{padding:3px 0;position:relative;padding-right:18px;}
 .desc-content div::before{content:'';position:absolute;right:4px;top:14px;width:4px;height:4px;border-radius:50%;background:var(--text-2);}
 .drawer-footer{padding:12px 18px;border-top:1px solid var(--border);background:#fff;display:flex;gap:10px;flex-shrink:0;}
-.btn-wishlist-drawer{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:18px;background:#fff;border:1px solid var(--border-strong);cursor:pointer;transition:var(--t);flex-shrink:0;}
-.btn-wishlist-drawer:hover{border-color:var(--price-deal);}
 .btn-drawer-add,.btn-drawer-buy{flex:1;height:44px;border-radius:var(--r-pill);font-weight:500;font-size:14px;font-family:'Cairo',sans-serif;cursor:pointer;transition:background var(--t);}
 .btn-drawer-add{background:var(--btn-yellow);border:1px solid var(--btn-yellow-border);color:var(--text);}
 .btn-drawer-add:hover{background:var(--btn-yellow-hover);}
@@ -449,16 +444,6 @@ textarea.pro-input{resize:vertical;min-height:60px;margin-bottom:0;}
 .toast.success{background:var(--success);}
 .toast.warn{background:var(--price-deal);}
 @keyframes toastIn{from{transform:translateY(-14px);opacity:0;}to{transform:translateY(0);opacity:1;}}
-
-/* WISHLIST */
-.wl-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:12px;background:var(--page-bg);}
-.wl-card{background:#fff;border:1px solid var(--border);border-radius:var(--r-sm);padding:10px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;transition:var(--t);}
-.wl-card:hover{border-color:var(--border-strong);box-shadow:var(--shadow-sm);}
-.wl-img{width:80px;height:80px;object-fit:contain;}
-.wl-title{font-size:12px;font-weight:400;text-align:center;color:var(--text);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-.wl-price{font-size:14px;font-weight:700;color:var(--text);}
-.btn-wl-remove{font-size:11px;color:var(--link);background:none;border:none;cursor:pointer;font-family:'Cairo',sans-serif;}
-.btn-wl-remove:hover{color:var(--link-hover);text-decoration:underline;}
 
 /* ============================================================
    ADDRESS SYSTEM — NEW
@@ -600,10 +585,6 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
       <button aria-label='تثبيت التطبيق' class='h-icon-btn install-pulse' id='installAppBtn' onclick='promptAppInstall()' style='display:none;'>
         <svg fill='none' height='20' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 24 24' width='20'><rect height='20' rx='2' width='14' x='5' y='2'/><line x1='12' x2='12.01' y1='18' y2='18'/></svg>
       </button>
-      <button aria-label='المفضلة' class='h-icon-btn' onclick='openModal(&quot;wishlist-modal&quot;)'>
-        <svg fill='none' height='20' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24' width='20'><path d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'/></svg>
-        <span class='badge' id='wl-count-mobile' style='display:none'>0</span>
-      </button>
       <button aria-label='طلباتي' class='h-icon-btn' onclick='openModal(&quot;history-modal&quot;)'>
         <svg fill='none' height='20' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24' width='20'><path d='M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z'/><polyline points='3.27 6.96 12 12.01 20.73 6.96'/><line x1='12' x2='12' y1='22.08' y2='12'/></svg>
       </button>
@@ -656,10 +637,6 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
     <span class='sub-lbl'>الكل</span>
   </div>
   <div id='cat-list-inline' style='display:contents'/>
-  <div class='sub-item' onclick='openModal(&quot;wishlist-modal&quot;)'>
-    <span class='sub-ic'>&#9825;</span>
-    <span class='sub-lbl'>المفضلة</span>
-  </div>
   <div class='sub-item' onclick='openModal(&quot;contact-modal&quot;)'>
     <span class='sub-ic'>💬</span>
     <span class='sub-lbl'>خدمة العملاء</span>
@@ -782,7 +759,6 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
     </div>
     <div class='drawer-body' id='drawer-body'/>
     <div class='drawer-footer'>
-      <button aria-label='المفضلة' class='btn-wishlist-drawer' id='drawer-wl-btn' onclick='drawerToggleWishlist()'>🤍</button>
       <button class='btn-drawer-add' id='drawer-add-btn'>أضف إلى السلة</button>
       <button class='btn-drawer-buy' id='drawer-buy-btn'>اشترِ الآن</button>
     </div>
@@ -810,16 +786,6 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
   </div>
 </div>
 
-<!-- WISHLIST MODAL -->
-<div class='modal' id='wishlist-modal' onclick='backdropClose(event,&quot;wishlist-modal&quot;)'>
-  <div class='modal-panel'>
-    <div class='modal-head'>
-      <h2>&#10084; المفضلة</h2>
-      <button class='modal-close' onclick='closeModal(&quot;wishlist-modal&quot;)'>&#10005;</button>
-    </div>
-    <div id='wishlist-body' style='overflow-y:auto;flex:1;overscroll-behavior:contain;background:var(--page-bg);'/>
-  </div>
-</div>
 
 <!-- HISTORY MODAL -->
 <div class='modal' id='history-modal' onclick='backdropClose(event,&quot;history-modal&quot;)'>
@@ -1014,7 +980,6 @@ if (BC) {
   BC.onmessage = function(ev) {
     var t = ev.data && ev.data.type, p = ev.data && ev.data.payload;
     if (t === 'cart')     { cart = p; saveCartLocal(); updateCartUI(); }
-    if (t === 'wishlist') { wishlist = p; wishlistSet = new Set(p); saveWishlistLocal(); updateWishlistBadge(); applyAllFilters(); }
     if (t === 'history')  { orderHistory = p; saveHistoryLocal(); }
     if (t === 'addrs')    { savedAddresses = p; updateDeliveryDisplay(); }
   };
@@ -1022,7 +987,6 @@ if (BC) {
 window.addEventListener('storage', function(ev) {
   try {
     if (ev.key === 'sp_cart_v5')  { cart = JSON.parse(ev.newValue) || []; updateCartUI(); }
-    if (ev.key === 'sp_wl_v5')    { wishlist = JSON.parse(ev.newValue) || []; wishlistSet = new Set(wishlist); updateWishlistBadge(); applyAllFilters(); }
     if (ev.key === 'sp_hist_v5')  { orderHistory = JSON.parse(ev.newValue) || []; }
     if (ev.key === 'sp_addrs_v1') { savedAddresses = JSON.parse(ev.newValue) || []; updateDeliveryDisplay(); }
   } catch(e) {}
@@ -1035,8 +999,6 @@ function broadcast(type, payload) { if (BC) BC.postMessage({ type: type, payload
 var products = [];
 var productIndex = {};
 var cart = [];
-var wishlist = [];
-var wishlistSet = new Set();
 var orderHistory = [];
 var allCategories = new Set();
 var currentCat = CONFIG.defaultCategory;
@@ -1048,7 +1010,6 @@ var renderedIds = [];
 var searchDebounce = null;
 var drawerOpen = false;
 var currentUser = null;
-var wishlistVersion = 0;
 var discountCache = {};
 var starsCache = {};
 
@@ -1075,7 +1036,6 @@ var checkoutPrefillAddr = null;
    ============================================================ */
 function loadState() {
   try { var c = JSON.parse(localStorage.getItem('sp_cart_v5')); if (Array.isArray(c)) cart = c.filter(function(i){ return i && i.id; }); } catch(e) {}
-  try { var w = JSON.parse(localStorage.getItem('sp_wl_v5'));   if (Array.isArray(w)) { wishlist = w; wishlistSet = new Set(w); } } catch(e) {}
   try { var h = JSON.parse(localStorage.getItem('sp_hist_v5')); if (Array.isArray(h)) orderHistory = h; } catch(e) {}
   try { var u = JSON.parse(localStorage.getItem('sp_user_v5')); if (u && u.email) currentUser = u; } catch(e) {}
   loadAddresses();
@@ -1083,10 +1043,8 @@ function loadState() {
 loadState();
 
 function saveCartLocal()     { localStorage.setItem('sp_cart_v5', JSON.stringify(cart)); }
-function saveWishlistLocal() { localStorage.setItem('sp_wl_v5',   JSON.stringify(wishlist)); }
 function saveHistoryLocal()  { localStorage.setItem('sp_hist_v5', JSON.stringify(orderHistory)); }
 function saveCart()     { saveCartLocal();     broadcast('cart', cart); }
-function saveWishlist() { saveWishlistLocal(); broadcast('wishlist', wishlist); wishlistVersion++; }
 function saveHistory()  { saveHistoryLocal();  broadcast('history', orderHistory); }
 
 /* ============================================================
@@ -1729,7 +1687,6 @@ function initStore() {
   renderSubNavCategories();
   applyAllFilters();
   updateCartUI();
-  updateWishlistBadge();
   initZoom();
   updateGreeting();
   loadAddresses();       // ensure addresses loaded
@@ -1867,14 +1824,10 @@ function renderProducts(list) {
   }
 
   var idSig    = list.map(function(p) { return p.id; }).join(',');
-  var cacheSig = idSig + '|wlv=' + wishlistVersion;
+  var cacheSig = idSig;
   if (grid.dataset.lastSig === cacheSig) return;
 
   if (idSig === renderedIds.join(',') && grid.children.length) {
-    list.forEach(function(p) {
-      var btn = grid.querySelector('.wishlist-btn[data-pid="' + p.id + '"]');
-      if (btn) { var a = wishlistSet.has(p.id); btn.classList.toggle('active',a); btn.textContent = a ? '❤️' : '🤍'; }
-    });
     grid.dataset.lastSig = cacheSig; return;
   }
 
@@ -1886,7 +1839,6 @@ function renderProducts(list) {
     var p = list[i];
     var firstV = (p.variants && p.variants.length) ? p.variants[0] : p;
     var d = getVariantDiscount(firstV);
-    var isWl = wishlistSet.has(p.id);
     var img = (firstV.image || p.image || 'https://placehold.co/600x600/f5f5f5/aaaaaa?text=No+Image').replace(/"/g,'&quot;');
     var titleSafe = escapeHtml(p.title);
     var ratingBlock = '';
@@ -1898,7 +1850,6 @@ function renderProducts(list) {
 
     html += '<div class="product-card" data-id="' + p.id + '">'
       + (d > 0 ? '<div class="disc-badge">خصم ' + d + '%</div>' : '')
-      + '<button class="wishlist-btn' + (isWl?' active':'') + '" data-pid="' + p.id + '" onclick="toggleWishlist(event,\'' + p.id + '\')" aria-label="المفضلة">' + (isWl?'❤️':'🤍') + '</button>'
       + '<div class="card-img-wrap" onclick="openDrawer(\'' + p.id + '\')">'
       + '<img loading="lazy" decoding="async" src="' + img + '" alt="' + titleSafe + '" onerror="this.src=\'https://placehold.co/600x600/f5f5f5/aaaaaa?text=Image+Error\'"/>'
       + '</div>'
@@ -2004,8 +1955,6 @@ function openDrawer(id) {
     + '<div class="desc-heading">معلومات المنتج</div>'
     + '<div class="desc-content" id="drawer-desc-content">' + (firstV.desc ? firstV.desc.map(function(l) { return '<div>' + escapeHtml(l) + '</div>'; }).join('') : '') + '</div></div>';
 
-  var wlBtn = document.getElementById('drawer-wl-btn');
-  if (wlBtn) wlBtn.textContent = wishlistSet.has(p.id) ? '❤️' : '🤍';
   document.getElementById('drawer-add-btn').textContent = 'أضف إلى السلة';
   document.getElementById('drawer-add-btn').style.background = '';
   document.getElementById('drawer-add-btn').style.color = '';
@@ -2120,11 +2069,6 @@ function selectColor(pid, color, el) {
   updateDrawerAddBtn(updCid);
 }
 
-function drawerToggleWishlist() {
-  if (!currentDrawerProduct) return;
-  toggleWishlist(null, currentDrawerProduct.id);
-  var wb = document.getElementById('drawer-wl-btn'); if (wb) wb.textContent = wishlistSet.has(currentDrawerProduct.id) ? '❤️' : '🤍';
-}
 
 /* ============================================================
    CART
@@ -2714,38 +2658,6 @@ function logoutGoogle() {
 }
 
 /* ============================================================
-   WISHLIST
-   ============================================================ */
-function toggleWishlist(e, pid) {
-  if (e) e.stopPropagation();
-  var wasIn = wishlistSet.has(pid);
-  if (wasIn) { wishlistSet.delete(pid); wishlist = wishlist.filter(function(id) { return id !== pid; }); toast('تمت الإزالة من المفضلة 🤍'); }
-  else { wishlistSet.add(pid); wishlist.push(pid); toast('تمت الإضافة للمفضلة ❤️'); }
-  saveWishlist(); updateWishlistBadge();
-  var btn = document.querySelector('.wishlist-btn[data-pid="' + pid + '"]');
-  if (btn) { btn.classList.toggle('active', !wasIn); btn.textContent = !wasIn ? '❤️' : '🤍'; }
-  applyAllFilters();
-}
-
-function updateWishlistBadge() {
-  var m = document.getElementById('wl-count-mobile');
-  if (m) { m.textContent = wishlist.length; m.style.display = wishlist.length ? '' : 'none'; }
-}
-
-function renderWishlist() {
-  var body = document.getElementById('wishlist-body'); if (!body) return;
-  var items = products.filter(function(p) { return wishlistSet.has(p.id); });
-  if (!items.length) { body.innerHTML = '<div class="empty-state" style="margin:12px"><div class="icon">🤍</div><h3>المفضلة فارغة</h3><p>أضف منتجاتك المفضلة هنا</p></div>'; return; }
-  body.innerHTML = '<div class="wl-grid">' + items.map(function(p) {
-    return '<div class="wl-card" onclick="openDrawer(\'' + p.id + '\');closeModal(\'wishlist-modal\')">'
-      + '<img class="wl-img" loading="lazy" src="' + escapeHtml(p.image||'') + '" alt="' + escapeHtml(p.title) + '" onerror="this.src=\'https://placehold.co/80x80/f5f5f5/aaaaaa?text=Image+Error\'"/>'
-      + '<div class="wl-title">' + escapeHtml(p.title) + '</div>'
-      + '<div class="wl-price">' + formatPrice(p.price) + ' ' + CONFIG.currency + '</div>'
-      + '<button class="btn-wl-remove" onclick="event.stopPropagation();toggleWishlist(null,\'' + p.id + '\')">إزالة ✕</button></div>';
-  }).join('') + '</div>';
-}
-
-/* ============================================================
    ORDER HISTORY
    ============================================================ */
 function renderHistory() {
@@ -2777,7 +2689,6 @@ var savedScrollY = 0;
 
 function openModal(id) {
   var m = document.getElementById(id); if (!m) return;
-  if (id === 'wishlist-modal') renderWishlist();
   if (id === 'history-modal') renderHistory();
   if (id === 'cart-modal') renderCartBody(cart.reduce(function(s,i) { return s+i.price*i.qty; }, 0));
   m.style.display = 'flex';
@@ -2813,7 +2724,7 @@ function backdropClose(e, id) { if (e.target === e.currentTarget) closeModal(id)
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
     var cs = document.getElementById('cart-sheet'); if (cs && cs.classList.contains('show')) closeCartSheet();
-    ['product-modal','cart-modal','wishlist-modal','history-modal','contact-modal','address-modal','first-visit-modal','add-addr-modal','maps-picker-modal','addr-select-modal']
+    ['product-modal','cart-modal','history-modal','contact-modal','address-modal','first-visit-modal','add-addr-modal','maps-picker-modal','addr-select-modal']
       .forEach(function(id) { var m = document.getElementById(id); if (m && m.classList.contains('show')) closeModal(id); });
     var zo = document.getElementById('zoom-overlay'); if (zo && zo.classList.contains('active')) closeZoom();
   }
