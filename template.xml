@@ -186,6 +186,9 @@ header.hide-header{transform:translateY(-100%);}
 .empty-state .icon{font-size:54px;margin-bottom:12px;}
 .empty-state h3{font-size:18px;margin:0 0 8px;color:var(--text);font-weight:700;}
 .empty-state p{font-size:14px;margin:0;}
+#load-more-wrap{text-align:center;padding:18px 16px 24px;}
+#load-more-btn{background:var(--btn-orange);color:#fff;border:none;border-radius:50px;padding:13px 40px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.15);transition:opacity .2s,transform .15s;}
+#load-more-btn:active{opacity:.85;transform:scale(.97);}
 
 /* OFFERS BANNER */
 .offers-banner{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;margin:6px 14px 0;padding:24px 16px;border-radius:14px;background:radial-gradient(circle at 50% -10%,#ffc24d,#f0840a 75%);color:#fff;text-align:center;cursor:pointer;box-shadow:var(--shadow-sm);}
@@ -695,6 +698,10 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
 
 <div class='products-grid' id='products-grid'/>
 
+<div id='load-more-wrap'>
+  <button id='load-more-btn' onclick='loadMoreProducts()' style='display:none'>تحميل المزيد</button>
+</div>
+
 <div class='sticky-bar' id='sticky-bar'>
   <div class='promo-bar'>
     <span class='promo-ring'/>
@@ -1060,6 +1067,9 @@ var currentDrawerProduct = null;
 var currentDrawerSelected = {};
 var renderedIds = [];
 var searchDebounce = null;
+var PAGE_SIZE = 18;
+var visibleCount = PAGE_SIZE;
+var currentFilteredFull = [];
 var drawerOpen = false;
 var currentUser = null;
 var discountCache = {};
@@ -1722,11 +1732,6 @@ function showFetchError() {
    INIT STORE
    ============================================================ */
 function initStore() {
-  // Limit catalog to the first 18 products
-  if (products.length > 18) {
-    products.slice(18).forEach(function(p) { delete productIndex[p.id]; });
-    products.length = 18;
-  }
   var pre = document.getElementById('preloader');
   if (pre) { pre.style.opacity = '0'; setTimeout(function() { pre.style.display = 'none'; }, 350); }
   populateCategoryDropdown();
@@ -1843,7 +1848,8 @@ function applySortFromShortcut(mode) { var sel = document.getElementById('sort-s
 /* ============================================================
    FILTER + SORT + RENDER
    ============================================================ */
-function applyAllFilters() {
+function applyAllFilters(keepPage) {
+  if (!keepPage) visibleCount = PAGE_SIZE;
   var list = products;
   if (currentCat !== CONFIG.defaultCategory) list = list.filter(function(p) { return p.category === currentCat; });
   if (searchQuery) {
@@ -1862,13 +1868,25 @@ function applyAllFilters() {
     else if (sortMode === 'rating')     list.sort(function(a,b) { return (b.rating||0) - (a.rating||0); });
     else if (sortMode === 'name')       list.sort(function(a,b) { return a.title.localeCompare(b.title,'ar'); });
   }
-  requestAnimationFrame(function() { renderProducts(list); });
+  currentFilteredFull = list;
+  var page = list.slice(0, visibleCount);
+  var btn = document.getElementById('load-more-btn');
+  if (btn) btn.style.display = list.length > visibleCount ? 'block' : 'none';
+  requestAnimationFrame(function() { renderProducts(page); });
+}
+
+function loadMoreProducts() {
+  visibleCount += PAGE_SIZE;
+  applyAllFilters(true);
+  // Scroll the new batch into view smoothly
+  var grid = document.getElementById('products-grid');
+  if (grid) { var last = grid.lastElementChild; if (last) last.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
 }
 
 function renderProducts(list) {
   var grid  = document.getElementById('products-grid');
   var label = document.getElementById('product-count-label');
-  if (label) label.textContent = list.length + ' منتج';
+  if (label) label.textContent = (currentFilteredFull.length || list.length) + ' منتج';
 
   if (!list.length) {
     grid.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><h3>لا توجد منتجات</h3><p>' + (searchQuery ? 'لا توجد نتائج لـ "' + searchQuery + '"' : 'لا توجد منتجات في هذه الفئة') + '</p></div>';
