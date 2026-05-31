@@ -967,7 +967,7 @@ var CONFIG = {
   defaultCategory: 'الكل',
   // Leave as 'YOUR_GOOGLE_MAPS_API_KEY' to disable the map picker cleanly (manual
   // address entry stays available). Put a real key here to enable it.
-  mapsApiKey: 'YOUR_GOOGLE_MAPS_API_KEY',
+  mapsApiKey: 'AIzaSyCWIpeIbxU8EQpjZuc-_-f01RhhKKg13VA',
   // Google Sign-In. Replace with a Client ID created for YOUR domain, or leave
   // empty to hide the Google button (the store works fully without login).
   googleClientId: '360615303745-h45ri50dd4mlfarff2rbu2tivmho822u.apps.googleusercontent.com'
