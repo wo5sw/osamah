@@ -971,7 +971,7 @@ var CONFIG = {
   storeName: 'Os My',
   freeShippingMin: 200,
   shippingFee: 25,
-  feedCacheKey: 'sp_feed_cache_v3',
+  feedCacheKey: 'sp_feed_cache_v4',
   feedCacheTTL: 300000,
   defaultCategory: 'الكل',
   mapsApiKey: 'YOUR_GOOGLE_MAPS_API_KEY'
@@ -1661,6 +1661,17 @@ function fetchProducts() {
           for (var vi = 0; vi < variants.length; vi++) { if (variants[vi].desc && variants[vi].desc.length > 0) { baseDesc = variants[vi].desc; break; } }
           for (var vi = 0; vi < variants.length; vi++) { if (variants[vi].images && variants[vi].images.length > 0) { baseImages = variants[vi].images; break; } }
 
+          // Distribute images across variants when they were all placed in one
+          // section (e.g. all photos at the top, sizes/prices listed below).
+          var imgVariantCount = 0, allSecImgs = [];
+          variants.forEach(function(v) { if (v.images && v.images.length) { imgVariantCount++; v.images.forEach(function(im) { allSecImgs.push(im); }); } });
+          if (variants.length > 1 && imgVariantCount < variants.length && allSecImgs.length >= variants.length) {
+            variants.forEach(function(v, i) {
+              var im = allSecImgs[i] || allSecImgs[allSecImgs.length - 1];
+              v.images = [im]; v.image = im.thumb; v.imageMedium = im.medium; v.imageFull = im.full;
+            });
+          }
+
           variants.forEach(function(v) {
             if (v.price === null) v.price = basePrice;
             if (v.oldPrice === null) v.oldPrice = baseOldPrice;
@@ -2092,7 +2103,7 @@ function selectColor(pid, color, el) {
   var sv = variant.oldPrice ? (variant.oldPrice - variant.price).toFixed(2) : 0;
   var ob = document.getElementById('drawer-old-price-box');
   if (ob) ob.innerHTML = variant.oldPrice ? '<div class="drawer-old-price">' + (dv ? '<span class="disc">-' + dv + '%</span>' : '') + '<span class="lbl">السعر القائمة:</span><span class="old">' + formatPrice(variant.oldPrice) + ' ' + CONFIG.currency + '</span></div>' + (dv > 0 ? '<div class="drawer-savings">💰 توفّر ' + sv + ' ' + CONFIG.currency + '</div>' : '') : '';
-  if (variant.images && variant.images.length) renderDrawerSlider(variant.images);
+  renderDrawerSlider((variant.images && variant.images.length) ? variant.images : (p.images || []));
   // Refresh variant meta (color/shape/size tags)
   var vmEl = document.getElementById('variant-meta');
   var newMeta = variantMetaHTML(variant);
