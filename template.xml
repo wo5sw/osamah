@@ -307,17 +307,20 @@ header.hide-header{transform:translateY(-100%);}
 /* PRODUCT DRAWER */
 #product-modal{z-index:1000001;flex-direction:column;align-items:center;justify-content:flex-end;background:rgba(15,17,17,.5);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);}
 #product-modal::before{content:'';position:fixed;inset:0;background:rgba(15,17,17,.35);z-index:-1;pointer-events:none;}
-#product-modal .modal-panel{max-width:580px;position:relative;border-radius:22px 22px 0 0;transform:translateY(110%);transition:transform .32s cubic-bezier(0,.9,.4,1);height:auto;max-height:80vh;max-height:calc(100dvh - 110px);}
+/* Fixed height so the card looks identical for ALL products (short or long content) */
+#product-modal .modal-panel{max-width:580px;position:relative;border-radius:22px 22px 0 0;transform:translateY(110%);transition:transform .32s cubic-bezier(0,.9,.4,1);height:80vh;height:calc(100dvh - 100px);max-height:calc(100dvh - 100px);}
 #product-modal.show .modal-panel{transform:translateY(0);}
 /* X button sits in the dark gap above the panel; fixed so it never overlaps content */
 .pm-close-float{position:fixed;top:26px;left:50%;margin-left:-27px;width:54px;height:54px;border-radius:50%;background:#1c1c1c;color:#fff;font-size:22px;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.5);opacity:0;transform:scale(.5);transition:opacity .25s,transform .32s cubic-bezier(0,.9,.4,1);z-index:1000002;}
 #product-modal.show .pm-close-float{opacity:1;transform:scale(1);}
 .pm-close-float:hover{background:var(--price-deal);}
-.drawer-slider{position:relative;height:320px;flex-shrink:0;background:#fff;border-bottom:1px solid var(--border);}
+.drawer-slider{position:relative;height:320px;flex-shrink:0;background:#fff;}
+/* Gradual fade: image dissolves smoothly into the white content below */
+.drawer-slider::after{content:'';position:absolute;left:0;right:0;bottom:0;height:80px;background:linear-gradient(to bottom,rgba(255,255,255,0) 0%,rgba(255,255,255,.85) 60%,#fff 100%);pointer-events:none;z-index:2;}
 .drawer-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;scrollbar-width:none;height:100%;}
 .drawer-track::-webkit-scrollbar{display:none;}
 .drawer-slide-img{flex:0 0 100%;width:100%;height:100%;object-fit:contain;scroll-snap-align:center;padding:18px;cursor:zoom-in;}
-.drawer-dots{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:5px;}
+.drawer-dots{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:3;}
 .dot{width:7px;height:7px;border-radius:50%;background:rgba(0,0,0,.25);cursor:pointer;transition:.2s;}
 .dot.active{background:var(--btn-orange);width:18px;border-radius:4px;}
 .drawer-body{padding:18px;overflow-y:auto;flex:1;background:#fff;overscroll-behavior:contain;}
@@ -1980,10 +1983,15 @@ function openDrawer(id) {
   var p = productIndex[id]; if (!p) return;
   drawerOpen = true;
   currentDrawerProduct = p;
-  // Leave a dark gap (≈100px) above the panel so the floating X never overlaps
-  // content. Uses real visible height (window.innerHeight) — reliable on iOS Safari.
+  // Fixed card height (visible viewport − 100px) so the popup looks IDENTICAL for
+  // every product, leaving a consistent dark gap above where the X floats.
+  // Uses real visible height (window.innerHeight) — reliable on iOS Safari.
   var _panel = document.querySelector('#product-modal .modal-panel');
-  if (_panel) { _panel.style.maxHeight = (window.innerHeight - 100) + 'px'; }
+  if (_panel) {
+    var _h = (window.innerHeight - 100) + 'px';
+    _panel.style.height = _h;
+    _panel.style.maxHeight = _h;
+  }
   var hasVariants = p.variants && p.variants.length > 0;
   var firstV = hasVariants ? p.variants[0] : p;
   currentDrawerSelected = hasVariants ? { color: firstV.color, size: null, sizePrice: null } : { size: null, sizePrice: null };
