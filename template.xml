@@ -14,11 +14,15 @@
   <meta content='width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no' name='viewport'/>
   <title><data:blog.title/></title>
   <meta content='yes' name='apple-mobile-web-app-capable'/>
+  <meta content='yes' name='mobile-web-app-capable'/>
   <meta content='black-translucent' name='apple-mobile-web-app-status-bar-style'/>
   <meta content='#131921' name='theme-color'/>
   <meta content='Os My' name='apple-mobile-web-app-title'/>
+  <meta content='Os My' name='application-name'/>
   <link href='https://cdn-icons-png.flaticon.com/512/869/869069.png' rel='apple-touch-icon'/>
-  <link href='data:application/json;charset=utf-8,%7B%22name%22%3A%22Os%20My%22%2C%22short_name%22%3A%22Os%20My%22%2C%22start_url%22%3A%22%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23131921%22%2C%22theme_color%22%3A%22%23131921%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F869%2F869069.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D' rel='manifest'/>
+  <link href='https://cdn-icons-png.flaticon.com/512/869/869069.png' rel='apple-touch-icon' sizes='180x180'/>
+  <link href='https://cdn-icons-png.flaticon.com/512/869/869069.png' rel='icon' sizes='512x512' type='image/png'/>
+  <link href='data:application/json;charset=utf-8,%7B%22name%22%3A%22Os%20My%22%2C%22short_name%22%3A%22Os%20My%22%2C%22start_url%22%3A%22%2F%22%2C%22scope%22%3A%22%2F%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%2C%22lang%22%3A%22ar%22%2C%22dir%22%3A%22rtl%22%2C%22background_color%22%3A%22%23131921%22%2C%22theme_color%22%3A%22%23131921%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F869%2F869069.png%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%2C%22purpose%22%3A%22any%22%7D%2C%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F869%2F869069.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%2C%22purpose%22%3A%22any%22%7D%2C%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F869%2F869069.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%2C%22purpose%22%3A%22maskable%22%7D%5D%7D' rel='manifest'/>
   <link href='https://fonts.googleapis.com' rel='preconnect'/>
   <link crossorigin='anonymous' href='https://fonts.gstatic.com' rel='preconnect'/>
   <link crossorigin='anonymous' href='https://lh3.googleusercontent.com' rel='preconnect'/>
@@ -956,6 +960,31 @@ var CONFIG = {
 /* ============================================================
    PWA INSTALL
    ============================================================ */
+/* Rebuild the manifest at runtime with ABSOLUTE urls. A data: URI manifest
+   cannot resolve start_url/scope "/" in Chrome, which blocks installability. */
+(function buildManifest() {
+  try {
+    var origin = location.origin;
+    var icon = 'https://cdn-icons-png.flaticon.com/512/869/869069.png';
+    var manifest = {
+      name: 'Os My', short_name: 'Os My',
+      start_url: origin + '/?utm_source=pwa', scope: origin + '/',
+      display: 'standalone', orientation: 'portrait',
+      lang: 'ar', dir: 'rtl',
+      background_color: '#131921', theme_color: '#131921',
+      icons: [
+        { src: icon, sizes: '192x192', type: 'image/png', purpose: 'any' },
+        { src: icon, sizes: '512x512', type: 'image/png', purpose: 'any' },
+        { src: icon, sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+      ]
+    };
+    var blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+    var url = URL.createObjectURL(blob);
+    var link = document.querySelector('link[rel="manifest"]');
+    if (!link) { link = document.createElement('link'); link.rel = 'manifest'; document.head.appendChild(link); }
+    link.setAttribute('href', url);
+  } catch (e) {}
+})();
 var deferredInstallPrompt = null;
 var installBtn = document.getElementById('installAppBtn');
 function isAppInstalled() {
@@ -978,6 +1007,11 @@ function promptAppInstall() {
     else toast('🤖 للتثبيت: افتح قائمة المتصفح ⋮ ثم اختر "إضافة للشاشة الرئيسية"','',7);
   }
 }
+window.addEventListener('appinstalled', function() {
+  deferredInstallPrompt = null;
+  if (installBtn) installBtn.style.display = 'none';
+  toast('🎉 تم تثبيت التطبيق بنجاح','success',5);
+});
 window.addEventListener('DOMContentLoaded', function() {
   if (isAppInstalled()) { if (installBtn) installBtn.style.display = 'none'; }
   else { var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream; if (isIOS && installBtn) installBtn.style.display = 'flex'; }
