@@ -17,12 +17,12 @@
   <meta content='yes' name='mobile-web-app-capable'/>
   <meta content='black-translucent' name='apple-mobile-web-app-status-bar-style'/>
   <meta content='#131921' name='theme-color'/>
-  <meta content='Os My' name='apple-mobile-web-app-title'/>
-  <meta content='Os My' name='application-name'/>
+  <meta content='Store Bro' name='apple-mobile-web-app-title'/>
+  <meta content='Store Bro' name='application-name'/>
   <link href='https://cdn-icons-png.flaticon.com/512/869/869069.png' rel='apple-touch-icon'/>
   <link href='https://cdn-icons-png.flaticon.com/512/869/869069.png' rel='apple-touch-icon' sizes='180x180'/>
   <link href='https://cdn-icons-png.flaticon.com/512/869/869069.png' rel='icon' sizes='512x512' type='image/png'/>
-  <link href='data:application/json;charset=utf-8,%7B%22name%22%3A%22Os%20My%22%2C%22short_name%22%3A%22Os%20My%22%2C%22start_url%22%3A%22%2F%22%2C%22scope%22%3A%22%2F%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%2C%22lang%22%3A%22ar%22%2C%22dir%22%3A%22rtl%22%2C%22background_color%22%3A%22%23131921%22%2C%22theme_color%22%3A%22%23131921%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F869%2F869069.png%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%2C%22purpose%22%3A%22any%22%7D%2C%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F869%2F869069.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%2C%22purpose%22%3A%22any%22%7D%2C%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F869%2F869069.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%2C%22purpose%22%3A%22maskable%22%7D%5D%7D' rel='manifest'/>
+  <link href='data:application/json;charset=utf-8,%7B%22name%22%3A%22Store%20Bro%22%2C%22short_name%22%3A%22Store%20Bro%22%2C%22start_url%22%3A%22%2F%22%2C%22scope%22%3A%22%2F%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%2C%22lang%22%3A%22ar%22%2C%22dir%22%3A%22rtl%22%2C%22background_color%22%3A%22%23131921%22%2C%22theme_color%22%3A%22%23131921%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F869%2F869069.png%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%2C%22purpose%22%3A%22any%22%7D%2C%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F869%2F869069.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%2C%22purpose%22%3A%22any%22%7D%2C%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F869%2F869069.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%2C%22purpose%22%3A%22maskable%22%7D%5D%7D' rel='manifest'/>
   <link href='https://fonts.googleapis.com' rel='preconnect'/>
   <link crossorigin='anonymous' href='https://fonts.gstatic.com' rel='preconnect'/>
   <link crossorigin='anonymous' href='https://lh3.googleusercontent.com' rel='preconnect'/>
@@ -597,8 +597,8 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
 
 <header>
   <div class='h-top'>
-    <a aria-label='Os My' class='h-item h-logo' href='/'>
-      <img alt='Os My' src='https://placehold.co/130x36/131921/FFFFFF/png?text=Os+My&amp;font=cairo'/>
+    <a aria-label='Store Bro' class='h-item h-logo' href='/'>
+      <img alt='Store Bro' src='https://placehold.co/130x36/131921/FFFFFF/png?text=Store+Bro&amp;font=cairo'/>
     </a>
 
     <div class='h-mobile-icons'>
@@ -852,7 +852,7 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
     <div class='sheet-handle'/>
     <div class='welcome-body'>
       <div class='welcome-icon'>📍</div>
-      <h2 class='welcome-title'>مرحباً بك في Os My!</h2>
+      <h2 class='welcome-title'>مرحباً بك في Store Bro!</h2>
       <p class='welcome-sub'>لتوصيل طلباتك بدقة وسرعة، أضف عنوان التوصيل الآن. يمكنك أيضاً تخطي هذه الخطوة وإضافته لاحقاً.</p>
       <div class='welcome-btns'>
         <button class='btn-welcome-add' onclick='closeModal(&quot;first-visit-modal&quot;);openAddAddrModal(null)'>📍 أضف عنوانك الآن</button>
@@ -959,7 +959,7 @@ var CONFIG = {
   currency: 'ر.س',
   whatsapp: '18292147994',
   phone: '+18292147994',
-  storeName: 'Os My',
+  storeName: 'Store Bro',
   freeShippingMin: 200,
   shippingFee: 25,
   feedCacheKey: 'sp_feed_cache_v4',
@@ -987,7 +987,7 @@ function hasGoogleAuth() { var c = CONFIG.googleClientId; return !!c && c.indexO
     var origin = location.origin;
     var icon = 'https://cdn-icons-png.flaticon.com/512/869/869069.png';
     var manifest = {
-      name: 'Os My', short_name: 'Os My',
+      name: 'Store Bro', short_name: 'Store Bro',
       start_url: origin + '/?utm_source=pwa', scope: origin + '/',
       display: 'standalone', orientation: 'portrait',
       lang: 'ar', dir: 'rtl',
