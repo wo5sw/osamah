@@ -359,12 +359,28 @@ header.hide-header{transform:translateY(-100%);}
 .delivery-block strong{display:block;font-size:14px;color:var(--text);margin-bottom:4px;}
 .delivery-block .free{color:var(--success);font-weight:700;}
 .desc-section{margin-top:16px;}
-.desc-heading{font-size:15px;font-weight:700;color:var(--text);margin:0 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+.desc-heading{font-size:15px;font-weight:700;color:var(--text);margin:0;}
+/* Accordion (collapsible) sections */
+.acc-section{border-top:1px solid var(--border);margin-top:14px;padding-top:6px;}
+.acc-head{width:100%;display:flex;align-items:center;justify-content:space-between;background:none;border:none;padding:10px 0;cursor:pointer;font-family:'Cairo',sans-serif;text-align:right;}
+.acc-chevron{font-size:14px;color:var(--text-2);transition:transform .3s cubic-bezier(.4,0,.2,1);}
+.acc-section.acc-open .acc-chevron{transform:rotate(180deg);}
+.acc-panel{max-height:0;overflow:hidden;transition:max-height .35s cubic-bezier(.4,0,.2,1),opacity .3s;opacity:0;}
+.acc-section.acc-open .acc-panel{max-height:1200px;opacity:1;}
 .desc-content{font-size:13px;color:var(--text);line-height:1.7;padding:4px 0;}
 .desc-content div{padding:3px 0;position:relative;padding-right:18px;}
 .desc-content div::before{content:'';position:absolute;right:4px;top:14px;width:4px;height:4px;border-radius:50%;background:var(--text-2);}
 .drawer-footer{padding:12px 18px 18px;border-top:1px solid var(--border);background:#fff;display:flex;gap:10px;flex-shrink:0;align-items:center;}
-.btn-drawer-add,.btn-drawer-buy{flex:1;height:48px;border-radius:var(--r-pill);font-weight:700;font-size:15px;font-family:'Cairo',sans-serif;cursor:pointer;transition:background var(--t);}
+/* Price + weight column shown on the right of the bottom bar */
+.drawer-foot-info{display:flex;flex-direction:column;justify-content:center;flex-shrink:0;min-width:84px;line-height:1.2;}
+.drawer-foot-info .dfi-price{font-size:17px;font-weight:800;color:var(--price-deal);white-space:nowrap;}
+.drawer-foot-info .dfi-weight{font-size:11px;color:var(--text-2);font-weight:600;white-space:nowrap;}
+/* Smooth Add ⇄ Quantity swap: both share a slot; the hidden one fades+scales out */
+.drawer-action-slot{position:relative;flex:1;height:48px;}
+.btn-drawer-add,.drawer-qty-wrap{position:absolute;inset:0;width:100%;transition:opacity .28s cubic-bezier(.4,0,.2,1),transform .28s cubic-bezier(.4,0,.2,1);}
+.btn-drawer-add.swap-out,.drawer-qty-wrap.swap-out{opacity:0;transform:scale(.82);pointer-events:none;}
+.btn-drawer-add.swap-hidden,.drawer-qty-wrap.swap-hidden{opacity:0;transform:scale(.82);pointer-events:none;visibility:hidden;}
+.btn-drawer-add,.btn-drawer-buy{flex:1;height:48px;border-radius:var(--r-pill);font-weight:700;font-size:15px;font-family:'Cairo',sans-serif;cursor:pointer;transition:background var(--t),opacity .28s,transform .28s;}
 .btn-drawer-add{background:var(--btn-yellow);border:1px solid var(--btn-yellow-border);color:var(--text);}
 .btn-drawer-add:hover{background:var(--btn-yellow-hover);}
 .btn-drawer-buy{background:var(--btn-orange);border:1px solid var(--btn-orange-border);color:var(--text);}
@@ -563,7 +579,10 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
   .drawer-qty-wrap button{width:42px;}
   .drawer-title{font-size:18px;}
   .drawer-price{font-size:24px;}
-  .drawer-footer{padding:10px;gap:6px;}
+  .drawer-footer{padding:10px;gap:8px;}
+  .drawer-foot-info{min-width:64px;}
+  .drawer-foot-info .dfi-price{font-size:15px;}
+  .drawer-foot-info .dfi-weight{font-size:10px;}
   .btn-drawer-add,.btn-drawer-buy{height:40px;font-size:13px;}
   .cart-item{padding:10px;gap:10px;flex-wrap:wrap;}
   .cart-item-img{width:70px;height:70px;}
@@ -788,12 +807,18 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
     </div>
     <div class='drawer-body' id='drawer-body'/>
     <div class='drawer-footer'>
-      <div class='drawer-qty-wrap' id='drawer-qty-wrap' style='display:none'>
-        <button onclick='drawerQtyChange(-1)' aria-label='إنقاص'>&#8722;</button>
-        <span class='drawer-qty-num' id='drawer-qty-num'>1</span>
-        <button onclick='drawerQtyChange(1)' aria-label='زيادة'>+</button>
+      <div class='drawer-foot-info'>
+        <span class='dfi-price' id='drawer-foot-price'/>
+        <span class='dfi-weight' id='drawer-foot-weight'/>
       </div>
-      <button class='btn-drawer-add' id='drawer-add-btn'>أضف إلى السلة</button>
+      <div class='drawer-action-slot'>
+        <div class='drawer-qty-wrap swap-hidden' id='drawer-qty-wrap'>
+          <button onclick='drawerQtyChange(-1)' aria-label='إنقاص'>&#8722;</button>
+          <span class='drawer-qty-num' id='drawer-qty-num'>1</span>
+          <button onclick='drawerQtyChange(1)' aria-label='زيادة'>+</button>
+        </div>
+        <button class='btn-drawer-add' id='drawer-add-btn'>أضف إلى السلة</button>
+      </div>
       <button class='btn-drawer-buy' id='drawer-buy-btn'>اشترِ الآن</button>
     </div>
   </div>
@@ -2060,9 +2085,9 @@ function openDrawer(id) {
     + '<div class="delivery-block"><strong>التوصيل</strong>'
     + (isFree ? '<div><span class="free">شحن مجاني</span> للطلبات فوق ' + CONFIG.freeShippingMin + ' ' + CONFIG.currency + '</div>' : '<div>تكلفة الشحن: <b>' + CONFIG.shippingFee + ' ' + CONFIG.currency + '</b></div><div style="margin-top:4px;font-size:12px;color:var(--text-2)">أضف ' + (CONFIG.freeShippingMin - firstV.price).toFixed(2) + ' ' + CONFIG.currency + ' للحصول على شحن مجاني</div>')
     + '</div>'
-    + '<div class="desc-section" id="drawer-desc-section"' + (firstV.desc && firstV.desc.length ? '' : ' style="display:none"') + '>'
-    + '<div class="desc-heading">معلومات المنتج</div>'
-    + '<div class="desc-content" id="drawer-desc-content">' + (firstV.desc ? firstV.desc.map(function(l) { return '<div>' + escapeHtml(l) + '</div>'; }).join('') : '') + '</div></div>';
+    + '<div class="desc-section acc-section acc-open" id="drawer-desc-section"' + (firstV.desc && firstV.desc.length ? '' : ' style="display:none"') + '>'
+    + '<button type="button" class="acc-head" onclick="toggleAccordion(this)"><span class="desc-heading">معلومات المنتج</span><span class="acc-chevron">&#9662;</span></button>'
+    + '<div class="acc-panel"><div class="desc-content" id="drawer-desc-content">' + (firstV.desc ? firstV.desc.map(function(l) { return '<div>' + escapeHtml(l) + '</div>'; }).join('') : '') + '</div></div></div>';
 
   document.getElementById('drawer-add-btn').textContent = 'أضف إلى السلة';
   document.getElementById('drawer-add-btn').style.background = '';
@@ -2071,9 +2096,28 @@ function openDrawer(id) {
   document.getElementById('drawer-buy-btn').style.opacity = '1';
   document.getElementById('drawer-add-btn').onclick = function() { addToCart(p.id, false); };
   document.getElementById('drawer-buy-btn').onclick = function() { addToCart(p.id, true); };
+  updateDrawerFootInfo(firstV);
   var _initCid = (hasVariants && p.variants.length > 1) ? p.id + '-' + firstV.color : p.id;
   updateDrawerAddBtn(_initCid);
   openModal('product-modal');
+}
+
+/* Keep the bottom-bar price + weight in sync with the current selection. */
+function updateDrawerFootInfo(variant, priceOverride) {
+  var pEl = document.getElementById('drawer-foot-price');
+  var wEl = document.getElementById('drawer-foot-weight');
+  if (pEl) pEl.textContent = formatPrice(priceOverride != null ? priceOverride : (variant ? variant.price : 0)) + ' ' + CONFIG.currency;
+  if (wEl) {
+    var weight = (currentDrawerSelected && currentDrawerSelected.size) || (variant && (variant.size || variant.shape)) || '';
+    wEl.textContent = weight;
+    wEl.style.display = weight ? '' : 'none';
+  }
+}
+
+/* Accordion toggle for collapsible product sections. */
+function toggleAccordion(headEl) {
+  var section = headEl.closest('.acc-section');
+  if (section) section.classList.toggle('acc-open');
 }
 
 function renderDrawerSlider(images) {
@@ -2136,6 +2180,7 @@ function selectSize(pid, price, label, el) {
   currentDrawerSelected.sizePrice = price;
   var dp = document.querySelector('.drawer-price'); if (dp) dp.innerHTML = priceHTML(price, {});
   var ob = document.getElementById('drawer-old-price-box'); if (ob) ob.innerHTML = '';
+  updateDrawerFootInfo(null, price);
   var cid = pid + (currentDrawerSelected.color ? '-' + currentDrawerSelected.color : '') + '-' + label;
   updateDrawerAddBtn(cid);
   // Update slider images: look for a variant that matches this size label so the
@@ -2170,6 +2215,7 @@ function selectColor(pid, color, el) {
   var variant = p.variants.find(function(v) { return v.color === color; }); if (!variant) return;
   currentDrawerSelected = { color: variant.color, size: null, sizePrice: null };
   var dp = document.querySelector('.drawer-price'); if (dp) dp.innerHTML = priceHTML(variant.price,{deal:!!variant.oldPrice});
+  updateDrawerFootInfo(variant);
   var dv = getVariantDiscount(variant);
   var sv = variant.oldPrice ? (variant.oldPrice - variant.price).toFixed(2) : 0;
   var ob = document.getElementById('drawer-old-price-box');
@@ -2238,17 +2284,34 @@ function updateDrawerAddBtn(cid) {
   var addBtn  = document.getElementById('drawer-add-btn');
   var qtyWrap = document.getElementById('drawer-qty-wrap');
   var qtyNum  = document.getElementById('drawer-qty-num');
-  if (!addBtn) return;
+  if (!addBtn || !qtyWrap) return;
   var item = cid ? cart.find(function(i) { return i.cid === cid; }) : null;
   if (item) {
-    addBtn.style.display = 'none';
-    if (qtyWrap) { qtyWrap.style.display = 'flex'; }
-    if (qtyNum)  { qtyNum.textContent = item.qty; }
+    // Active state: show the +/- selector, hide the Add button (animated)
+    if (qtyNum) qtyNum.textContent = item.qty;
+    swapDrawerAction(qtyWrap, addBtn);
   } else {
-    addBtn.style.display = '';
+    // Default state: show the full-width Add button (animated)
     addBtn.textContent = 'أضف إلى السلة';
-    if (qtyWrap) { qtyWrap.style.display = 'none'; }
+    swapDrawerAction(addBtn, qtyWrap);
   }
+}
+
+/* Cross-fade two footer elements that share the same slot. The incoming element
+   fades/scales in while the outgoing one fades/scales out, then is hidden. */
+function swapDrawerAction(showEl, hideEl) {
+  if (showEl.classList.contains('swap-hidden') || showEl.classList.contains('swap-out') || hideEl === showEl) {
+    showEl.classList.remove('swap-hidden');
+    // Force reflow so the transition runs from the hidden state.
+    void showEl.offsetWidth;
+    showEl.classList.remove('swap-out');
+  }
+  hideEl.classList.add('swap-out');
+  // After the transition, fully hide the outgoing element from layout/AT.
+  clearTimeout(hideEl._swapTimer);
+  hideEl._swapTimer = setTimeout(function() {
+    if (hideEl.classList.contains('swap-out')) hideEl.classList.add('swap-hidden');
+  }, 300);
 }
 
 function drawerQtyChange(delta) {
