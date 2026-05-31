@@ -881,7 +881,7 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
 
       <div class='loc-row'>
         <input class='pro-input' id='na-city' placeholder='المدينة *' type='text'/>
-        <button class='btn-location' onclick='openMapsModal()' title='تحديد موقعي على الخريطة'>📍</button>
+        <button class='btn-location' id='btn-location' onclick='openMapsModal()' title='تحديد موقعي على الخريطة'>📍</button>
       </div>
       <input class='pro-input' id='na-district' placeholder='الحي / المنطقة' type='text'/>
       <input class='pro-input' id='na-street' placeholder='اسم الشارع / تفاصيل إضافية' type='text'/>
@@ -965,8 +965,17 @@ var CONFIG = {
   feedCacheKey: 'sp_feed_cache_v4',
   feedCacheTTL: 300000,
   defaultCategory: 'الكل',
-  mapsApiKey: 'YOUR_GOOGLE_MAPS_API_KEY'
+  // Leave as 'YOUR_GOOGLE_MAPS_API_KEY' to disable the map picker cleanly (manual
+  // address entry stays available). Put a real key here to enable it.
+  mapsApiKey: 'YOUR_GOOGLE_MAPS_API_KEY',
+  // Google Sign-In. Replace with a Client ID created for YOUR domain, or leave
+  // empty to hide the Google button (the store works fully without login).
+  googleClientId: '360615303745-h45ri50dd4mlfarff2rbu2tivmho822u.apps.googleusercontent.com'
 };
+// True only when a real Google Maps key has been provided.
+function hasMapsKey() { var k = CONFIG.mapsApiKey; return !!k && k.indexOf('YOUR_') !== 0 && k.length > 20; }
+// True only when a real Google Client ID has been provided.
+function hasGoogleAuth() { var c = CONFIG.googleClientId; return !!c && c.indexOf('YOUR_') !== 0 && c.indexOf('.apps.googleusercontent.com') > 0; }
 
 /* ============================================================
    PWA INSTALL
@@ -1352,6 +1361,8 @@ function requireGoogleMaps(cb) {
 }
 
 function openMapsModal() {
+  // No real API key → don't open a broken/grey map; tell the user to type the address.
+  if (!hasMapsKey()) { toast('خريطة تحديد الموقع غير مفعّلة. يرجى إدخال العنوان يدوياً.', 'warn'); return; }
   pendingMapLocation = null;
   var addrText = document.getElementById('map-addr-text');
   if (addrText) addrText.textContent = 'انقر على الخريطة لتحديد موقعك...';
@@ -1628,34 +1639,46 @@ function fetchProducts() {
           var lines = cleanText.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l && !/^\.{3,}$/.test(l); });
 
           var vPrice = null, vOldPrice = null, vColor = null, vShape = null, vSize = null, vDesc = [], vSizes = null;
-          lines.forEach(function(line) {
-            // Skip standalone empty headers
+          lines.forEach(function(rawLine) {
+            // Normalise so parsing is forgiving of how the merchant typed it:
+            //  - Arabic-Indic digits ٠-٩ → 0-9   - Arabic colon ：/فاصلة → standard
+            //  - collapse repeated spaces        - strip a leading bullet (•, -, *)
+            var line = toEnNum(rawLine).replace(/：/g,':').replace(/[•▪◦*]\s*/,'').replace(/\s{2,}/g,' ').trim();
+            if (!line) return;
+            // A flexible number token: 1000 / 1,000 / 99.50 / ١٢٣ (already converted)
+            var NUM = '([0-9][0-9.,]*)';
+            // Optional separator after a label: ":", "-", ".", "=", Arabic comma, or just space
+            var SEP = '\\s*[:\\-.=،,]?\\s*';
+            // Skip standalone empty headers (label with no value)
             if (/^(?:الحجم|الأحجام|المقاس|المقاسات|Size|Sizes)\s*[:\-.]?\s*$/i.test(line)) return;
-            if (/^(?:السعر|سعر|Price)\s*[:\-.]?\s*$/i.test(line)) return;
-            // SIZE=PRICE pairs e.g. 2yrs=330  S=99
-            var szm = line.match(/^([^\s=:،,؛]+)\s*=\s*(\d[\d.]*)\s*$/);
-            if (szm) { if (!vSizes) vSizes = []; vSizes.push({ label: szm[1].trim(), price: parsePrice(szm[2]) }); return; }
-            var pm = line.match(/^(?:السعر|سعر|Price)\s*[:\-.]?\s*(\d[\d.]*)/i);
-            if (pm) { vPrice = parsePrice(pm[1]); return; }
-            var om = line.match(/^(?:السعر القديم|سعر قديم|السعر قبل|Old Price)\s*[:\-.]?\s*(\d[\d.]*)/i);
+            if (/^(?:السعر|سعر|الثمن|Price|Cost)\s*[:\-.]?\s*$/i.test(line)) return;
+            // SIZE=PRICE pairs e.g. 2yrs=330  S=99  (also accepts ":" as separator)
+            var szm = line.match(/^([^\s=:،,؛]+)\s*[=:]\s*([0-9][0-9.,]*)\s*$/);
+            if (szm && /[0-9]/.test(szm[2]) && !/^(?:السعر|سعر|الثمن|Price|التقييم|Rating|اللون|Color|الشكل|Shape)$/i.test(szm[1].trim())) {
+              if (!vSizes) vSizes = []; vSizes.push({ label: szm[1].trim(), price: parsePrice(szm[2]) }); return;
+            }
+            // Old price FIRST (more specific than plain price)
+            var om = line.match(new RegExp('^(?:السعر القديم|سعر قديم|السعر قبل|قبل الخصم|Old Price|Was)' + SEP + NUM, 'i'));
             if (om) { vOldPrice = parsePrice(om[1]); return; }
-            var rm = line.match(/^(?:التقييم|تقييم|Rating)\s*[:\-.]?\s*([\d.]+)/i);
+            var pm = line.match(new RegExp('^(?:السعر|سعر|الثمن|Price|Cost)' + SEP + NUM, 'i'));
+            if (pm) { vPrice = parsePrice(pm[1]); return; }
+            var rm = line.match(new RegExp('^(?:التقييم|تقييم|Rating)' + SEP + '([0-9][0-9.]*)', 'i'));
             if (rm) { productRating = Math.max(0, Math.min(5, parseFloat(rm[1]))); return; }
-            var cm = line.match(/^(?:عدد التقييمات|Reviews)\s*[:\-.]?\s*(\d+)/i);
+            var cm = line.match(new RegExp('^(?:عدد التقييمات|عدد المراجعات|Reviews|Ratings)' + SEP + '([0-9]+)', 'i'));
             if (cm) { productRatingCount = parseInt(cm[1],10); return; }
             // Color / variant identifier
-            var clm = line.match(/^(?:اللون|Color)\s*[:\-.]?\s*(.+)/i);
+            var clm = line.match(/^(?:اللون|Color|Colour)\s*[:\-.=]?\s*(.+)/i);
             if (clm && clm[1].trim()) { vColor = clm[1].trim(); return; }
             // Shape
-            var shm = line.match(/^(?:الشكل|شكل|Shape)\s*[:\-.]?\s*(.+)/i);
+            var shm = line.match(/^(?:الشكل|شكل|Shape)\s*[:\-.=]?\s*(.+)/i);
             if (shm && shm[1].trim()) { vShape = shm[1].trim(); return; }
             // Size with value on the same line e.g. "الحجم: 250ml"
-            var hzm = line.match(/^(?:الحجم|الأحجام|المقاس|Size)\s*[:\-.]?\s*(.+)/i);
+            var hzm = line.match(/^(?:الحجم|الأحجام|المقاس|Size)\s*[:\-.=]?\s*(.+)/i);
             if (hzm && hzm[1].trim()) { vSize = hzm[1].trim(); return; }
             // Variant name fallback (النوع / الاسم / الخيار)
-            var vnm = line.match(/^(?:النوع|الاسم|الخيار|Type|Variant)\s*[:\-.]?\s*(.*)/i);
+            var vnm = line.match(/^(?:النوع|الاسم|الخيار|Type|Variant)\s*[:\-.=]?\s*(.*)/i);
             if (vnm) { if (!vColor) vColor = vnm[1].trim(); return; }
-            vDesc.push(line);
+            vDesc.push(rawLine);
           });
           // If sizes provided, derive base price from first size
           if (vSizes && vSizes.length > 0 && vPrice === null) vPrice = vSizes[0].price;
@@ -1748,6 +1771,8 @@ function initStore() {
   updateGreeting();
   loadAddresses();       // ensure addresses loaded
   checkFirstVisit();     // show first-visit popup if needed
+  // Hide the map-picker button when no valid Maps key is configured.
+  if (!hasMapsKey()) { var lb = document.getElementById('btn-location'); if (lb) lb.style.display = 'none'; }
 }
 window.addEventListener('load', fetchProducts);
 
@@ -2498,10 +2523,10 @@ function goToCheckout() { goToCartStep2(); }
 function renderGoogleButtonSheet() {
   var container = document.getElementById('cs-google-auth');
   if (!container) return;
-  if (currentUser) { container.innerHTML = ''; return; }
+  if (currentUser || !hasGoogleAuth()) { container.innerHTML = ''; container.style.display = 'none'; return; }
   if (window.google && google.accounts && google.accounts.id) {
     try {
-      google.accounts.id.initialize({ client_id: '360615303745-h45ri50dd4mlfarff2rbu2tivmho822u.apps.googleusercontent.com', callback: handleCredentialResponse });
+      google.accounts.id.initialize({ client_id: CONFIG.googleClientId, callback: handleCredentialResponse });
       google.accounts.id.renderButton(container, { theme:'outline', size:'large', shape:'pill', width:250 });
     } catch(e) { container.innerHTML = '<span style="font-size:12px;color:var(--text-3)">تعذّر تحميل تسجيل الدخول</span>'; }
   } else { container.innerHTML = '<span style="font-size:12px;color:var(--text-3)">جاري تحميل تسجيل الدخول…</span>'; }
@@ -2729,10 +2754,10 @@ function doWhatsapp()  { closeModal('contact-modal'); window.open('https://wa.me
 function renderGoogleButton() {
   var container = document.getElementById('google-auth-container');
   if (!container) return;
-  if (currentUser) { container.innerHTML = ''; return; }
+  if (currentUser || !hasGoogleAuth()) { container.innerHTML = ''; container.style.display = 'none'; return; }
   if (window.google && google.accounts && google.accounts.id) {
     try {
-      google.accounts.id.initialize({ client_id: '360615303745-h45ri50dd4mlfarff2rbu2tivmho822u.apps.googleusercontent.com', callback: handleCredentialResponse });
+      google.accounts.id.initialize({ client_id: CONFIG.googleClientId, callback: handleCredentialResponse });
       google.accounts.id.renderButton(container, { theme:'outline', size:'large', shape:'pill', width:250 });
     } catch(e) { container.innerHTML = '<span style="font-size:12px;color:var(--text-3)">تعذّر تحميل تسجيل الدخول</span>'; }
   } else { container.innerHTML = '<span style="font-size:12px;color:var(--text-3)">جاري تحميل تسجيل الدخول…</span>'; }
