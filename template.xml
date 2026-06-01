@@ -329,7 +329,7 @@ header.hide-header{transform:translateY(-100%);}
 .drawer-dots{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:3;}
 .dot{width:7px;height:7px;border-radius:50%;background:rgba(0,0,0,.25);cursor:pointer;transition:.2s;}
 .dot.active{background:var(--btn-orange);width:18px;border-radius:4px;}
-.drawer-body{padding:0;overflow-y:auto;flex:1;background:#f3f4f6;overscroll-behavior:contain;}
+.drawer-body{padding:0;overflow-y:auto;flex:1;min-height:0;background:#f3f4f6;overscroll-behavior:contain;}
 /* App-style separated white section boxes (bottom-sheet look) */
 .app-section{background:#fff;padding:16px;margin-bottom:8px;}
 .app-section:last-child{margin-bottom:0;}
@@ -337,6 +337,8 @@ header.hide-header{transform:translateY(-100%);}
 .app-highlights{padding-right:20px;margin:0;font-size:13px;color:#444;line-height:1.9;}
 .app-highlights li{margin-bottom:2px;}
 #drawer-options-box .option-group:last-child,#drawer-options-box .variant-meta:last-child{border-bottom:none;padding-bottom:0;margin-bottom:0;}
+/* Neutralise .acc-section separator styles when the element is also an .app-section box */
+.app-section.acc-section{border-top:none;margin-top:0;padding-top:16px;}
 .drawer-title{font-size:20px;font-weight:500;color:var(--text);margin:0 0 8px;line-height:1.4;}
 .rating-line{display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);min-height:24px;}
 .drawer-price-box{padding:0;margin-bottom:16px;}
