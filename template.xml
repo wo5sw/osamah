@@ -1002,12 +1002,19 @@ var CONFIG = {
   mapsApiKey: 'AIzaSyCWIpeIbxU8EQpjZuc-_-f01RhhKKg13VA',
   // Google Sign-In. Replace with a Client ID created for YOUR domain, or leave
   // empty to hide the Google button (the store works fully without login).
-  googleClientId: '360615303745-h45ri50dd4mlfarff2rbu2tivmho822u.apps.googleusercontent.com'
+  googleClientId: '360615303745-h45ri50dd4mlfarff2rbu2tivmho822u.apps.googleusercontent.com',
+  // Auto product enrichment: paste the Google Apps Script web-app /exec URL here.
+  // When set, any post that contains a product link (e.g. Amazon) and no pasted
+  // images will auto-fetch the title/images/description from that link. The PRICE
+  // you type in the post (السعر: ...) ALWAYS wins. Leave empty to disable.
+  enrichApiUrl: ''
 };
 // True only when a real Google Maps key has been provided.
 function hasMapsKey() { var k = CONFIG.mapsApiKey; return !!k && k.indexOf('YOUR_') !== 0 && k.length > 20; }
 // True only when a real Google Client ID has been provided.
 function hasGoogleAuth() { var c = CONFIG.googleClientId; return !!c && c.indexOf('YOUR_') !== 0 && c.indexOf('.apps.googleusercontent.com') > 0; }
+// True only when a Google Apps Script enrichment endpoint has been configured.
+function hasEnrichApi() { var u = CONFIG.enrichApiUrl; return !!u && /^https:\/\/script\.google\.com\/macros\/s\/.+\/exec/.test(u); }
 
 /* ============================================================
    PWA INSTALL
@@ -1625,6 +1632,7 @@ function fetchProducts() {
         var sections = rawHTML.replace(/&nbsp;|​/gi,' ').split(/(?:\s*(?:<[^>]+>\s*)*\.{5,})/);
 
         var variants = [];
+        var productSourceUrl = null;   // first product link found (e.g. Amazon) → used for auto-enrichment
         var productRating = null, productRatingCount = null, publishedTs = 0;
         try { publishedTs = entry.published && entry.published.$t ? Date.parse(entry.published.$t) : 0; } catch(e) {}
         var isNew = publishedTs && (Date.now() - publishedTs) < 30*24*60*60*1000;
@@ -1677,6 +1685,9 @@ function fetchProducts() {
             //  - collapse repeated spaces        - strip a leading bullet (•, -, *)
             var line = toEnNum(rawLine).replace(/：/g,':').replace(/[•▪◦*]\s*/,'').replace(/\s{2,}/g,' ').trim();
             if (!line) return;
+            // A standalone product URL → remember it as the enrichment source and
+            // don't show it as a description bullet.
+            if (/^https?:\/\/\S+$/i.test(line)) { if (!productSourceUrl) productSourceUrl = line; return; }
             // A flexible number token: 1000 / 1,000 / 99.50 / ١٢٣ (already converted)
             var NUM = '([0-9][0-9.,]*)';
             // Optional separator after a label: ":", "-", ".", "=", Arabic comma, or just space
@@ -1750,6 +1761,16 @@ function fetchProducts() {
             if (!v.images || !v.images.length) { v.images = baseImages; v.image = baseImages[0].thumb; v.imageMedium = baseImages[0].medium; v.imageFull = baseImages[0].full; }
           });
 
+          // Fallback: scan the whole post HTML for a product link if none was on its own line.
+          if (!productSourceUrl) {
+            var sm = rawHTML.match(/https?:\/\/(?:www\.)?(?:amazon\.[a-z.]{2,6}|amzn\.(?:eu|to|asia|com))\/[^\s"'<>)]+/i);
+            if (sm) productSourceUrl = sm[0];
+          }
+          // Does this product already have at least one REAL (non-placeholder) image?
+          var anyRealImg = variants.some(function(v) {
+            return v.images && v.images[0] && v.images[0].full && v.images[0].full.indexOf('placehold') < 0;
+          });
+
           var first = variants[0];
           var p = {
             id: String(gid++),
@@ -1766,7 +1787,11 @@ function fetchProducts() {
             rating: productRating,
             ratingCount: productRatingCount,
             publishedTs: publishedTs,
-            isNew: isNew
+            isNew: isNew,
+            sourceUrl: productSourceUrl,
+            // Needs auto-enrichment only when we have a source link but no real
+            // images yet (so we never overwrite images the merchant pasted).
+            needsEnrich: !!productSourceUrl && !anyRealImg
           };
           products.push(p);
           productIndex[p.id] = p;
@@ -1781,6 +1806,79 @@ function fetchProducts() {
 function showFetchError() {
   var grid = document.getElementById('products-grid');
   if (grid) grid.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><h3>تعذّر تحميل المنتجات</h3><p>تحقّق من اتصالك بالإنترنت ثم أعد المحاولة.</p></div>';
+}
+
+/* ============================================================
+   AUTO PRODUCT ENRICHMENT (from a pasted product link)
+   Pulls title / images / description from the source link via the
+   Google Apps Script proxy. The merchant's typed PRICE always wins.
+   ============================================================ */
+function hashStr(s) { var h = 0; for (var i = 0; i < s.length; i++) { h = ((h << 5) - h + s.charCodeAt(i)) | 0; } return Math.abs(h).toString(36); }
+function enrichKey(url) { return 'sp_enrich_' + hashStr(url); }
+function getEnrichCache(url) {
+  try { var raw = localStorage.getItem(enrichKey(url)); if (!raw) return null; var o = JSON.parse(raw); if (Date.now() - o.ts > 86400000) { localStorage.removeItem(enrichKey(url)); return null; } return o.data; } catch(e) { return null; }
+}
+function setEnrichCache(url, data) { try { localStorage.setItem(enrichKey(url), JSON.stringify({ ts: Date.now(), data: data })); } catch(e) {} }
+
+/* Rebuild Amazon (m.media-amazon.com) image URLs at a requested size. */
+function amzImg(url, kind) {
+  if (!url) return url;
+  var clean = url.replace(/\._[A-Z0-9,_]+_\.(jpg|jpeg|png|webp)/i, '.$1');
+  var suf = (kind === 'thumb') ? 'AC_SX300' : (kind === 'medium') ? 'AC_SX600' : 'AC_SL1600';
+  if (/\.(jpg|jpeg|png|webp)(\?.*)?$/i.test(clean)) return clean.replace(/\.(jpg|jpeg|png|webp)(\?.*)?$/i, '._' + suf + '_.$1');
+  return clean;
+}
+
+function applyEnrichment(p, data) {
+  if (!data) return;
+  if (data.images && data.images.length) {
+    var imgs = data.images.map(function(u) { return { thumb: amzImg(u,'thumb'), medium: amzImg(u,'medium'), full: amzImg(u,'full') }; });
+    p.images = imgs; p.image = imgs[0].thumb; p.imageMedium = imgs[0].medium; p.imageFull = imgs[0].full;
+    if (p.variants && p.variants.length) {
+      p.variants.forEach(function(v) {
+        if (!v.images || !v.images.length || (v.image && v.image.indexOf('placehold') >= 0)) {
+          v.images = imgs; v.image = imgs[0].thumb; v.imageMedium = imgs[0].medium; v.imageFull = imgs[0].full;
+        }
+      });
+    }
+  }
+  if (data.description && data.description.length) {
+    var dl = (Array.isArray(data.description) ? data.description : String(data.description).split('\n'))
+      .map(function(s) { return String(s).trim(); }).filter(Boolean);
+    if (dl.length) {
+      if (!p.desc || !p.desc.length) p.desc = dl;
+      if (p.variants) p.variants.forEach(function(v) { if (!v.desc || !v.desc.length) v.desc = dl; });
+    }
+  }
+  if ((!p.title || !p.title.trim()) && data.title) p.title = data.title;
+  p.needsEnrich = false;
+}
+
+function refreshAfterEnrich() {
+  setFeedCache(products);
+  renderedIds = [];
+  var g = document.getElementById('products-grid'); if (g) g.dataset.lastSig = '';
+  applyAllFilters(true);
+}
+
+function enrichProductsFromSource() {
+  if (!hasEnrichApi()) return;
+  var pending = products.filter(function(p) { return p.needsEnrich && p.sourceUrl; });
+  if (!pending.length) return;
+  var remaining = pending.length, changed = false;
+  function tick(did) { if (did) changed = true; remaining--; if (remaining <= 0 && changed) refreshAfterEnrich(); }
+  pending.forEach(function(p) {
+    var cached = getEnrichCache(p.sourceUrl);
+    if (cached) { applyEnrichment(p, cached); tick(true); return; }
+    fetch(CONFIG.enrichApiUrl + '?url=' + encodeURIComponent(p.sourceUrl))
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data && data.ok !== false && (data.images && data.images.length || data.title || (data.description && data.description.length))) {
+          setEnrichCache(p.sourceUrl, data); applyEnrichment(p, data); tick(true);
+        } else { tick(false); }
+      })
+      .catch(function(e) { console.warn('enrich failed:', p.sourceUrl, e); tick(false); });
+  });
 }
 
 /* ============================================================
@@ -1805,6 +1903,8 @@ function initStore() {
   checkFirstVisit();     // show first-visit popup if needed
   // Hide the map-picker button when no valid Maps key is configured.
   if (!hasMapsKey()) { var lb = document.getElementById('btn-location'); if (lb) lb.style.display = 'none'; }
+  // Auto-fetch images/details for products that only carry a source link.
+  enrichProductsFromSource();
 }
 window.addEventListener('load', fetchProducts);
 
