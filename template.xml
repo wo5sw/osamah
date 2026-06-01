@@ -1836,10 +1836,19 @@ function amzImg(url, kind) {
   return clean;
 }
 
+/* Reject Amazon marketing assets (Prime logo, sprites, /images/G/ banners) —
+   real product photos always live under /images/I/. Non-Amazon images pass. */
+function isUsableProductImage(u) {
+  if (!u) return false;
+  if (/(?:media-amazon|images-amazon|ssl-images-amazon)\.com/i.test(u)) return u.indexOf('/images/I/') >= 0;
+  return !/sprite|prime|logo|grey-pixel|transparent-pixel/i.test(u);
+}
+
 function applyEnrichment(p, data) {
   if (!data) return;
-  if (data.images && data.images.length) {
-    var imgs = data.images.map(function(u) { return { thumb: amzImg(u,'thumb'), medium: amzImg(u,'medium'), full: amzImg(u,'full') }; });
+  var usable = (data.images || []).filter(isUsableProductImage);
+  if (usable.length) {
+    var imgs = usable.map(function(u) { return { thumb: amzImg(u,'thumb'), medium: amzImg(u,'medium'), full: amzImg(u,'full') }; });
     p.images = imgs; p.image = imgs[0].thumb; p.imageMedium = imgs[0].medium; p.imageFull = imgs[0].full;
     if (p.variants && p.variants.length) {
       p.variants.forEach(function(v) {
