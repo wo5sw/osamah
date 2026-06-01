@@ -734,11 +734,6 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
 </div>
 
 <div class='sticky-bar' id='sticky-bar'>
-  <div class='promo-bar'>
-    <span class='promo-ring'/>
-    <span class='promo-text' id='promo-text'/>
-    <span class='promo-toggle'>العروض</span>
-  </div>
   <div class='checkout-bar' onclick='toggleCartSheet()'>
     <div class='cart-summary-mini'>
       <img alt='' class='mini-thumb' id='sticky-thumb' onerror='this.src="https://placehold.co/90x90/f5f5f5/aaaaaa?text=Img"' src=''/>
@@ -2453,15 +2448,10 @@ function updateStickyBar() {
   var val   = document.getElementById('sticky-total-val');
   var cnt   = document.getElementById('sticky-count');
   var thumb = document.getElementById('sticky-thumb');
-  var promo = document.getElementById('promo-text');
   if (bar) { bar.classList.toggle('show', cart.length > 0); if (cart.length === 0) bar.classList.remove('bar-hidden'); }
   if (val)   val.textContent  = subtotal.toFixed(2) + ' ' + CONFIG.currency;
   if (cnt)   cnt.textContent  = count + ' ' + (count === 1 ? 'سلعة' : 'سلع');
   if (thumb) { var last = cart[cart.length - 1]; if (last && last.image) { thumb.src = last.image; thumb.style.visibility = 'visible'; } }
-  if (promo) {
-    if (subtotal >= CONFIG.freeShippingMin) promo.innerHTML = '🎉 تهانينا! طلبك مؤهّل للشحن المجاني';
-    else promo.innerHTML = 'أضف سلعاً بقيمة <b>' + (CONFIG.freeShippingMin - subtotal).toFixed(2) + ' ' + CONFIG.currency + '</b> أو أكثر للحصول على <b>شحن مجاني</b>';
-  }
 }
 
 /* ============================================================
@@ -2966,7 +2956,9 @@ function openModal(id) {
   var m = document.getElementById(id); if (!m) return;
   if (id === 'history-modal') renderHistory();
   if (id === 'cart-modal') renderCartBody(cart.reduce(function(s,i) { return s+i.price*i.qty; }, 0));
-  if (id === 'product-modal') { var sb = document.getElementById('sticky-bar'); if (sb) sb.style.visibility = 'hidden'; }
+  // Hide the bottom sticky bar while ANY modal is open so its "متابعة" button
+  // never overlaps the modal/content behind it.
+  var sb = document.getElementById('sticky-bar'); if (sb) sb.style.visibility = 'hidden';
   m.style.display = 'flex';
   requestAnimationFrame(function() { m.classList.add('show'); });
   if (!document.body.classList.contains('modal-open')) {
@@ -2981,7 +2973,7 @@ function openModal(id) {
 function closeModal(id) {
   var m = document.getElementById(id); if (!m) return;
   m.classList.remove('show');
-  if (id === 'product-modal') { drawerOpen = false; var sb = document.getElementById('sticky-bar'); if (sb) sb.style.visibility = ''; }
+  if (id === 'product-modal') { drawerOpen = false; }
   if (id === 'cart-modal') { checkoutFormVisible = false; checkoutPrefillAddr = null; }
   setTimeout(function() {
     m.style.display = 'none';
@@ -2991,6 +2983,8 @@ function closeModal(id) {
       document.body.style.top = '';
       document.body.style.width = '';
       window.scrollTo(0, savedScrollY);
+      // Restore the sticky bar only once every modal is closed.
+      var sb = document.getElementById('sticky-bar'); if (sb) sb.style.visibility = '';
     }
   }, 320);
 }
