@@ -1007,7 +1007,12 @@ var CONFIG = {
   // When set, any post that contains a product link (e.g. Amazon) and no pasted
   // images will auto-fetch the title/images/description from that link. The PRICE
   // you type in the post (السعر: ...) ALWAYS wins. Leave empty to disable.
-  enrichApiUrl: ''
+  enrichApiUrl: '',
+  // Method 1 fallback — link-preview service (Microlink), needs no server.
+  // Used automatically when enrichApiUrl is empty. Free tier ~50 requests/day,
+  // usually returns title + ONE main image + a short description. Set to false
+  // to disable the no-server fallback entirely.
+  enableLinkPreview: true
 };
 // True only when a real Google Maps key has been provided.
 function hasMapsKey() { var k = CONFIG.mapsApiKey; return !!k && k.indexOf('YOUR_') !== 0 && k.length > 20; }
@@ -1015,6 +1020,8 @@ function hasMapsKey() { var k = CONFIG.mapsApiKey; return !!k && k.indexOf('YOUR
 function hasGoogleAuth() { var c = CONFIG.googleClientId; return !!c && c.indexOf('YOUR_') !== 0 && c.indexOf('.apps.googleusercontent.com') > 0; }
 // True only when a Google Apps Script enrichment endpoint has been configured.
 function hasEnrichApi() { var u = CONFIG.enrichApiUrl; return !!u && /^https:\/\/script\.google\.com\/macros\/s\/.+\/exec/.test(u); }
+// Enrichment is possible via the Apps Script proxy OR the link-preview fallback.
+function enrichEnabled() { return hasEnrichApi() || !!CONFIG.enableLinkPreview; }
 
 /* ============================================================
    PWA INSTALL
@@ -1861,8 +1868,34 @@ function refreshAfterEnrich() {
   applyAllFilters(true);
 }
 
+/* Normalise either provider's response into { ok, title, images:[url], description:[line] }. */
+function normalizeEnrich(d, src) {
+  if (!d) return null;
+  if (src === 'microlink') {
+    if (d.status !== 'success' || !d.data) return null;
+    var dd = d.data, imgs = [];
+    if (dd.image && dd.image.url) imgs.push(dd.image.url);
+    else if (dd.logo && dd.logo.url) imgs.push(dd.logo.url);
+    return { ok: true, title: dd.title || '', images: imgs, description: dd.description ? [dd.description] : [] };
+  }
+  return d; // Apps Script already returns our shape
+}
+
+/* Fetch enrichment via the Apps Script proxy if configured, else the
+   no-server link-preview service (Microlink). */
+function enrichFetch(url) {
+  if (hasEnrichApi()) {
+    return fetch(CONFIG.enrichApiUrl + '?url=' + encodeURIComponent(url))
+      .then(function(r) { return r.json(); })
+      .then(function(d) { return normalizeEnrich(d, 'apps'); });
+  }
+  return fetch('https://api.microlink.io/?url=' + encodeURIComponent(url))
+    .then(function(r) { return r.json(); })
+    .then(function(d) { return normalizeEnrich(d, 'microlink'); });
+}
+
 function enrichProductsFromSource() {
-  if (!hasEnrichApi()) return;
+  if (!enrichEnabled()) return;
   var pending = products.filter(function(p) { return p.needsEnrich && p.sourceUrl; });
   if (!pending.length) return;
   var remaining = pending.length, changed = false;
@@ -1870,8 +1903,7 @@ function enrichProductsFromSource() {
   pending.forEach(function(p) {
     var cached = getEnrichCache(p.sourceUrl);
     if (cached) { applyEnrichment(p, cached); tick(true); return; }
-    fetch(CONFIG.enrichApiUrl + '?url=' + encodeURIComponent(p.sourceUrl))
-      .then(function(r) { return r.json(); })
+    enrichFetch(p.sourceUrl)
       .then(function(data) {
         if (data && data.ok !== false && (data.images && data.images.length || data.title || (data.description && data.description.length))) {
           setEnrichCache(p.sourceUrl, data); applyEnrichment(p, data); tick(true);
