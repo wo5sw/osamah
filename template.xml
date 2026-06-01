@@ -1844,27 +1844,66 @@ function isUsableProductImage(u) {
   return !/sprite|prime|logo|grey-pixel|transparent-pixel/i.test(u);
 }
 
+/* Build a {thumb,medium,full} image-set from a single source URL. */
+function toImgSet(u) { return { thumb: amzImg(u,'thumb'), medium: amzImg(u,'medium'), full: amzImg(u,'full') }; }
+
 function applyEnrichment(p, data) {
   if (!data) return;
   var usable = (data.images || []).filter(isUsableProductImage);
-  if (usable.length) {
-    var imgs = usable.map(function(u) { return { thumb: amzImg(u,'thumb'), medium: amzImg(u,'medium'), full: amzImg(u,'full') }; });
-    p.images = imgs; p.image = imgs[0].thumb; p.imageMedium = imgs[0].medium; p.imageFull = imgs[0].full;
+  var gallery = usable.length ? usable.map(toImgSet) : null;
+
+  // Description (feature bullets) → applied to product + all variants if empty.
+  var dl = null;
+  if (data.description && data.description.length) {
+    dl = (Array.isArray(data.description) ? data.description : String(data.description).split('\n'))
+      .map(function(s) { return String(s).trim(); }).filter(Boolean);
+    if (!dl.length) dl = null;
+  }
+
+  // Clean, de-duplicate the colour list (each with its own usable swatch image).
+  var colors = [];
+  if (data.colors && data.colors.length) {
+    var seenC = {};
+    data.colors.forEach(function(c) {
+      var nm = (c && c.name ? String(c.name) : '').trim();
+      if (!nm || seenC[nm]) return; seenC[nm] = true;
+      colors.push({ name: nm, image: (c.image && isUsableProductImage(c.image)) ? c.image : '' });
+    });
+  }
+
+  if (colors.length >= 2) {
+    // Multi-colour product: one variant per colour, each showing its own image.
+    p.variants = colors.map(function(c) {
+      var set = c.image ? toImgSet(c.image) : (gallery ? gallery[0] : null);
+      var imgs = c.image ? [toImgSet(c.image)] : (gallery || (p.images || []));
+      return {
+        color: c.name, shape: null, size: null,
+        price: p.price, oldPrice: p.oldPrice, sizes: null,
+        desc: dl || p.desc,
+        images: imgs,
+        image:      set ? set.thumb  : p.image,
+        imageMedium:set ? set.medium : p.imageMedium,
+        imageFull:  set ? set.full   : p.imageFull
+      };
+    });
+    var f = p.variants[0];
+    p.image = f.image; p.imageMedium = f.imageMedium; p.imageFull = f.imageFull;
+    p.images = f.images && f.images.length ? f.images : (gallery || p.images);
+  } else if (gallery) {
+    // Single-colour product: just attach the real gallery.
+    p.images = gallery; p.image = gallery[0].thumb; p.imageMedium = gallery[0].medium; p.imageFull = gallery[0].full;
     if (p.variants && p.variants.length) {
       p.variants.forEach(function(v) {
         if (!v.images || !v.images.length || (v.image && v.image.indexOf('placehold') >= 0)) {
-          v.images = imgs; v.image = imgs[0].thumb; v.imageMedium = imgs[0].medium; v.imageFull = imgs[0].full;
+          v.images = gallery; v.image = gallery[0].thumb; v.imageMedium = gallery[0].medium; v.imageFull = gallery[0].full;
         }
       });
     }
   }
-  if (data.description && data.description.length) {
-    var dl = (Array.isArray(data.description) ? data.description : String(data.description).split('\n'))
-      .map(function(s) { return String(s).trim(); }).filter(Boolean);
-    if (dl.length) {
-      if (!p.desc || !p.desc.length) p.desc = dl;
-      if (p.variants) p.variants.forEach(function(v) { if (!v.desc || !v.desc.length) v.desc = dl; });
-    }
+
+  if (dl) {
+    if (!p.desc || !p.desc.length) p.desc = dl;
+    if (p.variants) p.variants.forEach(function(v) { if (!v.desc || !v.desc.length) v.desc = dl; });
   }
   if ((!p.title || !p.title.trim()) && data.title) p.title = data.title;
   p.needsEnrich = false;

@@ -61,7 +61,7 @@ function doGet(e) {
 }
 
 function parseProduct(html) {
-  var res = { title: '', images: [], description: [] };
+  var res = { title: '', images: [], description: [], colors: [] };
 
   /* ---- TITLE ---- */
   var m = html.match(/<span[^>]*id="productTitle"[^>]*>([\s\S]*?)<\/span>/i);
@@ -115,6 +115,34 @@ function parseProduct(html) {
     var ogd = html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i)
            || html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i);
     if (ogd) res.description.push(clean(ogd[1]));
+  }
+
+  /* ---- COLOURS (twister swatches: name + that colour's own image) ---- */
+  var seenCol = {};
+  function addColor(name, img) {
+    name = clean(name).replace(/^(?:اختيار اللون|اختر|انقر لاختيار|اللون|Select|Click to select|Color|Colour)\s*[:\-]?\s*/i, '').trim();
+    if (!name || seenCol[name.toLowerCase()]) return;
+    seenCol[name.toLowerCase()] = true;
+    res.colors.push({ name: name, image: img || '' });
+  }
+  // The colour twister block (desktop or inline-twister layout).
+  var tw = html.match(/id="variation_color_name"[\s\S]*?<\/ul>/i)
+        || html.match(/id="inline-twister-row-color_name"[\s\S]*?<\/ul>/i)
+        || html.match(/id="twister"[\s\S]*?<\/ul>/i);
+  if (tw) {
+    var lis = tw[0].match(/<li[\s\S]*?<\/li>/gi) || [];
+    lis.forEach(function (li) {
+      var imM = li.match(/<img[^>]+src=["'](https:[^"']*\/images\/I\/[^"']+?)["']/i);
+      var nm = (li.match(/<img[^>]+alt=["']([^"']*)["']/i) || [])[1]
+            || (li.match(/title=["']([^"']*)["']/i) || [])[1]
+            || (li.match(/data-csa-c-item-id=["'][^"']*["'][^>]*>([^<]+)</i) || [])[1] || '';
+      if (nm) addColor(nm, imM ? imM[1] : '');
+    });
+  }
+  // Fallback: canonical colour names from the variation map (no per-colour image).
+  if (res.colors.length < 2) {
+    var vv = html.match(/"variationValues"\s*:\s*\{[^{}]*?"color_name"\s*:\s*\[([^\]]+)\]/i);
+    if (vv) (vv[1].match(/"([^"]+)"/g) || []).forEach(function (s) { addColor(s.replace(/"/g, ''), ''); });
   }
 
   return res;
