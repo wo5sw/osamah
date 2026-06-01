@@ -1020,8 +1020,8 @@ function hasMapsKey() { var k = CONFIG.mapsApiKey; return !!k && k.indexOf('YOUR
 function hasGoogleAuth() { var c = CONFIG.googleClientId; return !!c && c.indexOf('YOUR_') !== 0 && c.indexOf('.apps.googleusercontent.com') > 0; }
 // True only when a Google Apps Script enrichment endpoint has been configured.
 function hasEnrichApi() { var u = CONFIG.enrichApiUrl; return !!u && /^https:\/\/script\.google\.com\/macros\/s\/.+\/exec/.test(u); }
-// Enrichment is possible via the Apps Script proxy OR the link-preview fallback.
-function enrichEnabled() { return hasEnrichApi() || !!CONFIG.enableLinkPreview; }
+// Enrichment is always active: tries CORS proxies then Microlink, no setup needed.
+function enrichEnabled() { return true; }
 
 /* ============================================================
    PWA INSTALL
@@ -1916,6 +1916,51 @@ function refreshAfterEnrich() {
   applyAllFilters(true);
 }
 
+/* ---- Client-side Amazon HTML parser (mirrors amazon-proxy.gs) ---- */
+function _cleanHtml(s) {
+  return String(s||'').replace(/<[^>]+>/g,' ')
+    .replace(/&nbsp;/gi,' ').replace(/&amp;/gi,'&').replace(/&quot;/gi,'"')
+    .replace(/&#39;/gi,"'").replace(/&apos;/gi,"'").replace(/&lt;/gi,'<').replace(/&gt;/gi,'>')
+    .replace(/\s+/g,' ').trim();
+}
+function parseProductHtml(html) {
+  var res = { ok: true, title: '', images: [], description: [], colors: [] };
+  var m = html.match(/<span[^>]*id="productTitle"[^>]*>([\s\S]*?)<\/span>/i);
+  if (m) res.title = _cleanHtml(m[1]);
+  if (!res.title) { var og=html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i); if(og) res.title=_cleanHtml(og[1]); }
+  var seen={}, imgs=[];
+  function addImg(u) {
+    if(!u) return;
+    u=u.replace(/\\u002F/gi,'/').replace(/\\\//g,'/');
+    if(u.indexOf('media-amazon.com/images/I/')<0 && u.indexOf('images-amazon.com/images/I/')<0) return;
+    if(/sprite|icon|grey-pixel|transparent-pixel/i.test(u)) return;
+    var idm=u.match(/\/images\/I\/([^.\/]+)/); var id=idm?idm[1]:u;
+    if(seen[id]) return; seen[id]=true;
+    imgs.push(u.replace(/\._[A-Z0-9,_]+_\.(jpg|jpeg|png|webp)/i,'.$1'));
+  }
+  var re,x;
+  re=/"hiRes":"(https:[^"]+?)"/g;   while((x=re.exec(html))) addImg(x[1]);
+  re=/"large":"(https:[^"]+?)"/g;   while((x=re.exec(html))) addImg(x[1]);
+  re=/"mainUrl":"(https:[^"]+?)"/g; while((x=re.exec(html))) addImg(x[1]);
+  re=/data-a-dynamic-image=["'](\{[^"']+\})["']/g;
+  while((x=re.exec(html))){ var j=x[1].replace(/&quot;/g,'"'); var rr=/(https:[^"]+?)":\s*\[/g,y; while((y=rr.exec(j))) addImg(y[1]); }
+  if(!imgs.length){ var ogi=html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i); if(ogi) addImg(ogi[1]); }
+  res.images=imgs.slice(0,8);
+  var fb=html.match(/id="feature-bullets"[\s\S]*?<\/ul>/i);
+  if(fb){ var lis=fb[0].match(/<span[^>]*class="a-list-item"[^>]*>([\s\S]*?)<\/span>/gi)||[]; lis.forEach(function(li){ var t=_cleanHtml(li); if(t&&t.length>1&&res.description.indexOf(t)<0) res.description.push(t); }); }
+  if(!res.description.length){ var ogd=html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i)||html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i); if(ogd) res.description.push(_cleanHtml(ogd[1])); }
+  var seenCol={};
+  function addColor(name,img){
+    name=_cleanHtml(name).replace(/^(?:اختيار اللون|اختر|انقر لاختيار|اللون|Select|Click to select|Color|Colour)\s*[:\-]?\s*/i,'').trim();
+    if(!name||seenCol[name.toLowerCase()]) return; seenCol[name.toLowerCase()]=true;
+    res.colors.push({name:name,image:img||''});
+  }
+  var tw=html.match(/id="variation_color_name"[\s\S]*?<\/ul>/i)||html.match(/id="inline-twister-row-color_name"[\s\S]*?<\/ul>/i)||html.match(/id="twister"[\s\S]*?<\/ul>/i);
+  if(tw){ var tlis=tw[0].match(/<li[\s\S]*?<\/li>/gi)||[]; tlis.forEach(function(li){ var imM=li.match(/<img[^>]+src=["'](https:[^"']*\/images\/I\/[^"']+?)["']/i); var nm=(li.match(/<img[^>]+alt=["']([^"']*)["']/i)||[])[1]||(li.match(/title=["']([^"']*)["']/i)||[])[1]||''; if(nm) addColor(nm,imM?imM[1]:''); }); }
+  if(res.colors.length<2){ var vv=html.match(/"variationValues"\s*:\s*\{[^{}]*?"color_name"\s*:\s*\[([^\]]+)\]/i); if(vv) (vv[1].match(/"([^"]+)"/g)||[]).forEach(function(s){addColor(s.replace(/"/g,''),'');}); }
+  return res;
+}
+
 /* Normalise either provider's response into { ok, title, images:[url], description:[line] }. */
 function normalizeEnrich(d, src) {
   if (!d) return null;
@@ -1923,23 +1968,45 @@ function normalizeEnrich(d, src) {
     if (d.status !== 'success' || !d.data) return null;
     var dd = d.data, imgs = [];
     if (dd.image && dd.image.url) imgs.push(dd.image.url);
-    else if (dd.logo && dd.logo.url) imgs.push(dd.logo.url);
-    return { ok: true, title: dd.title || '', images: imgs, description: dd.description ? [dd.description] : [] };
+    return { ok: true, title: dd.title || '', images: imgs, description: dd.description ? [dd.description] : [], colors: [] };
   }
-  return d; // Apps Script already returns our shape
+  return d;
 }
 
-/* Fetch enrichment via the Apps Script proxy if configured, else the
-   no-server link-preview service (Microlink). */
+/* Fetch product data:
+   1. Apps Script proxy (if enrichApiUrl configured) — best: real photos + colours
+   2. corsproxy.io  free CORS proxy → parse HTML client-side
+   3. allorigins.win free CORS proxy → parse HTML client-side
+   4. Microlink      og: metadata only (title + 1 image, no colours)               */
 function enrichFetch(url) {
+  var enc = encodeURIComponent(url);
   if (hasEnrichApi()) {
-    return fetch(CONFIG.enrichApiUrl + '?url=' + encodeURIComponent(url))
-      .then(function(r) { return r.json(); })
-      .then(function(d) { return normalizeEnrich(d, 'apps'); });
+    return fetch(CONFIG.enrichApiUrl + '?url=' + enc)
+      .then(function(r){return r.json();})
+      .then(function(d){return normalizeEnrich(d,'apps');});
   }
-  return fetch('https://api.microlink.io/?url=' + encodeURIComponent(url))
-    .then(function(r) { return r.json(); })
-    .then(function(d) { return normalizeEnrich(d, 'microlink'); });
+  var proxies = [
+    {u:'https://corsproxy.io/?'+enc, json:false},
+    {u:'https://api.allorigins.win/get?url='+enc, json:true}
+  ];
+  function tryProxy(i) {
+    if (i >= proxies.length) {
+      return fetch('https://api.microlink.io/?url='+enc)
+        .then(function(r){return r.json();})
+        .then(function(d){return normalizeEnrich(d,'microlink');});
+    }
+    var p = proxies[i];
+    return fetch(p.u)
+      .then(function(r){ if(!r.ok) throw new Error('http '+r.status); return r.text(); })
+      .then(function(txt){
+        var html = p.json ? (function(){try{return JSON.parse(txt).contents||txt;}catch(e){return txt;}}()) : txt;
+        var data = parseProductHtml(html);
+        if(data && (data.images.length || data.title)) return data;
+        throw new Error('empty');
+      })
+      .catch(function(){return tryProxy(i+1);});
+  }
+  return tryProxy(0);
 }
 
 function enrichProductsFromSource() {
