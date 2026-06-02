@@ -1671,19 +1671,36 @@ function fetchProducts() {
           var lines = cleanText.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l && !/^\.{3,}$/.test(l); });
 
           var vPrice = null, vOldPrice = null, vColor = null, vShape = null, vSize = null, vDesc = [], vSizes = null;
+          var pendingPrices = [], pendingSizes = [], collectMode = null;
           lines.forEach(function(rawLine) {
             // Normalise so parsing is forgiving of how the merchant typed it:
             //  - Arabic-Indic digits ٠-٩ → 0-9   - Arabic colon ：/فاصلة → standard
             //  - collapse repeated spaces        - strip a leading bullet (•, -, *)
             var line = toEnNum(rawLine).replace(/：/g,':').replace(/[•▪◦*]\s*/,'').replace(/\s{2,}/g,' ').trim();
             if (!line) return;
-            // A flexible number token: 1000 / 1,000 / 99.50 / ١٢٣ (already converted)
             var NUM = '([0-9][0-9.,]*)';
             // Optional separator after a label: ":", "-", ".", "=", Arabic comma, or just space
             var SEP = '\\s*[:\\-.=،,]?\\s*';
-            // Skip standalone empty headers (label with no value)
-            if (/^(?:الحجم|الأحجام|المقاس|المقاسات|Size|Sizes)\s*[:\-.]?\s*$/i.test(line)) return;
-            if (/^(?:السعر|سعر|الثمن|Price|Cost)\s*[:\-.]?\s*$/i.test(line)) return;
+
+            // Detect a keyword label (always stops collection modes)
+            var isLabel = /^(?:السعر|سعر|الثمن|Price|Cost|السعر القديم|سعر قديم|السعر قبل|قبل الخصم|Old Price|Was|الحجم|الأحجام|المقاس|المقاسات|Size|Sizes|اللون|Color|Colour|الشكل|شكل|Shape|التقييم|تقييم|Rating|عدد التقييمات|عدد المراجعات|Reviews|Ratings|النوع|الاسم|الخيار|Type|Variant)\b/i.test(line);
+            // Detect a "pure price" line: starts with digit, optional currency/discount suffix
+            var priceM = line.match(/^([0-9][0-9,.]*)(?:\s*(?:ريال|SAR|SR|ر\.س|رس|riyal|ryal|\$|€|USD))?(?:\s*[-+]\s*\d+%?)?\s*$/i);
+
+            // Handle active collection modes first
+            if (collectMode === 'prices') {
+              if (priceM && !isLabel) { pendingPrices.push(parsePrice(priceM[1])); return; }
+              collectMode = null; // line doesn't look like a price → exit price mode and fall through
+            }
+            if (collectMode === 'sizes') {
+              if (!isLabel && !priceM && line.length <= 50) { pendingSizes.push(rawLine.trim()); return; }
+              collectMode = null; // exit size mode and fall through
+            }
+
+            // Standalone label headers → start list-collection mode
+            if (/^(?:السعر|سعر|الثمن|Price|Cost)\s*[:\-.]?\s*$/i.test(line)) { collectMode = 'prices'; return; }
+            if (/^(?:الحجم|الأحجام|المقاس|المقاسات|Size|Sizes)\s*[:\-.]?\s*$/i.test(line)) { collectMode = 'sizes'; return; }
+
             // SIZE=PRICE pairs e.g. 2yrs=330  S=99  (also accepts ":" as separator)
             var szm = line.match(/^([^\s=:،,؛]+)\s*[=:]\s*([0-9][0-9.,]*)\s*$/);
             if (szm && /[0-9]/.test(szm[2]) && !/^(?:السعر|سعر|الثمن|Price|التقييم|Rating|اللون|Color|الشكل|Shape)$/i.test(szm[1].trim())) {
@@ -1712,6 +1729,19 @@ function fetchProducts() {
             if (vnm) { if (!vColor) vColor = vnm[1].trim(); return; }
             vDesc.push(rawLine);
           });
+
+          // Merge collected price-list + size-list into SIZE=PRICE pairs (positional)
+          if (pendingPrices.length >= 2 && pendingSizes.length >= 2) {
+            if (!vSizes) vSizes = [];
+            var pairCount = Math.min(pendingPrices.length, pendingSizes.length);
+            for (var pi = 0; pi < pairCount; pi++) {
+              vSizes.push({ label: pendingSizes[pi], price: pendingPrices[pi] });
+            }
+          } else if (pendingPrices.length === 1 && vPrice === null) {
+            vPrice = pendingPrices[0];
+          } else if (pendingPrices.length >= 2 && vPrice === null) {
+            vPrice = pendingPrices[0];
+          }
           // If sizes provided, derive base price from first size
           if (vSizes && vSizes.length > 0 && vPrice === null) vPrice = vSizes[0].price;
           // Build a smart variant identifier from color + shape + size
