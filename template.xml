@@ -290,14 +290,14 @@ header.hide-header{transform:translateY(-100%);}
 .pp-secure{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--success);font-weight:800;margin-top:4px;}
 
 /* ZOOM LIGHTBOX */
-#zoom-overlay{display:none;position:fixed;inset:0;background:rgba(15,17,17,.92);z-index:99900;justify-content:center;align-items:center;opacity:0;transition:opacity .25s;cursor:zoom-out;}
+#zoom-overlay{display:none;position:fixed;inset:0;background:rgba(15,17,17,.92);z-index:1000900;justify-content:center;align-items:center;opacity:0;transition:opacity .25s;cursor:zoom-out;}
 #zoom-overlay.active{display:flex;opacity:1;}
 #zoom-overlay.fading{opacity:0;}
 #zoom-img{max-width:92vw;max-height:88vh;object-fit:contain;background:#fff;border-radius:4px;transform-origin:center;transition:transform .2s ease;cursor:grab;user-select:none;-webkit-user-drag:none;box-shadow:0 20px 50px rgba(0,0,0,.5);}
 #zoom-img.drag{cursor:grabbing;transition:none;}
-#zoom-close{position:fixed;top:14px;right:16px;width:40px;height:40px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:50%;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:99901;transition:var(--t);}
+#zoom-close{position:fixed;top:14px;right:16px;width:40px;height:40px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:50%;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:1000901;transition:var(--t);}
 #zoom-close:hover{background:var(--price-deal);transform:rotate(90deg);}
-#zoom-ctrl{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);display:flex;gap:8px;align-items:center;background:rgba(0,0,0,.65);border:1px solid rgba(255,255,255,.2);border-radius:50px;padding:6px 14px;z-index:99901;}
+#zoom-ctrl{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);display:flex;gap:8px;align-items:center;background:rgba(0,0,0,.65);border:1px solid rgba(255,255,255,.2);border-radius:50px;padding:6px 14px;z-index:1000901;}
 .z-btn{background:rgba(255,255,255,.1);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:var(--t);}
 .z-btn:hover{background:var(--btn-orange);}
 #zoom-pct{color:rgba(255,255,255,.85);font-size:12px;min-width:38px;text-align:center;font-weight:700;}
@@ -2726,12 +2726,11 @@ function submitOrderFromSheet() {
     orderHistory.unshift(order); if (orderHistory.length > 20) orderHistory.pop(); saveHistory();
 
     hidePayProcessing();
-    window.open('https://wa.me/' + CONFIG.whatsapp + '?text=' + encodeURIComponent(msg), '_blank');
     cart = []; saveCart();
     checkoutFormVisible = false; checkoutPrefillAddr = null;
     closeCartSheet(); closeModal('cart-modal'); updateCartUI();
-    toast('تم تحويلك للواتساب لإرسال الطلب! ✅', 'success');
     if (btn) { btn.innerHTML = orig; btn.disabled = false; btn.style.opacity = '1'; }
+    window.location.href = 'https://wa.me/' + CONFIG.whatsapp + '?text=' + encodeURIComponent(msg);
   }, 1500);
 }
 
@@ -2881,17 +2880,16 @@ function submitOrder() {
     saveHistory();
 
     hidePayProcessing();
-    window.open('https://wa.me/' + CONFIG.whatsapp + '?text=' + encodeURIComponent(msg), '_blank');
     cart = []; saveCart();
     checkoutFormVisible = false; checkoutPrefillAddr = null;
     closeCartSheet(); closeModal('cart-modal'); updateCartUI();
-    toast('تم تحويلك للواتساب لإرسال الطلب! ✅', 'success');
     if (btn) { btn.innerHTML = orig; btn.disabled = false; btn.style.opacity = '1'; }
+    window.location.href = 'https://wa.me/' + CONFIG.whatsapp + '?text=' + encodeURIComponent(msg);
   }, 800);
 }
 
 function doCall()      { closeModal('contact-modal'); window.location.href = 'tel:' + CONFIG.phone; }
-function doWhatsapp()  { closeModal('contact-modal'); window.open('https://wa.me/' + CONFIG.whatsapp + '?text=' + encodeURIComponent('مرحباً، لدي استفسار بخصوص المتجر.'), '_blank'); }
+function doWhatsapp()  { closeModal('contact-modal'); window.location.href = 'https://wa.me/' + CONFIG.whatsapp + '?text=' + encodeURIComponent('مرحباً، لدي استفسار بخصوص المتجر.'); }
 
 /* ============================================================
    GOOGLE AUTH
@@ -3054,6 +3052,10 @@ function resetZoom()  { zScale=1; zTx=0; zTy=0; applyZoomTransform(); }
    TOAST
    ============================================================ */
 function toast(msg, type, durationInSeconds) {
+  // Confirmation notifications (Add to Cart, Add Product, saved, etc.) are
+  // disabled by request. Only validation warnings are still shown so the
+  // checkout form can still guide the customer.
+  if (type === 'success') return;
   var wrap = document.getElementById('toast-wrap'); if(!wrap) return;
   var ms = durationInSeconds ? durationInSeconds * 1000 : 3000;
   var t = document.createElement('div');
