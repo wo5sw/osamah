@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Store Bro — منشئ المنتج</title>
+<style>
+:root{--pr:#2563eb;--pr2:#1d4ed8;--red:#dc2626;--green:#16a34a;--bg:#f1f5f9;--card:#fff;--bord:#e2e8f0;--txt:#1e293b;--txt2:#64748b;--r:12px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Tahoma,Arial,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;}
+.hdr{background:var(--pr);color:#fff;padding:14px 20px;position:sticky;top:0;z-index:99;box-shadow:0 2px 10px rgba(0,0,0,.2);display:flex;align-items:center;gap:12px;}
+.hdr h1{font-size:19px;font-weight:800;}
+.hdr p{font-size:12px;opacity:.85;margin-top:2px;}
+.main{max-width:780px;margin:0 auto;padding:20px 14px 80px;}
+.card{background:var(--card);border-radius:var(--r);border:1px solid var(--bord);padding:20px;margin-bottom:14px;}
+.ct{font-size:15px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+label{display:block;font-size:12px;font-weight:700;color:var(--txt2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;}
+input[type=text],input[type=number],input[type=url],textarea,select{width:100%;border:1.5px solid var(--bord);border-radius:8px;padding:10px 12px;font-size:14px;font-family:inherit;color:var(--txt);background:#fff;outline:none;transition:border-color .2s;}
+input:focus,textarea:focus{border-color:var(--pr);}
+textarea{resize:vertical;min-height:80px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.f{margin-bottom:14px;}
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:8px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;border:none;transition:.15s;}
+.bp{background:var(--pr);color:#fff;} .bp:hover{background:var(--pr2);}
+.bg{background:transparent;color:var(--txt2);border:1.5px solid var(--bord);} .bg:hover{border-color:var(--pr);color:var(--pr);}
+.br{background:transparent;color:var(--red);border:1.5px solid #fca5a5;padding:5px 10px;font-size:12px;} .br:hover{background:#fef2f2;}
+.bsm{padding:7px 12px;font-size:13px;}
+/* Variant card */
+.vc{border:1.5px solid var(--bord);border-radius:var(--r);padding:18px;margin-bottom:12px;background:#fafafa;}
+.vc:first-child{border-color:#93c5fd;background:#eff6ff;}
+.vh{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.vlbl{font-weight:800;color:var(--pr);font-size:14px;}
+/* Size rows */
+.sr{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+.sr input{flex:1;}
+/* Image rows */
+.ir{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+.ir input{flex:1;}
+.iprev{width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid var(--bord);display:none;flex-shrink:0;}
+/* Add variant btn */
+.av{width:100%;padding:14px;border:2px dashed var(--bord);border-radius:var(--r);background:transparent;color:var(--txt2);font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;transition:.15s;margin-bottom:16px;}
+.av:hover{border-color:var(--pr);color:var(--pr);background:#eff6ff;}
+/* Output */
+#out-wrap{display:none;margin-top:16px;}
+#out{width:100%;min-height:220px;font-family:'Courier New',monospace;font-size:12px;background:#0f172a;color:#e2e8f0;border:none;border-radius:var(--r);padding:16px;resize:vertical;direction:ltr;}
+.note{font-size:12px;color:var(--txt2);margin-top:10px;line-height:1.6;background:#fef9c3;padding:10px 12px;border-radius:8px;border-right:3px solid #facc15;}
+/* Steps */
+.steps{display:flex;flex-direction:column;gap:6px;margin-top:12px;}
+.step{display:flex;gap:10px;align-items:flex-start;font-size:13px;}
+.step-num{background:var(--pr);color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;margin-top:1px;}
+.tag{background:#dbeafe;color:#1d4ed8;font-size:10px;font-weight:800;padding:1px 7px;border-radius:20px;}
+hr{border:none;border-top:2px dashed var(--bord);margin:20px 0;}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <span style="font-size:26px">🛍️</span>
+  <div>
+    <h1>Store Bro — منشئ المنتج</h1>
+    <p>أنشئ مشاركة Blogger في ثوانٍ بدون كتابة كود</p>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- Basic info -->
+<div class="card">
+  <div class="ct">📦 معلومات المنتج</div>
+  <div class="f">
+    <label>عنوان المنتج <span class="tag">مطلوب</span></label>
+    <input type="text" id="ptitle" placeholder="مثال: جوال آيفون 17 برو ماكس" />
+  </div>
+  <div class="f">
+    <label>التصنيف / الفئة <span style="font-size:11px;font-weight:400;color:var(--txt2)">(أضفه كـ Label في Blogger أيضاً)</span></label>
+    <input type="text" id="pcat" placeholder="مثال: ايفون، سامسونج، ملابس..." />
+  </div>
+  <div class="g2">
+    <div class="f">
+      <label>التقييم (اختياري)</label>
+      <input type="number" id="prating" min="0" max="5" step="0.1" placeholder="مثال: 4.8" />
+    </div>
+    <div class="f">
+      <label>عدد التقييمات (اختياري)</label>
+      <input type="number" id="pratcount" placeholder="مثال: 1240" />
+    </div>
+  </div>
+</div>
+
+<!-- Variants -->
+<div id="vc"></div>
+<button class="av" onclick="addV()">＋ إضافة لون / خيار جديد</button>
+
+<hr>
+
+<!-- Generate -->
+<button class="btn bp" style="width:100%;padding:15px;font-size:16px;justify-content:center;" onclick="gen()">
+  ⚡ إنشاء كود المنشور
+</button>
+
+<!-- Output -->
+<div id="out-wrap">
+  <div class="card" style="margin-top:0;">
+    <div class="ct" style="justify-content:space-between;">
+      <span>📋 كود المنشور — انسخه في Blogger</span>
+      <button class="btn bg bsm" id="cbtn" onclick="copyOut()">نسخ الكود</button>
+    </div>
+    <textarea id="out" readonly></textarea>
+    <div class="note">
+      <strong>كيف تضيفه في Blogger؟</strong>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><span>افتح Blogger → مشاركة جديدة</span></div>
+        <div class="step"><div class="step-num">2</div><span>اكتب عنوان المنتج في حقل <b>العنوان</b></span></div>
+        <div class="step"><div class="step-num">3</div><span>أضف <b>التصنيف / Label</b> من الشريط الجانبي</span></div>
+        <div class="step"><div class="step-num">4</div><span>اضغط أيقونة <b>HTML ‹›</b> في شريط المحرر</span></div>
+        <div class="step"><div class="step-num">5</div><span>احذف أي نص موجود والصق الكود هنا</span></div>
+        <div class="step"><div class="step-num">6</div><span>اضغط <b>تحديث</b> ثم <b>نشر</b></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+var vc=0, uid=function(){return Date.now()+Math.random().toString(36).slice(2,6);};
+
+function addV(){
+  vc++;
+  var i=vc;
+  var wrap=document.getElementById('vc');
+  var d=document.createElement('div');
+  d.className='vc'; d.id='v'+i;
+  d.innerHTML=
+    '<div class="vh"><span class="vlbl">🎨 اللون / الخيار #'+i+'</span>'
+    +(i>1?'<button class="btn br" onclick="rmV('+i+')">✕ حذف</button>':'')
+    +'</div>'
+    +'<div class="f"><label>اسم اللون / الخيار</label>'
+    +'<input type="text" id="vc'+i+'-color" placeholder="مثال: كوزميك اورانج، أزرق داكن، أسود، مقاس L..." /></div>'
+    +'<div class="f"><label>الوصف</label>'
+    +'<textarea id="vc'+i+'-desc" placeholder="اكتب وصف المنتج هنا..."></textarea></div>'
+    +'<div class="f"><label>الصور <span style=\'font-size:11px;font-weight:400;color:var(--txt2)\'>(ارفع الصورة في Blogger → Image → انسخ الرابط → الصقه هنا)</span></label>'
+    +'<div id="vc'+i+'-imgs"></div>'
+    +'<button class="btn bg bsm" onclick="addImg('+i+')" style="margin-top:6px;">＋ صورة</button></div>'
+    +'<div class="f"><label>الأحجام والأسعار <span style=\'font-size:11px;font-weight:400;color:var(--txt2)\'>(اترك الحجم فارغاً إن كان سعراً واحداً فقط)</span></label>'
+    +'<div id="vc'+i+'-sizes"></div>'
+    +'<button class="btn bg bsm" onclick="addSz('+i+')" style="margin-top:6px;">＋ حجم / مقاس</button></div>'
+    +'<div class="g2">'
+    +'<div class="f"><label>السعر القديم (للخصم)</label><input type="number" id="vc'+i+'-oldp" placeholder="اتركه فارغاً إن لم يكن هناك خصم" /></div>'
+    +'<div class="f"><label>سطر إضافي (اختياري)</label><input type="text" id="vc'+i+'-extra" placeholder="مثال: شامل الضريبة" /></div>'
+    +'</div>';
+  wrap.appendChild(d);
+  addSz(i);
+  addImg(i);
+}
+
+function rmV(i){ var e=document.getElementById('v'+i); if(e) e.remove(); }
+
+function addSz(i){
+  var c=document.getElementById('vc'+i+'-sizes');
+  var rid='s'+uid();
+  var r=document.createElement('div'); r.className='sr'; r.id=rid;
+  r.innerHTML='<input type="text" placeholder="الحجم / المقاس (مثال: GB 256، L، كبير، ذهبي...)" />'
+    +'<input type="number" placeholder="السعر (ريال)" style="max-width:130px;" />'
+    +'<button class="btn br" onclick="document.getElementById(\''+rid+'\').remove()">✕</button>';
+  c.appendChild(r);
+}
+
+function addImg(i){
+  var c=document.getElementById('vc'+i+'-imgs');
+  var rid='ir'+uid();
+  var r=document.createElement('div'); r.className='ir'; r.id=rid;
+  r.innerHTML='<input type="url" placeholder="https://... رابط الصورة" oninput="prevImg(this)" />'
+    +'<img class="iprev" />'
+    +'<button class="btn br" onclick="document.getElementById(\''+rid+'\').remove()">✕</button>';
+  c.appendChild(r);
+}
+
+function prevImg(inp){
+  var img=inp.nextElementSibling;
+  if(!img||!inp.value) return;
+  img.src=inp.value; img.style.display='block';
+  img.onerror=function(){img.style.display='none';};
+}
+
+function gen(){
+  var title=document.getElementById('ptitle').value.trim();
+  if(!title){alert('يرجى كتابة عنوان المنتج أولاً');return;}
+
+  var rating=(document.getElementById('prating').value||'').trim();
+  var ratcount=(document.getElementById('pratcount').value||'').trim();
+  var globalLines=[];
+  if(rating)   globalLines.push('التقييم: '+rating);
+  if(ratcount) globalLines.push('عدد التقييمات: '+ratcount);
+
+  var sections=[];
+  document.querySelectorAll('.vc').forEach(function(card){
+    var i=card.id.replace('v','');
+    var color=(document.getElementById('vc'+i+'-color')||{value:''}).value.trim();
+    var desc =(document.getElementById('vc'+i+'-desc') ||{value:''}).value.trim();
+    var oldp =(document.getElementById('vc'+i+'-oldp') ||{value:''}).value.trim();
+    var extra=(document.getElementById('vc'+i+'-extra')||{value:''}).value.trim();
+
+    // sizes
+    var szLabels=[], szPrices=[];
+    card.querySelectorAll('.sr').forEach(function(row){
+      var ins=row.querySelectorAll('input');
+      var lbl=(ins[0]?ins[0].value.trim():'');
+      var prc=(ins[1]?ins[1].value.trim():'');
+      if(prc){szLabels.push(lbl);szPrices.push(prc);}
+    });
+
+    // images
+    var imgs=[];
+    card.querySelectorAll('.ir input[type=url]').forEach(function(inp){
+      var u=inp.value.trim(); if(u) imgs.push(u);
+    });
+
+    var lines=[];
+    if(color) lines.push('اللون: '+color);
+    if(desc){ lines.push('الوصف:'); lines.push(desc); }
+    if(oldp) lines.push('السعر القديم: '+oldp);
+    if(extra) lines.push(extra);
+
+    // Prices + Sizes
+    var hasSzLabels=szLabels.some(function(l){return !!l;});
+    if(szPrices.length===1 && !hasSzLabels){
+      lines.push('السعر: '+szPrices[0]);
+    } else if(szPrices.length>0){
+      lines.push('السعر:');
+      szPrices.forEach(function(p){lines.push(p);});
+      if(hasSzLabels){
+        lines.push('الحجم:');
+        szLabels.forEach(function(l,k){lines.push(l||('خيار '+(k+1)));});
+      }
+    }
+
+    // Build HTML
+    var html=lines.map(function(l){return '<div>'+esc(l)+'</div>';}).join('\n');
+    imgs.forEach(function(u){
+      html+='\n<div><a href="'+u+'"><img src="'+u+'" /></a></div>';
+    });
+
+    if(html.trim()) sections.push(html);
+  });
+
+  if(!sections.length){alert('يرجى إدخال بيانات على الأقل للخيار الأول');return;}
+
+  // Prepend global lines (rating) to first section
+  var prefix=globalLines.map(function(l){return '<div>'+esc(l)+'</div>';}).join('\n');
+  if(prefix) sections[0]=prefix+'\n'+sections[0];
+
+  var out=sections.join('\n<div>·····</div>\n');
+
+  document.getElementById('out').value=out;
+  var w=document.getElementById('out-wrap');
+  w.style.display='';
+  setTimeout(function(){w.scrollIntoView({behavior:'smooth',block:'start'});},100);
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function copyOut(){
+  var ta=document.getElementById('out');
+  ta.select();
+  try{document.execCommand('copy');}
+  catch(e){navigator.clipboard&&navigator.clipboard.writeText(ta.value);}
+  var b=document.getElementById('cbtn');
+  b.textContent='✅ تم النسخ!';
+  setTimeout(function(){b.textContent='نسخ الكود';},2500);
+}
+
+// Init with one variant
+addV();
+</script>
+</body>
+</html>
