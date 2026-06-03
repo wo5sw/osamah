@@ -994,7 +994,7 @@ var CONFIG = {
   storeName: 'Store Bro',
   freeShippingMin: 200,
   shippingFee: 25,
-  feedCacheKey: 'sp_feed_cache_v5',
+  feedCacheKey: 'sp_feed_cache_v6',
   feedCacheTTL: 300000,
   defaultCategory: 'الكل',
   // Leave as 'YOUR_GOOGLE_MAPS_API_KEY' to disable the map picker cleanly (manual
@@ -1622,7 +1622,7 @@ function fetchProducts() {
         } else { allCategories.add('عام'); }
 
         var rawHTML = (entry.content && entry.content.$t) || '';
-        var sections = rawHTML.replace(/&nbsp;|​/gi,' ').split(/(?:\s*(?:<[^>]+>\s*)*\.{5,})/);
+        var sections = rawHTML.replace(/&nbsp;|​/gi,' ').split(/(?:\s*(?:<[^>]+>\s*)*[.·•‧⋅·]{5,})/);
 
         var variants = [];
         var productRating = null, productRatingCount = null, publishedTs = 0;
@@ -1668,7 +1668,7 @@ function fetchProducts() {
 
           /* ---- TEXT / META EXTRACTION ---- */
           var cleanText = sec.replace(/<br\s*\/?>/gi,'\n').replace(/<\/p>|<\/div>|<\/h[1-6]>/gi,'\n').replace(/<[^>]+>/g,'');
-          var lines = cleanText.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l && !/^\.{3,}$/.test(l); });
+          var lines = cleanText.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l && !/^[.·•‧⋅]{3,}$/.test(l); });
 
           var vPrice = null, vOldPrice = null, vColor = null, vShape = null, vSize = null, vDesc = [], vSizes = null;
           var pendingPrices = [], pendingSizes = [], collectMode = null;
