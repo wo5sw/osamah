@@ -174,7 +174,11 @@ function addV(){
   d.className='vc'; d.id='v'+i;
   d.innerHTML=
     '<div class="vh"><span class="vlbl">🎨 اللون / الخيار #'+i+'</span>'
+    +'<div style="display:flex;gap:6px;align-items:center;">'
+    +'<button class="btn bg bsm" title="نسخ هذا الخيار" onclick="copyVariant('+i+')">📋</button>'
+    +'<button class="btn bg bsm" title="لصق خيار منسوخ هنا" onclick="pasteVariant('+i+')">📥</button>'
     +(i>1?'<button class="btn br" onclick="rmV('+i+')">✕ حذف</button>':'')
+    +'</div>'
     +'</div>'
     +'<div class="f"><label>اسم اللون / الخيار</label>'
     +'<input type="text" id="vc'+i+'-color" placeholder="مثال: كوزميك اورانج، أزرق داكن، مقاس L..." /></div>'
@@ -210,6 +214,83 @@ function addV(){
 }
 
 function rmV(i){ var e=document.getElementById('v'+i); if(e){e.remove(); delete varImgs[i];} }
+
+/* ── Per-variant copy / paste ── */
+var _copiedVariant = null;
+
+function readVariantData(i){
+  var szRows=[];
+  var szBox=document.getElementById('vc'+i+'-sizes');
+  if(szBox) szBox.querySelectorAll('.sr').forEach(function(row){
+    var ins=row.querySelectorAll('input');
+    szRows.push({label:ins[0]?ins[0].value:'', price:ins[1]?ins[1].value:''});
+  });
+  return {
+    color:(document.getElementById('vc'+i+'-color')||{value:''}).value,
+    desc: (document.getElementById('vc'+i+'-desc') ||{value:''}).value,
+    oldp: (document.getElementById('vc'+i+'-oldp') ||{value:''}).value,
+    extra:(document.getElementById('vc'+i+'-extra')||{value:''}).value,
+    sizes: szRows,
+    imgs: (varImgs[i]||[]).map(function(x){return {src:x.src,status:x.status||'ready'};})
+  };
+}
+
+function applyVariantData(i, v){
+  if(document.getElementById('vc'+i+'-color')) document.getElementById('vc'+i+'-color').value=v.color||'';
+  if(document.getElementById('vc'+i+'-desc'))  document.getElementById('vc'+i+'-desc').value =v.desc||'';
+  if(document.getElementById('vc'+i+'-oldp'))  document.getElementById('vc'+i+'-oldp').value =v.oldp||'';
+  if(document.getElementById('vc'+i+'-extra')) document.getElementById('vc'+i+'-extra').value=v.extra||'';
+  var szBox=document.getElementById('vc'+i+'-sizes');
+  if(szBox){
+    szBox.innerHTML='';
+    (v.sizes||[]).forEach(function(sz){
+      if(sz.price||sz.label){
+        addSz(i);
+        var rows=szBox.querySelectorAll('.sr'); var last=rows[rows.length-1];
+        if(last){ var ins=last.querySelectorAll('input'); if(ins[0])ins[0].value=sz.label||''; if(ins[1])ins[1].value=sz.price||''; }
+      }
+    });
+    if(!v.sizes||!v.sizes.length) addSz(i);
+  }
+  varImgs[i]=[];
+  (v.imgs||[]).forEach(function(im){
+    if(im.src && /^https?:\/\//.test(im.src))
+      varImgs[i].push({id:++imgSeq, src:im.src, status:'ready'});
+  });
+  renderThumbs(i);
+}
+
+function copyVariant(i){
+  _copiedVariant = readVariantData(i);
+  // Also push to clipboard as JSON for cross-session use
+  var json = JSON.stringify(_copiedVariant);
+  var done = function(ok){
+    showToast(ok ? '📋 تم نسخ الخيار — اضغط 📥 على أي خيار آخر للصق' : '📋 تم حفظ الخيار مؤقتاً — اضغط 📥 للصق', '#2563eb');
+  };
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(json).then(function(){done(true);},function(){done(false);});
+  } else { done(false); }
+}
+
+function pasteVariant(i){
+  // Try clipboard first (works cross-session), fall back to in-memory copy
+  if(navigator.clipboard&&navigator.clipboard.readText){
+    navigator.clipboard.readText().then(function(text){
+      var v=null;
+      try{ var p=JSON.parse(text); if(p&&typeof p.color!=='undefined') v=p; }catch(e){}
+      if(v) applyVariantData(i,v);
+      else if(_copiedVariant) applyVariantData(i,_copiedVariant);
+      else showToast('⚠️ لا يوجد خيار منسوخ — اضغط 📋 أولاً','#dc2626');
+      if(v||_copiedVariant) showToast('✅ تم لصق الخيار','#16a34a');
+    },function(){
+      if(_copiedVariant){ applyVariantData(i,_copiedVariant); showToast('✅ تم لصق الخيار','#16a34a'); }
+      else showToast('⚠️ لا يوجد خيار منسوخ — اضغط 📋 أولاً','#dc2626');
+    });
+  } else {
+    if(_copiedVariant){ applyVariantData(i,_copiedVariant); showToast('✅ تم لصق الخيار','#16a34a'); }
+    else showToast('⚠️ لا يوجد خيار منسوخ — اضغط 📋 أولاً','#dc2626');
+  }
+}
 
 function addSz(i){
   var c=document.getElementById('vc'+i+'-sizes');
