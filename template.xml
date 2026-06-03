@@ -994,7 +994,7 @@ var CONFIG = {
   storeName: 'Store Bro',
   freeShippingMin: 200,
   shippingFee: 25,
-  feedCacheKey: 'sp_feed_cache_v4',
+  feedCacheKey: 'sp_feed_cache_v5',
   feedCacheTTL: 300000,
   defaultCategory: 'الكل',
   // Leave as 'YOUR_GOOGLE_MAPS_API_KEY' to disable the map picker cleanly (manual
@@ -2184,7 +2184,7 @@ function renderDrawerSlider(images) {
   var track = document.getElementById('drawer-track');
   var dots  = document.getElementById('drawer-dots');
   track.innerHTML = images.map(function(img, idx) {
-    return '<img class="drawer-slide-img" loading="lazy" decoding="async" src="' + (img.medium||'') + '" onerror="this.src=\'https://placehold.co/800x800/f5f5f5/aaaaaa?text=Image+Not+Found\'" onclick="openZoom(\'' + (img.full||'').replace(/'/g,"\\'") + '\')" data-idx="' + idx + '"/>';
+    return '<img class="drawer-slide-img" decoding="sync" src="' + (img.medium||'') + '" onerror="this.src=\'https://placehold.co/800x800/f5f5f5/aaaaaa?text=Image+Not+Found\'" onclick="openZoom(\'' + (img.full||'').replace(/'/g,"\\'") + '\')" data-idx="' + idx + '"/>';
   }).join('');
   dots.innerHTML = images.length > 1 ? images.map(function(_,i) { return '<div class="dot' + (i===0?' active':'') + '" onclick="scrollToSlide(' + i + ')"></div>'; }).join('') : '';
   setTimeout(function() { track.scrollLeft = 0; }, 50);
@@ -2279,7 +2279,10 @@ function selectColor(pid, color, el) {
   var sv = variant.oldPrice ? (variant.oldPrice - variant.price).toFixed(2) : 0;
   var ob = document.getElementById('drawer-old-price-box');
   if (ob) ob.innerHTML = variant.oldPrice ? '<div class="drawer-old-price">' + (dv ? '<span class="disc">-' + dv + '%</span>' : '') + '<span class="lbl">السعر القائمة:</span><span class="old">' + formatPrice(variant.oldPrice) + ' ' + CONFIG.currency + '</span></div>' + (dv > 0 ? '<div class="drawer-savings">💰 توفّر ' + sv + ' ' + CONFIG.currency + '</div>' : '') : '';
-  renderDrawerSlider((variant.images && variant.images.length) ? variant.images : (p.images || []));
+  // Use this variant's images; walk other variants as fallback before p.images
+  var sliderImgs = (variant.images && variant.images.length) ? variant.images : null;
+  if (!sliderImgs) { for (var vi2=0;vi2<p.variants.length;vi2++){if(p.variants[vi2].color===color&&p.variants[vi2].images&&p.variants[vi2].images.length){sliderImgs=p.variants[vi2].images;break;}} }
+  renderDrawerSlider(sliderImgs || p.images || []);
   // Refresh variant meta (color/shape/size tags)
   var vmEl = document.getElementById('variant-meta');
   var newMeta = variantMetaHTML(variant);
