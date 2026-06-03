@@ -120,9 +120,12 @@ hr{border:none;border-top:2px dashed var(--bord);margin:20px 0;}
 <button class="av" onclick="addV()">＋ إضافة لون / خيار جديد</button>
 <hr>
 
-<div style="display:flex;gap:10px;margin-bottom:12px;">
+<div style="display:flex;gap:10px;margin-bottom:6px;">
   <button class="btn bg" style="flex:1;justify-content:center;gap:8px;" onclick="copySettings()">📋 نسخ الإعدادات</button>
-  <button class="btn bg" style="flex:1;justify-content:center;gap:8px;" onclick="pasteSettings()">📥 لصق الإعدادات</button>
+  <button class="btn bg" style="flex:1;justify-content:center;gap:8px;" onclick="pasteSettings()">📥 لصق / استيراد كود</button>
+</div>
+<div style="font-size:11.5px;color:var(--txt2);margin-bottom:14px;line-height:1.6;text-align:center;">
+  💡 «لصق / استيراد» يقبل الإعدادات المحفوظة <b>أو</b> كود منشور Blogger جاهز — فيُعاد بناء الفورم لتعدّل الصور أو أي شيء ثم تعيد التوليد.
 </div>
 
 <button class="btn bp" style="width:100%;padding:15px;font-size:16px;justify-content:center;" onclick="gen()">
@@ -548,7 +551,7 @@ function legacyCopyText(text){
 function pasteSettings(){
   if(navigator.clipboard&&navigator.clipboard.readText){
     navigator.clipboard.readText().then(function(text){
-      applySettings(text);
+      applyPasted(text);
     },function(){
       promptPaste();
     });
@@ -558,15 +561,110 @@ function pasteSettings(){
 }
 
 function promptPaste(){
-  var text=prompt('الصق الإعدادات المنسوخة هنا:');
-  if(text) applySettings(text);
+  var text=prompt('الصق هنا: إعدادات منسوخة أو كود منشور Blogger:');
+  if(text) applyPasted(text);
 }
 
-function applySettings(json){
-  var data;
-  try{ data=JSON.parse(json); }catch(e){ showToast('⚠️ البيانات غير صالحة — تأكد أنك نسخت الإعدادات كاملة','#dc2626'); return; }
-  if(!data||!data.variants){ showToast('⚠️ لم يُعثر على بيانات صالحة في الكود المنسوخ','#dc2626'); return; }
+// Auto-detect: JSON settings (starts with {) OR a Blogger post code (HTML/text)
+function applyPasted(text){
+  if(!text||!text.trim()){ showToast('⚠️ لم يتم لصق أي شيء','#dc2626'); return; }
+  var t=text.trim();
+  if(t.charAt(0)==='{'){
+    var data;
+    try{ data=JSON.parse(t); }catch(e){ showToast('⚠️ البيانات غير صالحة','#dc2626'); return; }
+    if(!data||!data.variants){ showToast('⚠️ لم يُعثر على بيانات صالحة','#dc2626'); return; }
+    applyData(data);
+    showToast('✅ تم استعادة الإعدادات بنجاح','#16a34a');
+  } else {
+    var parsed=importFromCode(t);
+    if(!parsed.variants.length){ showToast('⚠️ لم أتمكن من قراءة الكود — تأكد أنه كود منشور صحيح','#dc2626'); return; }
+    applyData(parsed);
+    showToast('✅ تم استيراد المنتج من الكود — عدّل ما تريد ثم أعد التوليد','#16a34a');
+  }
+}
 
+// Reverse-parse a Blogger post code back into the form data structure.
+// Mirrors the template's parser: sections split on ·····, list-mode prices/sizes.
+function importFromCode(raw){
+  var data={title:'',cat:'',rating:'',ratcount:'',variants:[]};
+  var toEn=function(s){return String(s).replace(/[٠-٩]/g,function(w){return '٠١٢٣٤٥٦٧٨٩'.indexOf(w);});};
+
+  // Split into sections on 5+ dot-chars (any kind), tolerating surrounding tags
+  var sections=raw.replace(/&nbsp;|&#160;/gi,' ').split(/(?:<[^>]*>\s*)*[·.•‧⋅]{5,}(?:\s*<[^>]*>)*/);
+
+  sections.forEach(function(sec){
+    // Collect image URLs: from src/href attributes AND plain-text https lines
+    var urls=[], re=/(?:src|href)\s*=\s*["']([^"']+)["']/gi, mm;
+    while((mm=re.exec(sec))){ if(/^https?:\/\//i.test(mm[1])) urls.push(mm[1].replace(/&amp;/g,'&')); }
+
+    var text=sec.replace(/<br\s*\/?>/gi,'\n').replace(/<\/(p|div|h[1-6])>/gi,'\n').replace(/<[^>]+>/g,'');
+    var lines=text.split('\n').map(function(l){return l.trim();}).filter(function(l){return l && !/^[·.•‧⋅]{3,}$/.test(l);});
+    lines.forEach(function(l){ if(/^https?:\/\/\S+$/i.test(l)) urls.push(l.replace(/&amp;/g,'&')); });
+    urls=urls.filter(function(u,k){return urls.indexOf(u)===k;});
+
+    var v={color:'',desc:'',oldp:'',extra:'',sizes:[],imgs:urls.map(function(u){return {src:u,status:'ready'};})};
+    var pendingPrices=[], pendingSizes=[], mode=null, hasData=false;
+
+    lines.forEach(function(rawLine){
+      var line=toEn(rawLine).replace(/：/g,':').trim();
+      if(!line) return;
+      if(/^https?:\/\//i.test(line)) return; // already captured as image
+      var priceM=line.match(/^([0-9][0-9,.]*)\s*$/);
+
+      // Active list modes
+      if(mode==='prices'){ if(priceM){pendingPrices.push(line.replace(/[,]/g,''));hasData=true;return;} mode=null; }
+      if(mode==='sizes'){ if(!priceM && line.length<=50 && !/^(?:اللون|الوصف|السعر|الحجم|المقاس|التقييم|عدد)/.test(line)){pendingSizes.push(line);return;} mode=null; }
+      if(mode==='desc'){ if(!/^(?:اللون|السعر|الحجم|المقاس|السعر القديم|التقييم|عدد التقييمات|Color|Price|Size)/i.test(line)){ v.desc=(v.desc?v.desc+' ':'')+line; return; } mode=null; }
+
+      // Global product meta
+      var rm=line.match(/^(?:التقييم|Rating)\s*[:\-]?\s*([0-9][0-9.]*)/i);
+      if(rm){ data.rating=rm[1]; hasData=true; return; }
+      var cm=line.match(/^(?:عدد التقييمات|عدد المراجعات|Reviews)\s*[:\-]?\s*([0-9]+)/i);
+      if(cm){ data.ratcount=cm[1]; hasData=true; return; }
+
+      // Standalone list headers
+      if(/^(?:السعر|Price)\s*[:\-]?\s*$/i.test(line)){ mode='prices'; return; }
+      if(/^(?:الحجم|الأحجام|المقاس|المقاسات|Size|Sizes)\s*[:\-]?\s*$/i.test(line)){ mode='sizes'; return; }
+
+      // Description (inline value or following lines)
+      var dm=line.match(/^(?:الوصف|التفاصيل|Description|Desc)\s*[:\-]?\s*(.*)$/i);
+      if(dm){ if(dm[1]&&dm[1].trim()){ v.desc=(v.desc?v.desc+' ':'')+dm[1].trim(); } else { mode='desc'; } hasData=true; return; }
+
+      // Old price (before plain price)
+      var om=line.match(/^(?:السعر القديم|سعر قديم|قبل الخصم|Old Price|Was)\s*[:\-]?\s*([0-9][0-9.,]*)/i);
+      if(om){ v.oldp=om[1].replace(/[,]/g,''); hasData=true; return; }
+      // Inline single price
+      var pm=line.match(/^(?:السعر|الثمن|Price|Cost)\s*[:\-]\s*([0-9][0-9.,]*)/i);
+      if(pm){ v.sizes.push({label:'',price:pm[1].replace(/[,]/g,'')}); hasData=true; return; }
+      // Color
+      var clm=line.match(/^(?:اللون|Color|Colour)\s*[:\-]?\s*(.+)/i);
+      if(clm&&clm[1].trim()){ v.color=clm[1].trim(); hasData=true; return; }
+      // Inline size value
+      var hzm=line.match(/^(?:الحجم|المقاس|Size)\s*[:\-]\s*(.+)/i);
+      if(hzm&&hzm[1].trim()){ v.sizes.push({label:hzm[1].trim(),price:''}); hasData=true; return; }
+      // SIZE=PRICE pair
+      var szm=line.match(/^([^\s=:،,؛]+)\s*[=:]\s*([0-9][0-9.,]*)\s*$/);
+      if(szm){ v.sizes.push({label:szm[1].trim(),price:szm[2].replace(/[,]/g,'')}); hasData=true; return; }
+      // Anything else → description fallback
+      v.desc=(v.desc?v.desc+' ':'')+rawLine.trim(); hasData=true;
+    });
+
+    // Merge collected price-list + size-list positionally
+    if(pendingPrices.length){
+      var n=Math.max(pendingPrices.length,pendingSizes.length);
+      for(var k=0;k<n;k++){ v.sizes.push({label:pendingSizes[k]||'', price:pendingPrices[k]||''}); }
+      hasData=true;
+    } else if(pendingSizes.length){
+      pendingSizes.forEach(function(s){ v.sizes.push({label:s,price:''}); });
+      hasData=true;
+    }
+
+    if(hasData || v.imgs.length) data.variants.push(v);
+  });
+  return data;
+}
+
+function applyData(data){
   // Reset product info
   document.getElementById('ptitle').value=data.title||'';
   document.getElementById('pcat').value=data.cat||'';
@@ -602,8 +700,6 @@ function applySettings(json){
     });
     renderThumbs(i);
   });
-
-  showToast('✅ تم استعادة الإعدادات بنجاح','#16a34a');
 }
 
 // Restore saved ImgBB key
