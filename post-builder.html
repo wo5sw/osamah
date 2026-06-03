@@ -256,19 +256,48 @@ function gen(){
   document.getElementById('out').value=out;
   var w=document.getElementById('out-wrap');
   w.style.display='';
+  // Auto-copy the generated code right away.
+  doCopy(function(ok){
+    var b=document.getElementById('cbtn');
+    if(b){ b.textContent = ok ? '✅ تم النسخ!' : 'نسخ الكود'; setTimeout(function(){b.textContent='نسخ الكود';},2500); }
+    showCopied(ok);
+  });
   setTimeout(function(){w.scrollIntoView({behavior:'smooth',block:'start'});},100);
+}
+
+function showCopied(ok){
+  var t=document.getElementById('copied-toast');
+  if(!t){ t=document.createElement('div'); t.id='copied-toast'; document.body.appendChild(t); }
+  t.textContent = ok ? '✅ تم نسخ الكود — الصقه الآن في Blogger' : '⚠️ اضغط زر «نسخ الكود» لنسخه';
+  t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:'+(ok?'#16a34a':'#dc2626')+';color:#fff;font-weight:700;font-size:14px;padding:12px 20px;border-radius:30px;box-shadow:0 4px 20px rgba(0,0,0,.25);z-index:9999;opacity:0;transition:opacity .25s;';
+  requestAnimationFrame(function(){t.style.opacity='1';});
+  clearTimeout(window._ctTimer);
+  window._ctTimer=setTimeout(function(){t.style.opacity='0';},3200);
 }
 
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
-function copyOut(){
+// Shared copy routine: tries the async Clipboard API, falls back to execCommand.
+function doCopy(cb){
   var ta=document.getElementById('out');
-  ta.select();
-  try{document.execCommand('copy');}
-  catch(e){navigator.clipboard&&navigator.clipboard.writeText(ta.value);}
-  var b=document.getElementById('cbtn');
-  b.textContent='✅ تم النسخ!';
-  setTimeout(function(){b.textContent='نسخ الكود';},2500);
+  var text=ta.value;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){cb&&cb(true);},function(){cb&&cb(legacyCopy(ta));});
+    return;
+  }
+  cb&&cb(legacyCopy(ta));
+}
+function legacyCopy(ta){
+  try{ ta.focus(); ta.select(); ta.setSelectionRange(0,ta.value.length); var ok=document.execCommand('copy'); window.getSelection().removeAllRanges(); return !!ok; }
+  catch(e){ return false; }
+}
+function copyOut(){
+  doCopy(function(ok){
+    var b=document.getElementById('cbtn');
+    b.textContent = ok ? '✅ تم النسخ!' : '⚠️ انسخ يدوياً';
+    setTimeout(function(){b.textContent='نسخ الكود';},2500);
+    showCopied(ok);
+  });
 }
 
 // Init with one variant
