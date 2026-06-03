@@ -71,6 +71,29 @@ hr{border:none;border-top:2px dashed var(--bord);margin:20px 0;}
 
 <div class="main">
 
+<div class="card" style="border:1.5px solid #93c5fd;background:#eff6ff;">
+  <div class="ct" style="margin-bottom:8px;cursor:pointer;justify-content:space-between;" onclick="toggleSettings()">
+    <span>🚀 الرفع الذكي للصور <span class="tag" id="upStatus">غير مفعّل</span></span>
+    <span id="setArrow" style="font-size:13px;color:var(--txt2);">▾</span>
+  </div>
+  <div id="setBody" style="display:none;">
+    <p style="font-size:12.5px;color:var(--txt2);line-height:1.7;margin-bottom:10px;">
+      فعّل هذه الميزة لرفع صور <b>جهازك</b> تلقائياً وتحويلها إلى رابط يعمل في Blogger.
+      <br>روابط الصور الجاهزة (أمازون، أي موقع) تعمل دائماً بدون تفعيل.
+    </p>
+    <label>مفتاح ImgBB المجاني</label>
+    <div class="url-row">
+      <input type="text" id="imgbbKey" placeholder="الصق المفتاح هنا..." oninput="saveKey()" style="font-size:13px;" />
+    </div>
+    <div style="font-size:11.5px;color:#b45309;background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;padding:8px 10px;margin-top:8px;line-height:1.7;">
+      <b>كيف تحصل على المفتاح (مرة واحدة فقط، مجاناً):</b><br>
+      1. افتح <a href="https://api.imgbb.com/" target="_blank" style="color:#1d4ed8;font-weight:700;">api.imgbb.com</a> ← اضغط <b>Get API Key</b><br>
+      2. سجّل دخول (بحساب Google مثلاً) ← انسخ المفتاح<br>
+      3. الصقه هنا — وبعدها أي صورة من جهازك تُرفع تلقائياً ✨
+    </div>
+  </div>
+</div>
+
 <div class="card">
   <div class="ct">📦 معلومات المنتج</div>
   <div class="f">
@@ -129,7 +152,7 @@ hr{border:none;border-top:2px dashed var(--bord);margin:20px 0;}
 
 <script>
 var vc=0;
-// per-variant image store: varImgs[id] = [{src, isBase64}]
+// per-variant image store: varImgs[id] = [{id, src, status:'ready'|'uploading'|'error', err}]
 var varImgs={};
 
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
@@ -190,7 +213,25 @@ function addSz(i){
   c.appendChild(r);
 }
 
+/* ── Settings / ImgBB key ── */
+function toggleSettings(){
+  var b=document.getElementById('setBody'), a=document.getElementById('setArrow');
+  var open=b.style.display==='none';
+  b.style.display=open?'':'none'; a.textContent=open?'▴':'▾';
+}
+function getKey(){ return (document.getElementById('imgbbKey').value||'').trim(); }
+function saveKey(){
+  try{ localStorage.setItem('sb_imgbb_key', getKey()); }catch(e){}
+  updateUpStatus();
+}
+function updateUpStatus(){
+  var s=document.getElementById('upStatus');
+  if(getKey()){ s.textContent='مفعّل ✓'; s.style.background='#dcfce7'; s.style.color='#15803d'; }
+  else { s.textContent='غير مفعّل'; s.style.background='#dbeafe'; s.style.color='#1d4ed8'; }
+}
+
 /* ── Image handling ── */
+var imgSeq=0;
 
 function dragOver(e,i){ e.preventDefault(); document.getElementById('zone'+i).classList.add('drag-over'); }
 function dragLeave(i){ document.getElementById('zone'+i).classList.remove('drag-over'); }
@@ -198,11 +239,10 @@ function dragLeave(i){ document.getElementById('zone'+i).classList.remove('drag-
 function dropImg(e,i){
   e.preventDefault();
   dragLeave(i);
-  var items=e.dataTransfer.items||[];
   // Try to get URL from drag (e.g. dragging an img from browser)
   var url=e.dataTransfer.getData('text/uri-list')||e.dataTransfer.getData('text/plain')||'';
   if(url && /^https?:\/\//i.test(url.trim())){
-    url.trim().split(/\s+/).forEach(function(u){ if(/^https?:\/\//i.test(u)) pushImg(i,u,false); });
+    url.trim().split(/\s+/).forEach(function(u){ if(/^https?:\/\//i.test(u)) addUrlImg(i,u); });
     return;
   }
   var files=e.dataTransfer.files;
@@ -214,9 +254,7 @@ function filesChosen(e,i){ readFiles(i,e.target.files); e.target.value=''; }
 function readFiles(i,files){
   Array.from(files).forEach(function(f){
     if(!f.type.startsWith('image/')) return;
-    var reader=new FileReader();
-    reader.onload=function(ev){ pushImg(i,ev.target.result,true); };
-    reader.readAsDataURL(f);
+    handleFile(i,f);
   });
 }
 
@@ -226,34 +264,77 @@ function addUrl(i){
   var inp=document.getElementById('urlInput'+i);
   var val=(inp.value||'').trim();
   if(!val) return;
-  // Handle multiple pasted lines
   val.split(/[\n,]+/).forEach(function(u){
     u=u.trim();
-    if(u && /^https?:\/\//i.test(u)) pushImg(i,u,false);
+    if(u && /^https?:\/\//i.test(u)) addUrlImg(i,u);
   });
   inp.value='';
 }
 
-function pushImg(i,src,isBase64){
+// A ready URL image (Amazon / any website / drag)
+function addUrlImg(i,url){
   if(!varImgs[i]) varImgs[i]=[];
-  // Deduplicate URLs (not base64)
-  if(!isBase64 && varImgs[i].some(function(x){return x.src===src;})) return;
-  varImgs[i].push({src:src,isBase64:isBase64});
+  if(varImgs[i].some(function(x){return x.src===url;})) return;
+  varImgs[i].push({id:++imgSeq, src:url, status:'ready'});
   renderThumbs(i);
 }
 
-function removeImg(i,idx){
-  if(varImgs[i]) varImgs[i].splice(idx,1);
+// A device file/clipboard image → preview now, then auto-upload to host
+function handleFile(i,file){
+  if(!varImgs[i]) varImgs[i]=[];
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    var b64=ev.target.result;
+    var entry={id:++imgSeq, src:b64, status: getKey()?'uploading':'error', err: getKey()?'':'أضف مفتاح الرفع أعلى الصفحة'};
+    varImgs[i].push(entry);
+    renderThumbs(i);
+    if(getKey()) uploadToHost(i,entry,b64);
+  };
+  reader.readAsDataURL(file);
+}
+
+// Upload base64 to ImgBB → on success replace src with hosted URL
+function uploadToHost(i,entry,b64){
+  var pure=b64.indexOf(',')>=0 ? b64.split(',')[1] : b64;
+  var fd=new FormData();
+  fd.append('key', getKey());
+  fd.append('image', pure);
+  fetch('https://api.imgbb.com/1/upload',{method:'POST',body:fd})
+    .then(function(r){return r.json();})
+    .then(function(j){
+      if(j && j.success && j.data && (j.data.display_url||j.data.url)){
+        entry.src=j.data.display_url||j.data.url;
+        entry.status='ready'; entry.err='';
+      } else {
+        entry.status='error'; entry.err=(j&&j.error&&j.error.message)||'فشل الرفع — تحقق من المفتاح';
+      }
+      renderThumbsAll();
+    })
+    .catch(function(){
+      entry.status='error'; entry.err='تعذّر الاتصال بخدمة الرفع';
+      renderThumbsAll();
+    });
+}
+
+function removeImgById(i,id){
+  if(varImgs[i]) varImgs[i]=varImgs[i].filter(function(x){return x.id!==id;});
   renderThumbs(i);
 }
+
+function renderThumbsAll(){ Object.keys(varImgs).forEach(function(k){ renderThumbs(k); }); }
 
 function renderThumbs(i){
   var box=document.getElementById('thumbs'+i);
   if(!box) return;
-  box.innerHTML=varImgs[i].map(function(img,k){
+  var ph='data:image/svg+xml,<svg xmlns=\\\'http://www.w3.org/2000/svg\\\' width=\\\'72\\\' height=\\\'72\\\'><rect width=\\\'72\\\' height=\\\'72\\\' fill=\\\'%23f1f5f9\\\'/><text x=\\\'50%25\\\' y=\\\'55%25\\\' dominant-baseline=\\\'middle\\\' text-anchor=\\\'middle\\\' font-size=\\\'10\\\' fill=\\\'%2394a3b8\\\'>خطأ</text></svg>';
+  box.innerHTML=(varImgs[i]||[]).map(function(img){
+    var overlay='';
+    if(img.status==='uploading') overlay='<div style="position:absolute;inset:0;background:rgba(15,23,42,.55);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:800;">⏳ رفع...</div>';
+    else if(img.status==='error') overlay='<div title="'+(img.err||'').replace(/"/g,'')+'" style="position:absolute;inset:0;background:rgba(220,38,38,.6);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:800;text-align:center;padding:2px;">⚠️ غير مرفوعة</div>';
     return '<div class="img-thumb-wrap">'
-      +'<img src="'+img.src+'" onerror="this.src=\'data:image/svg+xml,<svg xmlns=\\\'http://www.w3.org/2000/svg\\\' width=\\\'72\\\' height=\\\'72\\\'><rect width=\\\'72\\\' height=\\\'72\\\' fill=\\\'%23f1f5f9\\\'/><text x=\\\'50%25\\\' y=\\\'55%25\\\' dominant-baseline=\\\'middle\\\' text-anchor=\\\'middle\\\' font-size=\\\'10\\\' fill=\\\'%2394a3b8\\\'>خطأ</text></svg>\'" />'
-      +'<button class="rm-img" onclick="removeImg('+i+','+k+')">✕</button>'
+      +'<img src="'+img.src+'" onerror="this.src=\''+ph+'\'" />'
+      +overlay
+      +'<button class="rm-img" onclick="removeImgById('+i+','+img.id+')">✕</button>'
       +'</div>';
   }).join('');
 }
@@ -262,26 +343,21 @@ function renderThumbs(i){
 document.addEventListener('paste',function(e){
   var items=e.clipboardData&&e.clipboardData.items;
   if(!items) return;
-  // Find the last focused variant id
   var zi=window._focusedVariant||1;
   var hadImage=false;
   Array.from(items).forEach(function(item){
     if(item.type.startsWith('image/')){
       hadImage=true;
-      var f=item.getAsFile(); if(!f) return;
-      var reader=new FileReader();
-      reader.onload=function(ev){ pushImg(zi,ev.target.result,true); };
-      reader.readAsDataURL(f);
+      var f=item.getAsFile(); if(f) handleFile(zi,f);
     }
   });
   if(!hadImage){
     var text=e.clipboardData.getData('text')||'';
     if(text && /^https?:\/\//i.test(text.trim())){
-      e.preventDefault();
       var active=document.activeElement;
-      // Only intercept if not already in a URL input
       if(!active||active.type!=='url'){
-        text.trim().split(/[\n,]+/).forEach(function(u){ u=u.trim(); if(/^https?:\/\//i.test(u)) pushImg(zi,u,false); });
+        e.preventDefault();
+        text.trim().split(/[\n,]+/).forEach(function(u){ u=u.trim(); if(/^https?:\/\//i.test(u)) addUrlImg(zi,u); });
       }
     }
   }
@@ -303,7 +379,7 @@ function gen(){
   if(rating)   globalLines.push('التقييم: '+rating);
   if(ratcount) globalLines.push('عدد التقييمات: '+ratcount);
 
-  var skippedBase64=0;
+  var skippedBase64=0, stillUploading=0;
   var sections=[];
   document.querySelectorAll('.vc').forEach(function(card){
     var i=parseInt(card.id.replace('v',''));
@@ -321,7 +397,8 @@ function gen(){
     });
 
     var imgs=(varImgs[i]||[]).filter(function(img){
-      if(img.isBase64){ skippedBase64++; return false; }
+      if(img.status==='uploading'){ stillUploading++; return false; }
+      if(img.status!=='ready' || !/^https?:\/\//i.test(img.src)){ skippedBase64++; return false; }
       return true;
     });
 
@@ -357,12 +434,15 @@ function gen(){
   var w=document.getElementById('out-wrap');
   w.style.display='';
 
-  // Show base64 skip warning
+  // Show warning for images that aren't a ready URL yet
   var b64warn=document.getElementById('b64warn');
   if(!b64warn){b64warn=document.createElement('div');b64warn.id='b64warn';w.querySelector('.card').insertBefore(b64warn,w.querySelector('textarea'));}
-  if(skippedBase64>0){
+  if(stillUploading>0){
+    b64warn.style.cssText='background:#fffbeb;border:1.5px solid #fcd34d;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#b45309;font-weight:700;';
+    b64warn.innerHTML='⏳ ما زال هناك '+stillUploading+' صورة قيد الرفع — انتظر ثوانٍ ثم اضغط «إنشاء كود المنشور» مرة أخرى.';
+  } else if(skippedBase64>0){
     b64warn.style.cssText='background:#fef2f2;border:1.5px solid #f87171;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#dc2626;font-weight:700;';
-    b64warn.innerHTML='⚠️ تم تخطي '+skippedBase64+' صورة مرفوعة من الجهاز — Blogger لا يقبل صور base64 وستجمّد المحرر. استخدم روابط URL بدلاً منها.';
+    b64warn.innerHTML='⚠️ تم تخطي '+skippedBase64+' صورة من الجهاز لم تُرفع. فعّل «الرفع الذكي للصور» أعلى الصفحة (مفتاح ImgBB) ثم أعد إضافتها — أو استخدم روابط URL جاهزة.';
   } else {
     b64warn.style.cssText='';
     b64warn.innerHTML='';
@@ -408,6 +488,10 @@ function copyOut(){
     showToast(ok?'✅ تم النسخ!':'⚠️ انسخ يدوياً',ok?'#16a34a':'#dc2626');
   });
 }
+
+// Restore saved ImgBB key
+try{ var savedKey=localStorage.getItem('sb_imgbb_key'); if(savedKey) document.getElementById('imgbbKey').value=savedKey; }catch(e){}
+updateUpStatus();
 
 addV();
 </script>
