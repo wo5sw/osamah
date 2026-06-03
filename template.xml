@@ -1683,7 +1683,7 @@ function fetchProducts() {
             var SEP = '\\s*[:\\-.=،,]?\\s*';
 
             // Detect a keyword label (always stops collection modes)
-            var isLabel = /^(?:السعر|سعر|الثمن|Price|Cost|السعر القديم|سعر قديم|السعر قبل|قبل الخصم|Old Price|Was|الحجم|الأحجام|المقاس|المقاسات|Size|Sizes|اللون|Color|Colour|الشكل|شكل|Shape|التقييم|تقييم|Rating|عدد التقييمات|عدد المراجعات|Reviews|Ratings|النوع|الاسم|الخيار|Type|Variant)\b/i.test(line);
+            var isLabel = /^(?:السعر|سعر|الثمن|Price|Cost|السعر القديم|سعر قديم|السعر قبل|قبل الخصم|Old Price|Was|الحجم|الأحجام|المقاس|المقاسات|Size|Sizes|اللون|Color|Colour|الشكل|شكل|Shape|التقييم|تقييم|Rating|عدد التقييمات|عدد المراجعات|Reviews|Ratings|النوع|الاسم|الخيار|Type|Variant|الوصف|الوصف|Description|Desc|التفاصيل|المواصفات|محتويات العلبة|محتويات|Box Contents|In the Box)\b/i.test(line);
             // Detect a "pure price" line: starts with digit, optional currency/discount suffix
             var priceM = line.match(/^([0-9][0-9,.]*)(?:\s*(?:ريال|SAR|SR|ر\.س|رس|riyal|ryal|\$|€|USD))?(?:\s*[-+]\s*\d+%?)?\s*$/i);
 
@@ -1700,6 +1700,14 @@ function fetchProducts() {
             // Standalone label headers → start list-collection mode
             if (/^(?:السعر|سعر|الثمن|Price|Cost)\s*[:\-.]?\s*$/i.test(line)) { collectMode = 'prices'; return; }
             if (/^(?:الحجم|الأحجام|المقاس|المقاسات|Size|Sizes)\s*[:\-.]?\s*$/i.test(line)) { collectMode = 'sizes'; return; }
+            // Description label, alone or inline. The text after it (or the lines
+            // that follow) become the variant description.
+            var dm = line.match(/^(?:الوصف|التفاصيل|المواصفات|Description|Desc)\s*[:\-.]?\s*(.*)$/i);
+            if (dm) { if (dm[1] && dm[1].trim()) vDesc.push(dm[1].trim()); return; }
+            // Box-contents heading is just a label — skip it, keep its images/text after.
+            if (/^(?:محتويات العلبة|محتويات|Box Contents|In the Box|What'?s in the Box)\s*[:\-.]?\s*$/i.test(line)) return;
+            // A lone list index ("1", "2", "3") used as a per-color marker → ignore.
+            if (/^[0-9]{1,2}$/.test(line) && collectMode === null) return;
 
             // SIZE=PRICE pairs e.g. 2yrs=330  S=99  (also accepts ":" as separator)
             var szm = line.match(/^([^\s=:،,؛]+)\s*[=:]\s*([0-9][0-9.,]*)\s*$/);
