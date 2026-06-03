@@ -994,7 +994,7 @@ var CONFIG = {
   storeName: 'Store Bro',
   freeShippingMin: 200,
   shippingFee: 25,
-  feedCacheKey: 'sp_feed_cache_v6',
+  feedCacheKey: 'sp_feed_cache_v7',
   feedCacheTTL: 300000,
   defaultCategory: 'الكل',
   // Leave as 'YOUR_GOOGLE_MAPS_API_KEY' to disable the map picker cleanly (manual
@@ -1681,6 +1681,15 @@ function fetchProducts() {
             var NUM = '([0-9][0-9.,]*)';
             // Optional separator after a label: ":", "-", ".", "=", Arabic comma, or just space
             var SEP = '\\s*[:\\-.=،,]?\\s*';
+
+            // Lone https:// URL on its own line → image (post-builder plain-text format)
+            // Also handles HTML-entity-encoded & in URLs
+            if (/^https?:\/\/\S{8,}$/.test(line)) {
+              var cleanUrl = line.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"');
+              var alreadyHave = secImgs.some(function(x){ return x.full === cleanUrl; });
+              if (!alreadyHave) secImgs.push({ thumb: blogImg(cleanUrl,'s600'), medium: blogImg(cleanUrl,'s800'), full: cleanUrl });
+              return;
+            }
 
             // Detect a keyword label (always stops collection modes)
             var isLabel = /^(?:السعر|سعر|الثمن|Price|Cost|السعر القديم|سعر قديم|السعر قبل|قبل الخصم|Old Price|Was|الحجم|الأحجام|المقاس|المقاسات|Size|Sizes|اللون|Color|Colour|الشكل|شكل|Shape|التقييم|تقييم|Rating|عدد التقييمات|عدد المراجعات|Reviews|Ratings|النوع|الاسم|الخيار|Type|Variant|الوصف|الوصف|Description|Desc|التفاصيل|المواصفات|محتويات العلبة|محتويات|Box Contents|In the Box)\b/i.test(line);

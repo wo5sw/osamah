@@ -341,7 +341,8 @@ function gen(){
 
     var html=lines.map(function(l){return '<div>'+esc(l)+'</div>';}).join('\n');
     imgs.forEach(function(img){
-      html+='\n<div><a href="'+img.src+'"><img src="'+img.src+'" /></a></div>';
+      // Plain-text URL — Blogger won't strip it; template detects https:// lines as images
+      html+='\n<div>'+img.src+'</div>';
     });
 
     if(html.trim()) sections.push(html);
