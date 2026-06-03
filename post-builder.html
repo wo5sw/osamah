@@ -120,6 +120,11 @@ hr{border:none;border-top:2px dashed var(--bord);margin:20px 0;}
 <button class="av" onclick="addV()">＋ إضافة لون / خيار جديد</button>
 <hr>
 
+<div style="display:flex;gap:10px;margin-bottom:12px;">
+  <button class="btn bg" style="flex:1;justify-content:center;gap:8px;" onclick="copySettings()">📋 نسخ الإعدادات</button>
+  <button class="btn bg" style="flex:1;justify-content:center;gap:8px;" onclick="pasteSettings()">📥 لصق الإعدادات</button>
+</div>
+
 <button class="btn bp" style="width:100%;padding:15px;font-size:16px;justify-content:center;" onclick="gen()">
   ⚡ إنشاء كود المنشور
 </button>
@@ -487,6 +492,118 @@ function copyOut(){
     setTimeout(function(){b.textContent='نسخ الكود';},2500);
     showToast(ok?'✅ تم النسخ!':'⚠️ انسخ يدوياً',ok?'#16a34a':'#dc2626');
   });
+}
+
+/* ── Copy / Paste all settings ── */
+function readAllSettings(){
+  var data={
+    v:'1',
+    title: document.getElementById('ptitle').value||'',
+    cat:   document.getElementById('pcat').value||'',
+    rating:document.getElementById('prating').value||'',
+    ratcount:document.getElementById('pratcount').value||'',
+    variants:[]
+  };
+  document.querySelectorAll('.vc').forEach(function(card){
+    var i=parseInt(card.id.replace('v',''));
+    var szRows=[];
+    card.querySelectorAll('.sr').forEach(function(row){
+      var ins=row.querySelectorAll('input');
+      szRows.push({label:ins[0]?ins[0].value:'', price:ins[1]?ins[1].value:''});
+    });
+    data.variants.push({
+      color:(document.getElementById('vc'+i+'-color')||{value:''}).value,
+      desc: (document.getElementById('vc'+i+'-desc') ||{value:''}).value,
+      oldp: (document.getElementById('vc'+i+'-oldp') ||{value:''}).value,
+      extra:(document.getElementById('vc'+i+'-extra')||{value:''}).value,
+      sizes: szRows,
+      imgs: (varImgs[i]||[]).map(function(x){return {src:x.src,status:x.status||'ready'};})
+    });
+  });
+  return data;
+}
+
+function copySettings(){
+  var json=JSON.stringify(readAllSettings(),null,2);
+  var copyDone=function(ok){
+    showToast(ok?'✅ تم نسخ الإعدادات — الصقها في أي وقت لاستعادتها':'⚠️ فشل النسخ، جرّب مرة أخرى', ok?'#16a34a':'#dc2626');
+  };
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(json).then(function(){copyDone(true);},function(){copyDone(legacyCopyText(json));});
+  } else {
+    copyDone(legacyCopyText(json));
+  }
+}
+
+function legacyCopyText(text){
+  try{
+    var ta=document.createElement('textarea');
+    ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    var ok=document.execCommand('copy');
+    document.body.removeChild(ta); return ok;
+  }catch(e){return false;}
+}
+
+function pasteSettings(){
+  if(navigator.clipboard&&navigator.clipboard.readText){
+    navigator.clipboard.readText().then(function(text){
+      applySettings(text);
+    },function(){
+      promptPaste();
+    });
+  } else {
+    promptPaste();
+  }
+}
+
+function promptPaste(){
+  var text=prompt('الصق الإعدادات المنسوخة هنا:');
+  if(text) applySettings(text);
+}
+
+function applySettings(json){
+  var data;
+  try{ data=JSON.parse(json); }catch(e){ showToast('⚠️ البيانات غير صالحة — تأكد أنك نسخت الإعدادات كاملة','#dc2626'); return; }
+  if(!data||!data.variants){ showToast('⚠️ لم يُعثر على بيانات صالحة في الكود المنسوخ','#dc2626'); return; }
+
+  // Reset product info
+  document.getElementById('ptitle').value=data.title||'';
+  document.getElementById('pcat').value=data.cat||'';
+  document.getElementById('prating').value=data.rating||'';
+  document.getElementById('pratcount').value=data.ratcount||'';
+
+  // Clear existing variants
+  var wrap=document.getElementById('vc'); wrap.innerHTML=''; vc=0; varImgs={};
+
+  // Rebuild variants
+  data.variants.forEach(function(v){
+    addV();
+    var i=vc;
+    if(document.getElementById('vc'+i+'-color')) document.getElementById('vc'+i+'-color').value=v.color||'';
+    if(document.getElementById('vc'+i+'-desc'))  document.getElementById('vc'+i+'-desc').value =v.desc||'';
+    if(document.getElementById('vc'+i+'-oldp'))  document.getElementById('vc'+i+'-oldp').value =v.oldp||'';
+    if(document.getElementById('vc'+i+'-extra')) document.getElementById('vc'+i+'-extra').value=v.extra||'';
+
+    // Sizes — remove the one auto-added by addV, rebuild from data
+    var szBox=document.getElementById('vc'+i+'-sizes');
+    if(szBox) szBox.innerHTML='';
+    (v.sizes||[]).forEach(function(sz){
+      if(sz.price||sz.label){ addSz(i); var rows=document.getElementById('vc'+i+'-sizes').querySelectorAll('.sr'); var last=rows[rows.length-1]; if(last){ var ins=last.querySelectorAll('input'); if(ins[0])ins[0].value=sz.label||''; if(ins[1])ins[1].value=sz.price||''; } }
+    });
+    if(!v.sizes||!v.sizes.length) addSz(i);
+
+    // Images
+    varImgs[i]=[];
+    (v.imgs||[]).forEach(function(im){
+      if(im.src && /^https?:\/\//.test(im.src)){
+        varImgs[i].push({id:++imgSeq, src:im.src, status:'ready'});
+      }
+    });
+    renderThumbs(i);
+  });
+
+  showToast('✅ تم استعادة الإعدادات بنجاح','#16a34a');
 }
 
 // Restore saved ImgBB key
