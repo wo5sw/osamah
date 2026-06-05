@@ -1,0 +1,1916 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<html b:version='2' class='v2' expr:dir='data:blog.languageDirection' xmlns='http://www.w3.org/1999/xhtml' xmlns:b='http://www.google.com/2005/gml/b' xmlns:data='http://www.google.com/2005/gml/data' xmlns:expr='http://www.google.com/2005/gml/expr'>
+  <head>
+    <meta content='width=device-width, initial-scale=1' name='viewport'/>
+    <title><data:blog.pageTitle/></title>
+    <meta content='#0f2027' name='theme-color'/>
+    <meta content='yes' name='mobile-web-app-capable'/>
+    <meta content='yes' name='apple-mobile-web-app-capable'/>
+    <meta content='black-translucent' name='apple-mobile-web-app-status-bar-style'/>
+    <meta content='Queue System' name='apple-mobile-web-app-title'/>
+    <link href='https://cdn-icons-png.flaticon.com/512/679/679720.png' rel='apple-touch-icon'/>
+    <link href='data:application/json;charset=utf-8,%7B%22name%22%3A%22Queue%20System%22%2C%22short_name%22%3A%22Queue%22%2C%22start_url%22%3A%22%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230f2027%22%2C%22theme_color%22%3A%22%2317a2b8%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F679%2F679720.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D' rel='manifest'/>
+
+    <script defer='defer' src='https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js'/>
+    <script src='https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js'/>
+    <script src='https://unpkg.com/mqtt/dist/mqtt.min.js'/>
+
+    <b:skin><![CDATA[
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      :root {
+        --bg:      linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+        --glass:   rgba(255,255,255,0.08);
+        --glass2:  rgba(255,255,255,0.13);
+        --border:  rgba(255,255,255,0.15);
+        --teal:    #17a2b8;
+        --green:   #28a745;
+        --red:     #dc3545;
+        --amber:   #f39c12;
+        --text:    #fff;
+        --muted:   rgba(255,255,255,0.65);
+        --radius:  20px;
+      }
+
+      body {
+        margin: 0; padding: 0;
+        background: var(--bg);
+        min-height: 100vh;
+        font-family: 'Segoe UI', sans-serif;
+        color: var(--text);
+        text-align: center;
+        direction: ltr;
+      }
+
+      .container { padding: 20px; max-width: 860px; margin: auto; padding-bottom: 70px; }
+
+      .box {
+        background: var(--glass);
+        backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+        border: 1px solid var(--border);
+        padding: 35px 28px; border-radius: var(--radius);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        margin-top: 36px;
+      }
+
+      h2 { margin-bottom: 16px; font-size: 22px; }
+      p  { color: var(--muted); font-size: 14px; line-height: 1.6; }
+
+      .screen { display: none; }
+      .active-screen { display: block; animation: fadeIn .3s ease; }
+      @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+      /* ── BUTTONS ── */
+      .btn {
+        display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+        padding: 12px 26px; border: none; border-radius: 12px;
+        font-size: 15px; cursor: pointer; font-weight: 600;
+        margin: 7px; color: #fff; transition: all .22s;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      }
+      .btn:hover  { transform: translateY(-2px); opacity: .92; }
+      .btn:active { transform: scale(.97); }
+      .btn-admin  { background: linear-gradient(135deg,#007bff,#0056b3); }
+      .btn-driver { background: linear-gradient(135deg,#17a2b8,#0e7a8a); }
+      .btn-success{ background: linear-gradient(135deg,#28a745,#1a7330); }
+      .btn-back   { background: var(--glass2); border: 1px solid var(--border); }
+      .btn-danger { background: linear-gradient(135deg,#dc3545,#a71d2a); }
+      .btn-install{ background: linear-gradient(135deg,#f39c12,#e67e22); animation: pulse 2s infinite; }
+      .btn-notif  { background: linear-gradient(135deg,#6f42c1,#4a2a8a); }
+      .btn-sm     { padding: 6px 14px; font-size: 13px; margin: 4px; }
+      .btn:disabled { cursor: not-allowed; opacity: 0.6; }
+
+      @keyframes pulse {
+        0%,100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(243,156,18,.6); }
+        50%      { transform: scale(1.03); box-shadow: 0 0 0 10px rgba(243,156,18,0); }
+      }
+
+      /* ── INPUTS ── */
+      .input-field {
+        padding: 13px 16px; width: 85%; max-width: 320px;
+        border: 2px solid var(--border); border-radius: 12px;
+        font-size: 15px; margin-bottom: 16px; outline: none;
+        text-align: center; display: block; margin-left: auto; margin-right: auto;
+        background: rgba(255,255,255,0.1); color: #fff;
+        transition: border-color .2s;
+      }
+      .input-field::placeholder { color: rgba(255,255,255,0.35); }
+      .input-field:focus { border-color: var(--teal); }
+
+      .alert-msg { color: #ff6b6b; font-size: 13px; margin-top: 10px; display: none; font-weight: 600; }
+
+      /* ── READER ── */
+      #reader {
+        width: 100%; max-width: 340px; margin: 15px auto;
+        border: 3px solid var(--teal); border-radius: 16px;
+        overflow: hidden; display: none;
+        box-shadow: 0 0 30px rgba(23,162,184,0.4);
+      }
+
+      /* ── QUEUE STATUS BOX ── */
+      .queue-status-box {
+        background: rgba(255,255,255,0.05);
+        border: 2px dashed rgba(255,255,255,0.3);
+        padding: 22px 16px; border-radius: 16px;
+        margin: 16px auto 22px; font-size: 18px; font-weight: bold;
+        transition: all .35s ease; max-width: 320px;
+      }
+      .queue-status-box .big-number {
+        font-size: clamp(32px, 14vw, 72px); display: block;
+        margin: 6px 0; color: #fff;
+        text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+        line-height: 1.1; word-break: break-all;
+      }
+
+      /* ── PUSH PERMISSION BOX ── */
+      .push-permission-box {
+        background: rgba(111,66,193,0.15);
+        border: 1px solid rgba(111,66,193,0.4);
+        border-radius: 14px; padding: 18px 16px;
+        margin: 14px auto; max-width: 340px;
+      }
+      .push-permission-box p { color: rgba(255,255,255,0.85); font-size: 13px; margin-bottom: 10px; }
+
+      /* ── PUSH STATUS INDICATOR ── */
+      .push-status {
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 12px; padding: 4px 12px; border-radius: 20px;
+        background: rgba(255,255,255,0.08); border: 1px solid var(--border);
+        margin-bottom: 14px;
+      }
+      .push-dot { width: 8px; height: 8px; border-radius: 50%; }
+      .push-dot.on  { background: #28a745; box-shadow: 0 0 6px #28a745; }
+      .push-dot.off { background: #ff6b6b; }
+      .push-dot.loading { background: #f39c12; animation: blink 1s infinite; }
+      @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.3;} }
+
+      /* ── DASHBOARDS ── */
+      .next-driver-box {
+        background: rgba(40,167,69,0.15); border: 1px solid rgba(40,167,69,0.4);
+        padding: 20px; border-radius: 14px; margin-bottom: 20px;
+      }
+      .next-driver-box h3 { color: #55efc4; margin: 0 0 6px; font-size: 14px; }
+      .next-driver-box h2 { color: #fff; margin: 6px 0; font-size: 20px; }
+
+      .queue-table { width: 100%; border-collapse: collapse; margin-top: 16px; text-align: center; }
+      .queue-table th { background: rgba(0,123,255,.55); color: #fff; padding: 12px 10px; font-size: 13px; }
+      .queue-table td { padding: 11px 10px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.07); }
+      .queue-table tr:first-child td { background: rgba(40,167,69,0.12); }
+      .history-table th { background: rgba(108,117,125,.55); }
+      .history-table tr:first-child td { background: transparent; }
+
+      .stats-row { display: flex; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+      .stat-card { flex: 1; min-width: 90px; background: var(--glass2); border-radius: 12px; padding: 14px 10px; }
+      .stat-num   { font-size: 26px; font-weight: bold; }
+      .stat-label { font-size: 11px; opacity: .65; letter-spacing: .5px; margin-top: 3px; }
+
+      .btn-remove { background: rgba(220,53,69,.22); color: #ff6b6b; border: 1px solid rgba(220,53,69,.4); padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+      .btn-remove:hover { background: rgba(220,53,69,.4); }
+
+      .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+
+      /* ── SIDEBAR ── */
+      .admin-sidebar {
+        position: fixed; top: 0; right: -320px; width: 320px; height: 100vh;
+        background: rgba(15,32,39,0.98); backdrop-filter: blur(10px);
+        border-left: 1px solid var(--border); z-index: 10000; padding: 20px;
+        transition: right .3s ease-in-out; overflow-y: auto; text-align: left;
+        box-shadow: -5px 0 20px rgba(0,0,0,0.5);
+      }
+      .admin-sidebar.open { right: 0; }
+      .admin-sidebar h3 { color: var(--amber); border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 14px; margin-top: 24px; font-size: 15px; }
+      .close-sidebar-btn { position: absolute; top: 14px; right: 18px; background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
+      .unscanned-list { list-style: none; padding: 0; }
+      .unscanned-list li { padding: 11px 8px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; display: flex; justify-content: space-between; }
+      .unscanned-badge { background: var(--amber); color: #fff; border-radius: 50%; padding: 2px 8px; font-size: 11px; }
+
+      /* ── NOTIFICATIONS ── */
+      #notif-banner {
+        position: fixed; top: 16px; left: 50%; transform: translateX(-50%) translateY(-80px);
+        background: linear-gradient(135deg,#28a745,#1a7330);
+        color: #fff; padding: 13px 26px; border-radius: 50px;
+        font-size: 14px; font-weight: bold;
+        box-shadow: 0 6px 30px rgba(0,0,0,0.4); z-index: 9999;
+        transition: transform .4s cubic-bezier(0.34,1.56,0.64,1);
+        white-space: nowrap; max-width: 90vw; text-overflow: ellipsis; overflow: hidden;
+      }
+      #notif-banner.show { transform: translateX(-50%) translateY(0); }
+
+      #toast-wrap { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); z-index: 9998; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+
+      .blog-posts, .post-outer, .date-outer, #blog-pager, .blog-feeds { display: none !important; }
+    ]]></b:skin>
+  </head>
+  <body>
+
+    <div id='notif-banner'>📲 Action updated</div>
+
+    <div class='admin-sidebar' id='adminSidebar'>
+      <button class='close-sidebar-btn' onclick='toggleSidebar()'>&#10005;</button>
+      <h3>&#9888;&#65039; Reps Not Arrived Yet</h3>
+      <ul class='unscanned-list' id='unscannedList'/>
+    </div>
+
+    <div class='container'>
+
+      <div class='box screen active-screen' id='homeScreen'>
+        <h2>🚚 Queue Management System</h2>
+        <p style='margin-bottom:20px;'>Select login type</p>
+        <button class='btn btn-admin' onclick='showScreen(&quot;adminLoginScreen&quot;)'>👑 Admin Login</button>
+        <button class='btn btn-driver' onclick='openRegScreen()'>📦 Reps Portal</button>
+      </div>
+
+      <div class='box screen' id='adminLoginScreen'>
+        <h2>🔒 Admin Login</h2>
+        <input class='input-field' id='adminPassword' onkeydown='if(event.key===&quot;Enter&quot;)verifyAdmin()' placeholder='Password…' type='password'/>
+        <br/>
+        <button class='btn btn-success' onclick='verifyAdmin()'>Login</button>
+        <button class='btn btn-back' onclick='showScreen(&quot;homeScreen&quot;)'>Back</button>
+        <div class='alert-msg' id='adminError'>&#10060; Incorrect password</div>
+      </div>
+
+      <div class='box screen' id='driverRegScreen'>
+        <h2>📝 Rep Login</h2>
+        <p style='margin-bottom:16px;'>Enter your secret code &#8212; it will be saved on this device</p>
+        <input class='input-field' id='regSecret' onkeydown='if(event.key===&quot;Enter&quot;)registerDriver()' placeholder='Secret code…' type='password'/>
+        
+        <button class='btn btn-driver' id='loginSubmitBtn' onclick='registerDriver()'>Login</button>
+        <button class='btn btn-back' onclick='showScreen(&quot;homeScreen&quot;)'>Back</button>
+        <div class='alert-msg' id='regError'>&#10060; Invalid or unregistered code</div>
+      </div>
+
+      <div class='box screen' id='driverCameraScreen'>
+        <h2 id='welcomeDriverText'>Welcome 👋</h2>
+
+        <div class='push-permission-box' id='pushPermBox'>
+          <div class='push-status' id='pushStatusBadge'>
+            <span class='push-dot loading' id='pushDot'/>
+            <span id='pushStatusText'>Checking notifications&#8230;</span>
+          </div>
+          <p id='pushExplainText'>Enable push notifications so your phone rings even when you&#39;re using another app.</p>
+          <button class='btn btn-notif btn-sm' id='pushEnableBtn' onclick='enablePushNotifications()' style='display:none;'>
+            🔔 Enable Turn Alerts
+          </button>
+          <div id='pushEnabledMsg' style='display:none; color:#55efc4; font-size:13px; font-weight:600;'>&#9989; Alerts enabled &#8212; you&#39;ll be notified when it&#39;s your turn, even in the background!</div>
+        </div>
+
+        <div class='queue-status-box' id='queuePositionBox'>
+          Scan barcode to book your turn
+        </div>
+
+        <div id='rep-stats-container' style='margin-top:16px; margin-bottom:16px; background:rgba(255,255,255,0.05); padding:18px 14px; border-radius:14px; border:1px solid rgba(255,255,255,0.1);'>
+          <p style='font-size:12px; opacity:0.7; letter-spacing:0.5px; margin-bottom:4px;'>📦 ORDERS COMPLETED TODAY</p>
+          <div id='daily-count' style='font-size:38px; font-weight:bold; color:#17a2b8; text-shadow:0 2px 10px rgba(23,162,184,0.3);'>0</div>
+        </div>
+
+        <p id='camInstructionsText'>Point camera at the wall barcode</p>
+        <button class='btn btn-success' id='startCamBtn' onclick='startScanner()'>&#9654; Start Scan</button>
+        <div id='reader'/>
+
+        <div style='margin-top:20px; padding-top:16px; border-top: 1px solid rgba(255,255,255,0.1);'>
+          <button class='btn btn-install' id='installAppBtn' onclick='promptAppInstall()' style='display:none;'>📱 Install App</button>
+        </div>
+
+        <div id='driverQueueContainer' style='margin-top:30px; display:none;'>
+          <h3 style='text-align:left; margin-bottom:10px; color:#adb5bd; font-size:14px;'>👥 Who is Waiting</h3>
+          <table class='queue-table'>
+            <thead><tr><th>Rank</th><th>Name</th></tr></thead>
+            <tbody id='driverQueueBody'/>
+          </table>
+        </div>
+
+      </div>
+
+      <div class='box screen' id='dashboardScreen'>
+        <div class='admin-header'>
+          <h2 style='margin:0;'>📦 Admin Dashboard</h2>
+          <div style='display:flex; flex-wrap:wrap; gap:6px; justify-content:flex-end;'>
+            <button class='btn btn-sm' onclick='toggleSidebar()' style='background:var(--glass2); border:1px solid var(--border);'>
+              👁&#65039; Pending <span class='unscanned-badge' id='unscannedBadge'>0</span>
+            </button>
+            <button class='btn btn-success btn-sm' onclick='refreshDriversList()'>📥 Update Reps</button>
+            <button class='btn btn-admin btn-sm' onclick='syncStateToCloud()'>&#9729;&#65039; Sync Cloud</button>
+            <button class='btn btn-back  btn-sm' onclick='logoutAdmin()'>Logout</button>
+          </div>
+        </div>
+
+        <div class='stats-row'>
+          <div class='stat-card'><div class='stat-num' id='stat-waiting'>0</div><div class='stat-label'>Waiting</div></div>
+          <div class='stat-card'><div class='stat-num' id='stat-assigned'>0</div><div class='stat-label'>Completed</div></div>
+        </div>
+
+        <div class='next-driver-box'>
+          <h3>&#9989; Rep ready for pickup:</h3>
+          <h2 id='nextDriver'>No reps waiting</h2>
+          <button class='btn btn-success' id='assignBtn' onclick='assignNextOrder()' style='display:none;'>&#10004;&#65039; Assign Order</button>
+        </div>
+
+        <h3 style='text-align:left; margin-bottom:6px; color:#17a2b8;'>&#9203; Current Queue</h3>
+        <table class='queue-table'>
+          <thead><tr><th>Rank</th><th>Name</th><th>Time</th></tr></thead>
+          <tbody id='tableBody'/>
+        </table>
+
+        <h3 style='text-align:left; margin-top:36px; margin-bottom:6px; color:#adb5bd;'>📜 Completed Orders</h3>
+        <table class='queue-table history-table'>
+          <thead><tr><th>#</th><th>Name</th><th>Completed</th></tr></thead>
+          <tbody id='historyTableBody'/>
+        </table>
+
+        <button class='btn btn-danger' onclick='clearAllData()' style='margin-top:24px;'>🗑&#65039; Clear All Data</button>
+      </div>
+
+    </div><div id='toast-wrap'/>
+
+    <script type='text/javascript'>
+    //<![CDATA[
+
+    /* ═══════════════════════════════════════════════════════
+       ▶ CONFIGURATION
+       ═══════════════════════════════════════════════════════ */
+
+    var ONESIGNAL_APP_ID = 'YOUR-ONESIGNAL-APP-ID-HERE';
+    var ADMIN_PASSWORD = '7700';
+    var QR_CODE_VALUE = 'AMAZON_STORE_123';
+    var ONESIGNAL_REST_KEY = 'YOUR-ONESIGNAL-REST-API-KEY-HERE';
+
+    var TOPIC_SYNC     = 'qs_sync_mandoobs_wh_8891';
+    var TOPIC_STATE    = 'qs_state_mandoobs_wh_8891';
+
+    // ── Geolocation verification ──────────────────────────────────────────
+    // Open https://maps.app.goo.gl/EPnoynCvaZvM5bBS7 on your phone,
+    // tap Share → Copy Link, paste it — the full URL contains @LAT,LNG,ZOOM
+    // Copy those numbers here:
+    var TARGET_LAT          = 24.7745;   // ← replace with actual latitude
+    var TARGET_LNG          = 46.7382;   // ← replace with actual longitude
+    var MAX_DISTANCE_METERS = 200;       // allowed radius around the location
+
+    /* ═══════════════════════════════════════════════════════
+       STATE & STORAGE
+       ═══════════════════════════════════════════════════════ */
+    function sg(k,fb){ try{var v=localStorage.getItem(k);return v!==null?JSON.parse(v):fb;}catch(e){return fb;} }
+    function ss(k,v) { try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} }
+
+    var AUTHORIZED_DRIVERS = {};
+    var isAdmin = false;
+    var currentDriver  = { id: null, name: null };
+    var html5QrCode    = null;
+    var ringInterval   = null, ringCount = 0;
+    var mqttClient     = null;
+    var myOSPlayerId   = null; 
+    
+    // Unique Device Tracking for login prevention
+    var myDeviceId     = sg('my_device_id', Math.random().toString(36).substr(2,9));
+    ss('my_device_id', myDeviceId);
+    var loginTimeout   = null;
+
+    // Load initial state from local storage
+    var queue      = sg('sys_queue',   []);
+    var historyLog = sg('sys_history', []);
+
+    /* ═══════════════════════════════════════════════════════
+       BLOGGER FEED
+       ═══════════════════════════════════════════════════════ */
+    function loadDrivers() {
+      fetch('/feeds/posts/default?alt=json&max-results=500')
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          if(data.feed && data.feed.entry){
+            data.feed.entry.forEach(function(e){
+              var div = document.createElement('div');
+              div.innerHTML = e.content.$t;
+              (div.innerText||div.textContent).split('\n').forEach(function(line){
+                var parts = line.split(':');
+                if(parts.length>=2){
+                  var name = parts[0].trim(), secret = parts.slice(1).join(':').trim();
+                  if(name && secret) AUTHORIZED_DRIVERS[secret] = name;
+                }
+              });
+            });
+          }
+        }).catch(function(){});
+    }
+    loadDrivers();
+
+    function refreshDriversList() {
+      showToast('⏳ Fetching latest reps from Blogger...', '#17a2b8', 3);
+      fetch('/feeds/posts/default?alt=json&max-results=500')
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          var count = 0;
+          AUTHORIZED_DRIVERS = {}; 
+          if(data.feed && data.feed.entry){
+            data.feed.entry.forEach(function(e){
+              var div = document.createElement('div');
+              div.innerHTML = e.content.$t;
+              (div.innerText||div.textContent).split('\n').forEach(function(line){
+                var parts = line.split(':');
+                if(parts.length>=2){
+                  var name = parts[0].trim(), secret = parts.slice(1).join(':').trim();
+                  if(name && secret) {
+                    AUTHORIZED_DRIVERS[secret] = name;
+                    count++;
+                  }
+                }
+              });
+            });
+          }
+          if(isAdmin) updateUnscannedUI(); 
+          showToast('✅ Successfully updated! Loaded ' + count + ' reps.', '#28a745', 5);
+        }).catch(function(){
+          showToast('❌ Failed to update. Please check internet connection.', '#dc3545', 5);
+        });
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       ONESIGNAL
+       ═══════════════════════════════════════════════════════ */
+    var oneSignalReady = false;
+
+    window.addEventListener('DOMContentLoaded', function(){
+      if(ONESIGNAL_APP_ID === 'YOUR-ONESIGNAL-APP-ID-HERE') {
+        setPushStatus('off', 'Push alerts not configured');
+        document.getElementById('pushExplainText').textContent = '(Push notifications require OneSignal setup)';
+        return;
+      }
+
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(function(OneSignal) {
+        OneSignal.init({
+          appId: ONESIGNAL_APP_ID,
+          allowLocalhostAsSecureOrigin: false,
+          notifyButton: { enable: false },
+        });
+
+        oneSignalReady = true;
+
+        OneSignal.Notifications.addEventListener('permissionChange', function(granted){
+          if(granted) onPushGranted();
+          else        setPushStatus('off', 'Notifications blocked');
+        });
+
+        OneSignal.Notifications.permission
+          ? onPushGranted()
+          : setPushStatus('off', 'Tap below to enable alerts');
+      });
+    });
+
+    function enablePushNotifications() {
+      if(!oneSignalReady){ showToast('Push service loading… try again in a moment.','#f39c12'); return; }
+      OneSignalDeferred.push(function(OneSignal){
+        OneSignal.Notifications.requestPermission().then(function(granted){
+          if(granted) onPushGranted();
+          else        setPushStatus('off', 'Permission denied — enable in browser settings');
+        });
+      });
+    }
+
+    function onPushGranted() {
+      OneSignalDeferred.push(function(OneSignal){
+        OneSignal.User.PushSubscription.id
+          ? storePlayerId(OneSignal.User.PushSubscription.id)
+          : OneSignal.User.PushSubscription.addEventListener('change', function(e){
+              if(e.current && e.current.id) storePlayerId(e.current.id);
+            });
+      });
+    }
+
+    function storePlayerId(pid) {
+      myOSPlayerId = pid;
+      ss('os_player_id_' + (currentDriver.id || 'anon'), pid);
+      setPushStatus('on', 'Alerts enabled ✓');
+      document.getElementById('pushEnableBtn').style.display = 'none';
+      document.getElementById('pushEnabledMsg').style.display = 'block';
+      document.getElementById('pushExplainText').style.display = 'none';
+      
+      // If the driver is already in the queue, sync their Push ID up to the cloud automatically
+      var idx = queue.findIndex(function(q){ return String(q.id) === String(currentDriver.id); });
+      if(idx !== -1 && queue[idx].osPlayerId !== pid) {
+         queue[idx].osPlayerId = pid;
+         syncStateToCloud();
+      }
+    }
+
+    function setPushStatus(state, text) {
+      var dot  = document.getElementById('pushDot');
+      var txt  = document.getElementById('pushStatusText');
+      var btn  = document.getElementById('pushEnableBtn');
+      if(!dot) return;
+      dot.className = 'push-dot ' + state;
+      if(txt) txt.textContent = text;
+      if(state === 'off' && btn) {
+        btn.style.display = 'inline-flex';
+        document.getElementById('pushEnabledMsg').style.display = 'none';
+      }
+      if(state === 'on') {
+        if(btn) btn.style.display = 'none';
+        document.getElementById('pushEnabledMsg').style.display = 'block';
+        document.getElementById('pushExplainText').style.display = 'none';
+      }
+    }
+
+    function sendPushToDriver(playerId, driverName) {
+      if(!playerId) return; 
+      if(ONESIGNAL_REST_KEY === 'YOUR-ONESIGNAL-REST-API-KEY-HERE') return;
+
+      fetch('https://onesignal.com/api/v1/notifications', {
+        method: 'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Basic ' + ONESIGNAL_REST_KEY
+        },
+        body: JSON.stringify({
+          app_id:             ONESIGNAL_APP_ID,
+          include_player_ids: [playerId],
+          headings:  { en: '🚨 You are Number 1! 🚨' },
+          contents:  { en: driverName + ' — You are number one and must take the order immediately.' },
+          
+          // 🚀 FORCES WAKE-UP & HIGH PRIORITY DELIVERY
+          priority: 10,
+          android_visibility: 1, 
+          
+          // 🔊 ATTEMPTS TO TRIGGER NATIVE SOUNDS
+          ios_sound: 'default',
+          android_sound: 'default',
+          android_channel_id: '', 
+          
+          ttl: 300  
+        })
+      }).catch(function(){});
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       MQTT - DECENTRALIZED CLOUD DATABASE
+       ═══════════════════════════════════════════════════════ */
+    try {
+      mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
+        clientId: 'qs_' + Math.random().toString(36).substr(2,10),
+        clean: true, 
+        connectTimeout: 15000, 
+        reconnectPeriod: 2000,
+        keepalive: 30 
+      });
+
+      mqttClient.on('connect', function(){
+        // Automatically fetch the latest retained cloud data upon connecting
+        mqttClient.subscribe([TOPIC_SYNC, TOPIC_STATE], { qos: 1 });
+      });
+
+      mqttClient.on('error', function(err) {
+        console.warn('MQTT Connection Error:', err);
+      });
+
+      mqttClient.on('message', function(topic, message){
+        try {
+          var data = JSON.parse(message.toString());
+
+          // ☁️ CLOUD STATE SYNC: Replaces the need for the admin laptop to be turned on
+          if(topic === TOPIC_STATE) {
+             if(data.queue)      { queue = data.queue;            ss('sys_queue', queue); }
+             if(data.historyLog) { historyLog = data.historyLog; ss('sys_history', historyLog); }
+
+             if(isAdmin) {
+               renderAdminUI(); // Update admin screen with cloud data
+             } else if(currentDriver.id) {
+               // The driver looks at the cloud data to see their own position!
+               var myPos = queue.findIndex(function(x){ return String(x.id) === String(currentDriver.id); });
+               updateDriverQueueUI(myPos, 'waiting');
+               renderDriverQueueUI(); // Update the live table on driver screen
+               if(data.historyLog) {
+                 updateDailyCounter(data.historyLog); // Update live orders taken today
+               }
+             }
+          }
+
+          // Peer-to-Peer PIN Verification Logic for Representatives
+          if(topic === TOPIC_SYNC && !isAdmin) {
+            if(data.command === 'PIN_CHECK' && currentDriver.id === data.id && data.deviceId !== myDeviceId) {
+              mqttClient.publish(TOPIC_SYNC, JSON.stringify({
+                command: 'PIN_IN_USE',
+                id: data.id,
+                targetDevice: data.deviceId
+              }), { qos: 1 }); 
+            }
+            if(data.command === 'PIN_IN_USE' && data.targetDevice === myDeviceId) {
+              clearTimeout(loginTimeout); 
+              var btn = document.getElementById('loginSubmitBtn');
+              if(btn) { btn.textContent = 'Login'; btn.disabled = false; }
+              var err = document.getElementById('regError');
+              err.textContent = '❌ PIN is currently online on another device.';
+              err.style.display = 'block';
+            }
+          }
+        } catch(e){}
+      });
+    } catch(e){}
+
+    /* ═══════════════════════════════════════════════════════
+       NAVIGATION & UI UTILS
+       ═══════════════════════════════════════════════════════ */
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active-screen'); });
+      document.getElementById(id).classList.add('active-screen');
+    }
+
+    function showToast(msg, color, sec) {
+      var w = document.getElementById('toast-wrap');
+      var t = document.createElement('div');
+      t.innerHTML = msg;
+      t.style.cssText = 'background:'+(color||'#28a745')+';color:#fff;padding:13px 20px;border-radius:12px;font-size:13px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,0.4);max-width:90vw;text-align:center;line-height:1.5;';
+      w.appendChild(t);
+      var d = (sec||5)*1000;
+      setTimeout(function(){ t.style.opacity='0'; t.style.transition='opacity .4s'; }, d);
+      setTimeout(function(){ t.remove(); }, d+500);
+    }
+
+    function showNotifBanner(msg) {
+      var b = document.getElementById('notif-banner');
+      b.textContent = msg;
+      b.classList.add('show');
+      setTimeout(function(){ b.classList.remove('show'); }, 4500);
+    }
+
+    /* PWA */
+    var deferredInstall = null;
+    window.addEventListener('beforeinstallprompt', function(e){
+      e.preventDefault(); deferredInstall = e;
+      var btn = document.getElementById('installAppBtn');
+      if(btn) btn.style.display = 'inline-flex';
+    });
+    function promptAppInstall(){
+      if(deferredInstall){ deferredInstall.prompt(); deferredInstall.userChoice.then(function(r){ if(r.outcome==='accepted') document.getElementById('installAppBtn').style.display='none'; deferredInstall=null; }); }
+      else {
+        var ios = /iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
+        showToast(ios?'🍎 Tap Share → "Add to Home Screen"':'🤖 Tap browser menu → "Add to Home screen"','#17a2b8',7);
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       AUTH
+       ═══════════════════════════════════════════════════════ */
+    function verifyAdmin(){
+      var pw = document.getElementById('adminPassword');
+      if(pw.value === ADMIN_PASSWORD){
+        document.getElementById('adminError').style.display = 'none';
+        pw.value = ''; isAdmin = true;
+        showScreen('dashboardScreen'); 
+        renderAdminUI(); // Read local DB instantly
+      } else {
+        document.getElementById('adminError').style.display = 'block';
+        pw.value = ''; pw.focus();
+      }
+    }
+    function logoutAdmin(){ isAdmin=false; document.getElementById('adminSidebar').classList.remove('open'); showScreen('homeScreen'); }
+
+    // 🚀 RESTORES SAVED SECRET IF LOGGED OUT
+    function openRegScreen(){ 
+      document.getElementById('regError').style.display='none'; 
+      document.getElementById('regSecret').value = sg('saved_rep_secret', ''); // Populate saved password
+      showScreen('driverRegScreen'); 
+    }
+
+    // Peer-to-Peer verification login flow
+    function registerDriver(){
+      var secret = document.getElementById('regSecret').value.trim();
+      var err = document.getElementById('regError');
+      var btn = document.getElementById('loginSubmitBtn');
+
+      if(AUTHORIZED_DRIVERS[secret]){
+        err.style.display = 'none';
+
+        if(mqttClient && mqttClient.connected) {
+          btn.textContent = 'Verifying...';
+          btn.disabled = true;
+
+          mqttClient.publish(TOPIC_SYNC, JSON.stringify({
+            command: 'PIN_CHECK',
+            id: secret,
+            deviceId: myDeviceId
+          }), { qos: 1 });
+
+          loginTimeout = setTimeout(function(){
+            btn.textContent = 'Login';
+            btn.disabled = false;
+            executeLogin(secret);
+          }, 2000);
+          
+        } else {
+          executeLogin(secret);
+        }
+      } else {
+        err.textContent = Object.keys(AUTHORIZED_DRIVERS).length===0
+          ? '⏳ Still loading — please wait and try again'
+          : '❌ Invalid or unregistered code';
+        err.style.display = 'block';
+        document.getElementById('regSecret').value = '';
+        document.getElementById('regSecret').focus();
+      }
+    }
+
+    function executeLogin(secret) {
+      currentDriver = { id: secret, name: AUTHORIZED_DRIVERS[secret] };
+      ss('logged_in_driver', currentDriver);
+      ss('saved_rep_secret', secret); 
+      openDriverDashboard();
+    }
+
+    function openDriverDashboard(){
+      document.getElementById('welcomeDriverText').textContent = 'Welcome, ' + currentDriver.name + ' 👋';
+      showScreen('driverCameraScreen');
+
+      var savedPid = sg('os_player_id_' + currentDriver.id, null);
+      if(savedPid) myOSPlayerId = savedPid;
+
+      // Initial local UI load
+      var lastPos = sg('last_pos_' + currentDriver.id, -1);
+      if(lastPos >= 0) updateDriverQueueUI(lastPos, 'waiting');
+      renderDriverQueueUI(); 
+      updateDailyCounter(historyLog); // Instantly pull up today's performance history on load
+
+      if(oneSignalReady){
+        OneSignalDeferred.push(function(OS){
+          if(OS.Notifications.permission){
+            onPushGranted();
+          } else {
+            OS.Notifications.requestPermission().then(function(granted){
+              if(granted) onPushGranted();
+              else        setPushStatus('off', 'Tap below to enable alerts');
+            });
+          }
+        });
+      } else if('Notification' in window){
+        if(Notification.permission === 'granted'){
+          setPushStatus('on', 'Alerts enabled ✓');
+        } else if(Notification.permission === 'default'){
+          Notification.requestPermission().then(function(r){
+            if(r === 'granted') setPushStatus('on', 'Alerts enabled ✓');
+            else                setPushStatus('off', 'Tap below to enable alerts');
+          });
+        }
+      }
+
+      setTimeout(function(){
+        if(!html5QrCode) startScanner();
+      }, 400);
+    }
+
+    function logoutDriver(){
+      stopScanner(); stopContinuousRing();
+      ss('logged_in_driver', null);
+      currentDriver = { id:null, name:null }; myOSPlayerId = null;
+      var box = document.getElementById('queuePositionBox');
+      box.textContent = 'Scan barcode to book your turn';
+      box.style.background=''; box.style.borderColor='';
+      document.getElementById('startCamBtn').style.display='inline-flex';
+      document.getElementById('startCamBtn').textContent='▶ Start Scan';
+      document.getElementById('camInstructionsText').style.display='block';
+      showScreen('homeScreen');
+    }
+
+    window.addEventListener('DOMContentLoaded', function(){
+      var s = sg('logged_in_driver',null);
+      if(s && s.id){ currentDriver=s; isAdmin=false; openDriverDashboard(); }
+      if(window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone){
+        var b=document.getElementById('installAppBtn'); if(b) b.style.display='none';
+      }
+    });
+
+    /* ═══════════════════════════════════════════════════════
+       AUDIO 
+       ═══════════════════════════════════════════════════════ */
+    function playSuccessSound(){
+      try{
+        var ctx=new(window.AudioContext||window.webkitAudioContext)();
+        var osc=ctx.createOscillator(),gain=ctx.createGain();
+        osc.connect(gain);gain.connect(ctx.destination);
+        osc.type='sine'; var now=ctx.currentTime;
+        [523.25,659.25,783.99,1046.5].forEach(function(f,i){osc.frequency.setValueAtTime(f,now+i*.1);});
+        gain.gain.setValueAtTime(0,now);gain.gain.linearRampToValueAtTime(0.3,now+.05);
+        gain.gain.setValueAtTime(0.3,now+.35);gain.gain.linearRampToValueAtTime(0,now+.45);
+        osc.start(now);osc.stop(now+.5);
+      }catch(e){}
+    }
+
+    function triggerRingAlert(){
+      try{
+        var ctx=new(window.AudioContext||window.webkitAudioContext)();
+        var now=ctx.currentTime;
+        [0,.6,1.2].forEach(function(off){
+          var o=ctx.createOscillator(),g=ctx.createGain();
+          o.connect(g);g.connect(ctx.destination);o.type='sine';
+          o.frequency.setValueAtTime(880,now+off);o.frequency.setValueAtTime(1108.73,now+off+.1);
+          g.gain.setValueAtTime(0,now+off);g.gain.linearRampToValueAtTime(0.5,now+off+.05);
+          g.gain.linearRampToValueAtTime(0,now+off+.4);
+          o.start(now+off);o.stop(now+off+.5);
+        });
+        if('vibrate' in navigator) navigator.vibrate([400,200,400,200,400]);
+      }catch(e){}
+    }
+
+    function startContinuousRing(){
+      if(ringInterval) return;
+      ringCount=1; triggerRingAlert();
+      ringInterval=setInterval(function(){ ringCount++; if(ringCount<=3) triggerRingAlert(); else stopContinuousRing(); },3000);
+    }
+    function stopContinuousRing(){
+      clearInterval(ringInterval); ringInterval=null; ringCount=0;
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       GEOLOCATION
+       ═══════════════════════════════════════════════════════ */
+    function haversineDistance(lat1, lng1, lat2, lng2){
+      var R = 6371000;
+      var dLat = (lat2 - lat1) * Math.PI / 180;
+      var dLng = (lng2 - lng1) * Math.PI / 180;
+      var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
+              Math.sin(dLng/2) * Math.sin(dLng/2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function checkLocation(onSuccess, onFail){
+      if(!navigator.geolocation){ onFail('الجهاز لا يدعم تحديد الموقع'); return; }
+      document.getElementById('queuePositionBox').innerHTML = '📍 جارٍ التحقق من موقعك...';
+      navigator.geolocation.getCurrentPosition(
+        function(pos){
+          var dist = haversineDistance(pos.coords.latitude, pos.coords.longitude, TARGET_LAT, TARGET_LNG);
+          if(dist <= MAX_DISTANCE_METERS){
+            onSuccess();
+          } else {
+            onFail('أنت خارج نطاق الموقع المسموح به (' + Math.round(dist) + ' م)');
+          }
+        },
+        function(){ onFail('تعذّر الحصول على موقعك — تأكد من تفعيل GPS والسماح للتطبيق'); },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       SCANNER
+       ═══════════════════════════════════════════════════════ */
+    function stopScanner(){
+      if(html5QrCode){ try{html5QrCode.stop().catch(function(){});}catch(e){} try{html5QrCode.clear();}catch(e){} html5QrCode=null; }
+      document.getElementById('reader').style.display='none';
+    }
+
+    function startScanner(){
+      var lastPos = sg('last_pos_' + (currentDriver.id||''), -1);
+      if(lastPos >= 0 && html5QrCode === null){
+        return;
+      }
+
+      stopContinuousRing();
+      document.getElementById('reader').style.display='block';
+      document.getElementById('startCamBtn').style.display='none';
+      document.getElementById('camInstructionsText').style.display='none';
+
+      html5QrCode = new Html5Qrcode('reader');
+      html5QrCode.start({facingMode:'environment'},{fps:10,qrbox:{width:240,height:240}},
+        function onScan(text){
+          if(text === QR_CODE_VALUE){
+            stopScanner();
+            document.getElementById('startCamBtn').style.display='inline-flex';
+            document.getElementById('startCamBtn').textContent='🔄 Scan Again';
+            playSuccessSound();
+
+            checkLocation(
+              function(){
+                // ✅ Within allowed radius — proceed with queue entry
+                document.getElementById('queuePositionBox').innerHTML = '⏳ جارٍ المعالجة...';
+                if(mqttClient && mqttClient.connected){
+                  // THE MAGIC: The rep adds themselves directly to the array, independent of the admin laptop!
+                  var exists = queue.some(function(d){ return String(d.id)===String(currentDriver.id); });
+                  if(!exists){
+                    var t = Date.now();
+                    queue.push({
+                      id: String(currentDriver.id),
+                      name: currentDriver.name,
+                      time: new Date(t).toLocaleTimeString('en-US'),
+                      timestamp: t,
+                      osPlayerId: myOSPlayerId || null,
+                      status: 'waiting'
+                    });
+                    // Sort by time just in case multiple reps scan simultaneously
+                    queue.sort(function(a,b){ return (a.timestamp||0)-(b.timestamp||0); });
+                    ss('sys_queue', queue);
+                    renderDriverQueueUI(); // Update their local screen immediately
+                    syncStateToCloud(); // Push the newly calculated queue back up to the MQTT broker
+                  }
+                } else {
+                  document.getElementById('queuePositionBox').innerHTML='📡 No connection — please check internet';
+                }
+              },
+              function(msg){
+                // ❌ Outside radius or GPS error — block queue entry
+                document.getElementById('queuePositionBox').innerHTML = '🚫 ' + msg;
+                showToast('🚫 ' + msg, '#dc3545', 6);
+              }
+            );
+          }
+        },
+        function(){}
+      ).catch(function(){
+        showToast('⚠️ Camera denied — close overlays, refresh and try again','#dc3545',8);
+        document.getElementById('startCamBtn').style.display='inline-flex';
+        document.getElementById('camInstructionsText').style.display='block';
+        document.getElementById('reader').style.display='none';
+      });
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       QUEUE MANAGEMENT & UI
+       ═══════════════════════════════════════════════════════ */
+    function updateDriverQueueUI(pos, status){
+      ss('last_pos_'+currentDriver.id, pos);
+      var box=document.getElementById('queuePositionBox');
+      var camBtn=document.getElementById('startCamBtn');
+      var camTxt=document.getElementById('camInstructionsText');
+      if(!box) return;
+
+      if(pos===0){
+        box.innerHTML="You are number <span class='big-number'>1</span><span style='font-size:15px;'>Head to pickup immediately! 🎉</span>";
+        box.style.background='rgba(40,167,69,0.3)'; box.style.borderColor='#55efc4';
+        if(camBtn) camBtn.style.display='none';
+        if(camTxt) camTxt.style.display='none';
+        startContinuousRing(); 
+      } else if(pos>0){
+        stopContinuousRing();
+        box.innerHTML="You are number <span class='big-number'>"+(pos+1)+"</span>";
+        box.style.background='rgba(23,162,184,0.3)'; box.style.borderColor='#17a2b8';
+        if(camBtn) camBtn.style.display='none';
+        if(camTxt) camTxt.style.display='none';
+      } else {
+        stopContinuousRing();
+        box.innerHTML='Scan barcode to book your turn';
+        box.style.background='rgba(255,255,255,0.05)'; box.style.borderColor='rgba(255,255,255,0.3)';
+        if(camBtn){ camBtn.style.display='inline-flex'; camBtn.textContent='▶ Start Scan'; }
+        if(camTxt) camTxt.style.display='block';
+      }
+    }
+
+    // Renders the live table on the Representative's phone
+    function renderDriverQueueUI() {
+      var container = document.getElementById('driverQueueContainer');
+      var tbody = document.getElementById('driverQueueBody');
+      if(!container || !tbody) return;
+
+      if(!queue || queue.length === 0) {
+        container.style.display = 'none';
+        return;
+      }
+
+      container.style.display = 'block';
+      tbody.innerHTML = '';
+      
+      queue.forEach(function(d, i){
+        var tr = document.createElement('tr');
+        
+        // Highlight the current driver's row in green so they can find themselves
+        if(String(d.id) === String(currentDriver.id)) {
+          tr.style.background = 'rgba(23,162,184,0.15)';
+          tr.innerHTML = '<td><strong>' + (i+1) + '</strong></td><td style="color:#55efc4;"><strong>' + esc(d.name) + ' (You)</strong></td>';
+        } else {
+          tr.innerHTML = '<td><strong>' + (i+1) + '</strong></td><td>' + esc(d.name) + '</td>';
+        }
+        tbody.appendChild(tr);
+      });
+    }
+
+    // 🚀 NEW: Processes background order history logs to build the daily performance sheet
+    function updateDailyCounter(cloudHistory) {
+      var now = new Date();
+      // Creates a key for the current day
+      var currentDayKey = now.getDate() + '-' + now.getMonth() + '-' + now.getFullYear();
+      
+      // Load current local tracking instance
+      var record = sg('rep_daily_record_' + currentDriver.id, { day: currentDayKey, countedTimestamps: [], count: 0 });
+      
+      // Smart Auto-Reset when the rolling calendar changes days (resets at midnight)
+      if (record.day !== currentDayKey) {
+        record = { day: currentDayKey, countedTimestamps: [], count: 0 };
+      }
+      
+      var hasUpdates = false;
+      cloudHistory.forEach(function(item) {
+        if (String(item.id) === String(currentDriver.id) && item.completedAt) {
+          // Double-count preventative safeguard logic
+          if (record.countedTimestamps.indexOf(item.completedAt) === -1) {
+            var orderDate = new Date(item.completedAt);
+            var orderDayKey = orderDate.getDate() + '-' + orderDate.getMonth() + '-' + orderDate.getFullYear();
+            
+            // Only count if the order happened today
+            if (orderDayKey === currentDayKey) {
+              record.countedTimestamps.push(item.completedAt);
+              record.count++;
+              hasUpdates = true;
+            }
+          }
+        }
+      });
+      
+      if (hasUpdates || !document.getElementById('daily-count')) {
+        ss('rep_daily_record_' + currentDriver.id, record);
+      }
+      
+      var countEl = document.getElementById('daily-count');
+      if (countEl) {
+        countEl.textContent = record.count;
+      }
+    }
+
+    function syncStateToCloud(){
+      if(mqttClient && mqttClient.connected){
+        // Publish the full data arrays with retain: true. This acts as our cloud database!
+        var payload = { queue: queue, historyLog: historyLog };
+        mqttClient.publish(TOPIC_STATE, JSON.stringify(payload), {retain: true, qos: 1});
+      }
+    }
+
+    function renderAdminUI(){
+      document.getElementById('stat-waiting').textContent  = queue.length;
+      document.getElementById('stat-assigned').textContent = historyLog.length;
+
+      var nextEl=document.getElementById('nextDriver'), btn=document.getElementById('assignBtn');
+      
+      if(queue.length>0){ 
+        nextEl.textContent='🧑 '+queue[0].name; 
+        btn.style.display = 'inline-flex'; 
+      }
+      else{ nextEl.textContent='No reps waiting'; btn.style.display='none'; }
+
+      var body=document.getElementById('tableBody'); body.innerHTML='';
+      if(queue.length===0){
+        body.innerHTML='<tr><td colspan="3" style="text-align:center;color:rgba(255,255,255,0.4);padding:18px;">Queue is empty</td></tr>';
+      } else {
+        queue.forEach(function(d,i){
+          var tr=document.createElement('tr');
+          tr.innerHTML='<td><strong>'+(i+1)+'</strong></td><td>'+esc(d.name)+'</td><td>'+esc(d.time)+'</td>';
+          body.appendChild(tr);
+        });
+      }
+
+      var hb=document.getElementById('historyTableBody'); hb.innerHTML='';
+      if(historyLog.length===0){
+        hb.innerHTML='<tr><td colspan="3" style="text-align:center;color:rgba(255,255,255,0.4);padding:18px;">No completed orders yet</td></tr>';
+      } else {
+        historyLog.slice().reverse().forEach(function(d,i){
+          var tr=document.createElement('tr');
+          tr.innerHTML='<td><strong>'+(historyLog.length-i)+'</strong></td><td>'+esc(d.name)+'</td><td>'+esc(d.time)+'</td>';
+          hb.appendChild(tr);
+        });
+      }
+
+      updateUnscannedUI();
+    }
+
+    // 🚀 ONE-CLICK WORKFLOW: Instantly completes the order and alerts the rep
+    function assignNextOrder(){
+      if(!queue.length) return;
+
+      // 1. Remove the first rep from the queue and mark them as done
+      var done = queue.shift(); 
+      done.time = new Date().toLocaleTimeString('en-US');
+      done.completedAt = Date.now(); // Inject explicit completion timestamp for driver counter metrics
+      
+      // 2. Add them to the completed history log
+      historyLog.push(done);
+
+      // 3. Save locally
+      ss('sys_queue', queue);
+      ss('sys_history', historyLog);
+
+      // 4. Notify the rep and update the admin screen
+      if(done.osPlayerId){
+        sendPushToDriver(done.osPlayerId, done.name);
+        showToast('✅ Order assigned to ' + done.name + ' — push sent 🔔', '#28a745');
+      } else {
+        showToast('✅ Order assigned to ' + done.name, '#28a745');
+      }
+
+      renderAdminUI(); 
+      syncStateToCloud(); // Publish the changes to the cloud!
+    }
+
+    function clearAllData(){
+      if(!confirm('Clear ALL queue and history? This cannot be undone.')) return;
+      queue=[]; historyLog=[];
+      ss('sys_queue',[]); ss('sys_history',[]);
+      renderAdminUI();
+      syncStateToCloud(); // Overwrites the cloud database with empty arrays
+      showToast('🗑️ All data cleared','#adb5bd');
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       SIDEBAR & UTILS
+       ═══════════════════════════════════════════════════════ */
+    function toggleSidebar(){ document.getElementById('adminSidebar').classList.toggle('open'); }
+
+    function updateUnscannedUI(){
+      var list=document.getElementById('unscannedList'); if(!list) return;
+      list.innerHTML='';
+      var activeIds  = queue.map(function(q){ return q.id; });
+      var historyIds = historyLog.map(function(h){ return h.id; });
+      var count = 0;
+      Object.keys(AUTHORIZED_DRIVERS).forEach(function(secret){
+        if(activeIds.indexOf(secret)===-1 && historyIds.indexOf(secret)===-1){
+          count++;
+          var li=document.createElement('li');
+          li.innerHTML='<span>'+esc(AUTHORIZED_DRIVERS[secret])+'</span>';
+          list.appendChild(li);
+        }
+      });
+      if(count===0) list.innerHTML='<li style="opacity:.5;text-align:center;">All reps have scanned! 🎉</li>';
+      var badge=document.getElementById('unscannedBadge'); if(badge) badge.textContent=count;
+    }
+
+    function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    //]]>
+    </script>
+
+    <b:section class='main' id='main' showaddelement='yes'>
+      <b:widget id='Blog1' locked='true' title='رسائل المدونة الإلكترونية' type='Blog' version='1'>
+        <b:widget-settings>
+          <b:widget-setting name='showDateHeader'>false</b:widget-setting>
+          <b:widget-setting name='style.textcolor'>#ffffff</b:widget-setting>
+          <b:widget-setting name='showShareButtons'>false</b:widget-setting>
+          <b:widget-setting name='showCommentLink'>false</b:widget-setting>
+          <b:widget-setting name='style.urlcolor'>#ffffff</b:widget-setting>
+          <b:widget-setting name='showAuthor'>false</b:widget-setting>
+          <b:widget-setting name='style.linkcolor'>#ffffff</b:widget-setting>
+          <b:widget-setting name='style.unittype'>TextAndImage</b:widget-setting>
+          <b:widget-setting name='style.bgcolor'>#ffffff</b:widget-setting>
+          <b:widget-setting name='reactionsLabel'/>
+          <b:widget-setting name='showAuthorProfile'>false</b:widget-setting>
+          <b:widget-setting name='style.layout'>1x1</b:widget-setting>
+          <b:widget-setting name='showLabels'>false</b:widget-setting>
+          <b:widget-setting name='showLocation'>false</b:widget-setting>
+          <b:widget-setting name='showTimestamp'>false</b:widget-setting>
+          <b:widget-setting name='postsPerAd'>1</b:widget-setting>
+          <b:widget-setting name='showBacklinks'>false</b:widget-setting>
+          <b:widget-setting name='style.bordercolor'>#ffffff</b:widget-setting>
+          <b:widget-setting name='showInlineAds'>false</b:widget-setting>
+          <b:widget-setting name='showReactions'>false</b:widget-setting>
+        </b:widget-settings>
+        <b:includable id='main' var='top'/>
+        <b:includable id='backlinkDeleteIcon' var='backlink'/>
+        <b:includable id='backlinks' var='post'/>
+        <b:includable id='comment-form' var='post'>
+  <div class='comment-form'>
+    <a name='comment-form'/>
+    <b:if cond='data:mobile'>
+      <h4 id='comment-post-message'>
+        <a expr:id='data:widget.instanceId + &quot;_comment-editor-toggle-link&quot;' href='javascript:void(0)'><data:postCommentMsg/></a></h4>
+      <p><data:blogCommentMessage/></p>
+      <data:blogTeamBlogMessage/>
+      <a expr:href='data:post.commentFormIframeSrc' id='comment-editor-src'/>
+      <iframe allowtransparency='true' class='blogger-iframe-colorize blogger-comment-from-post' expr:height='data:cmtIframeInitialHeight' frameborder='0' id='comment-editor' name='comment-editor' src='' style='display: none' width='100%'/>
+    <b:else/>
+      <h4 id='comment-post-message'><data:postCommentMsg/></h4>
+      <p><data:blogCommentMessage/></p>
+      <data:blogTeamBlogMessage/>
+      <a expr:href='data:post.commentFormIframeSrc' id='comment-editor-src'/>
+      <iframe allowtransparency='true' class='blogger-iframe-colorize blogger-comment-from-post' expr:height='data:cmtIframeInitialHeight' frameborder='0' id='comment-editor' name='comment-editor' src='' width='100%'/>
+    </b:if>
+    <data:post.cmtfpIframe/>
+    <script type='text/javascript'>
+      BLOG_CMT_createIframe(&#39;<data:post.appRpcRelayPath/>&#39;);
+    </script>
+  </div>
+</b:includable>
+        <b:includable id='commentDeleteIcon' var='comment'>
+  <span expr:class='&quot;item-control &quot; + data:comment.adminClass'>
+    <b:if cond='data:showCmtPopup'>
+      <div class='goog-toggle-button'>
+        <div class='goog-inline-block comment-action-icon'/>
+      </div>
+    <b:else/>
+      <a class='comment-delete' expr:href='data:comment.deleteUrl' expr:title='data:top.deleteCommentMsg'>
+        <img src='https://resources.blogblog.com/img/icon_delete13.gif'/>
+      </a>
+    </b:if>
+  </span>
+</b:includable>
+        <b:includable id='comment_count_picker' var='post'>
+  <a class='comment-link' expr:href='data:post.addCommentUrl' expr:onclick='data:post.addCommentOnclick'>
+    <data:post.commentLabelFull/>:
+  </a>
+</b:includable>
+        <b:includable id='comment_picker' var='post'>
+  <b:if cond='data:post.showThreadedComments'>
+    <b:include data='post' name='threaded_comments'/>
+  <b:else/>
+    <b:include data='post' name='comments'/>
+  </b:if>
+</b:includable>
+        <b:includable id='comments' var='post'>
+  <div class='comments' id='comments'>
+    <a name='comments'/>
+    <b:if cond='data:post.allowComments'>
+      <h4><data:post.commentLabelFull/>:</h4>
+
+      <b:if cond='data:post.commentPagingRequired'>
+        <span class='paging-control-container'>
+          <b:if cond='data:post.hasOlderLinks'>
+            <a expr:class='data:post.oldLinkClass' expr:href='data:post.oldestLinkUrl'><data:post.oldestLinkText/></a>
+              &#160;
+            <a expr:class='data:post.oldLinkClass' expr:href='data:post.olderLinkUrl'><data:post.olderLinkText/></a>
+              &#160;
+          </b:if>
+
+          <data:post.commentRangeText/>
+
+          <b:if cond='data:post.hasNewerLinks'>
+            &#160;
+            <a expr:class='data:post.newLinkClass' expr:href='data:post.newerLinkUrl'><data:post.newerLinkText/></a>
+            &#160;
+            <a expr:class='data:post.newLinkClass' expr:href='data:post.newestLinkUrl'><data:post.newestLinkText/></a>
+          </b:if>
+        </span>
+      </b:if>
+
+      <div expr:id='data:widget.instanceId + &quot;_comments-block-wrapper&quot;'>
+        <dl expr:class='data:post.avatarIndentClass' id='comments-block'>
+          <b:loop values='data:post.comments' var='comment'>
+            <dt expr:class='&quot;comment-author &quot; + data:comment.authorClass' expr:id='data:comment.anchorName'>
+              <b:if cond='data:comment.favicon'>
+                <img expr:src='data:comment.favicon' height='16px' style='margin-bottom:-2px;' width='16px'/>
+              </b:if>
+              <a expr:name='data:comment.anchorName'/>
+              <b:if cond='data:blog.enabledCommentProfileImages'>
+                <data:comment.authorAvatarImage/>
+              </b:if>
+              <b:if cond='data:comment.authorUrl'>
+                <a expr:href='data:comment.authorUrl' rel='nofollow'><data:comment.author/></a>
+              <b:else/>
+                <data:comment.author/>
+              </b:if>
+              <data:commentPostedByMsg/>
+            </dt>
+            <dd class='comment-body' expr:id='data:widget.instanceId + data:comment.cmtBodyIdPostfix'>
+              <b:if cond='data:comment.isDeleted'>
+                <span class='deleted-comment'><data:comment.body/></span>
+              <b:else/>
+                <p>
+                  <data:comment.body/>
+                </p>
+              </b:if>
+            </dd>
+            <dd class='comment-footer'>
+              <span class='comment-timestamp'>
+                <a expr:href='data:comment.url' title='comment permalink'>
+                  <data:comment.timestamp/>
+                </a>
+                <b:include data='comment' name='commentDeleteIcon'/>
+              </span>
+            </dd>
+          </b:loop>
+        </dl>
+      </div>
+
+      <b:if cond='data:post.commentPagingRequired'>
+        <span class='paging-control-container'>
+          <a expr:class='data:post.oldLinkClass' expr:href='data:post.oldestLinkUrl'>
+            <data:post.oldestLinkText/>
+          </a>
+          <a expr:class='data:post.oldLinkClass' expr:href='data:post.olderLinkUrl'>
+            <data:post.olderLinkText/>
+          </a>
+          &#160;
+          <data:post.commentRangeText/>
+          &#160;
+          <a expr:class='data:post.newLinkClass' expr:href='data:post.newerLinkUrl'>
+            <data:post.newerLinkText/>
+          </a>
+          <a expr:class='data:post.newLinkClass' expr:href='data:post.newestLinkUrl'>
+            <data:post.newestLinkText/>
+          </a>
+        </span>
+      </b:if>
+
+      <p class='comment-footer'>
+        <b:if cond='data:post.embedCommentForm'>
+          <b:if cond='data:post.allowNewComments'>
+            <b:include data='post' name='comment-form'/>
+          <b:else/>
+            <data:post.noNewCommentsText/>
+          </b:if>
+        <b:elseif cond='data:post.allowComments'/>
+          <a expr:href='data:post.addCommentUrl' expr:onclick='data:post.addCommentOnclick'><data:postCommentMsg/></a>
+        </b:if>
+      </p>
+    </b:if>
+    <b:if cond='data:showCmtPopup'>
+      <div id='comment-popup'>
+        <iframe allowtransparency='true' frameborder='0' id='comment-actions' name='comment-actions' scrolling='no'>
+        </iframe>
+      </div>
+    </b:if>
+
+  </div>
+</b:includable>
+        <b:includable id='feedLinks'>
+  <b:if cond='data:blog.pageType != &quot;item&quot;'> <b:if cond='data:feedLinks'>
+      <div class='blog-feeds'>
+        <b:include data='feedLinks' name='feedLinksBody'/>
+      </div>
+    </b:if>
+
+  <b:else/> <div class='post-feeds'>
+      <b:loop values='data:posts' var='post'>
+        <b:include cond='data:post.allowComments and data:post.feedLinks' data='post.feedLinks' name='feedLinksBody'/>
+      </b:loop>
+    </div>
+  </b:if>
+</b:includable>
+        <b:includable id='feedLinksBody' var='links'>
+  <div class='feed-links'>
+  <data:feedLinksMsg/>
+  <b:loop values='data:links' var='f'>
+     <a class='feed-link' expr:href='data:f.url' expr:type='data:f.mimeType' target='_blank'><data:f.name/> (<data:f.feedType/>)</a>
+  </b:loop>
+  </div>
+</b:includable>
+        <b:includable id='iframe_comments' var='post'>
+  </b:includable>
+        <b:includable id='mobile-index-post' var='post'>
+  <div class='mobile-date-outer date-outer'>
+    <b:if cond='data:post.dateHeader'>
+      <div class='date-header'>
+        <span><data:post.dateHeader/></span>
+      </div>
+    </b:if>
+
+    <div class='mobile-post-outer'>
+      <a expr:href='data:post.url'>
+        <h3 class='mobile-index-title entry-title' itemprop='name'>
+          <data:post.title/>
+        </h3>
+
+        <div class='mobile-index-arrow'>&amp;rsaquo;</div>
+
+        <div class='mobile-index-contents'>
+          <b:if cond='data:post.thumbnailUrl'>
+            <div class='mobile-index-thumbnail'>
+              <div class='Image'>
+                <img expr:src='data:post.thumbnailUrl'/>
+              </div>
+            </div>
+          </b:if>
+
+          <div class='post-body'>
+            <b:if cond='data:post.snippet'><data:post.snippet/></b:if>
+          </div>
+        </div>
+
+        <div style='clear: both;'/>
+      </a>
+
+      <div class='mobile-index-comment'>
+        <b:include cond='data:blog.pageType != &quot;static_page&quot;                          and data:post.allowComments                          and data:post.numComments != 0' data='post' name='comment_count_picker'/>
+      </div>
+    </div>
+  </div>
+</b:includable>
+        <b:includable id='mobile-main' var='top'>
+    <div class='blog-posts hfeed'>
+
+      <b:include data='top' name='status-message'/>
+
+      <b:if cond='data:blog.pageType == &quot;index&quot;'>
+        <b:loop values='data:posts' var='post'>
+          <b:include data='post' name='mobile-index-post'/>
+        </b:loop>
+      <b:else/>
+        <b:loop values='data:posts' var='post'>
+          <b:include data='post' name='mobile-post'/>
+        </b:loop>
+      </b:if>
+    </div>
+
+   <b:include name='mobile-nextprev'/>
+</b:includable>
+        <b:includable id='mobile-nextprev'>
+  <div class='blog-pager' id='blog-pager'>
+    <b:if cond='data:newerPageUrl'>
+      <div class='mobile-link-button' id='blog-pager-newer-link'>
+      <a class='blog-pager-newer-link' expr:href='data:newerPageUrl' expr:id='data:widget.instanceId + &quot;_blog-pager-newer-link&quot;' expr:title='data:newerPageTitle'>&amp;lsaquo;</a>
+      </div>
+    </b:if>
+
+    <b:if cond='data:olderPageUrl'>
+      <div class='mobile-link-button' id='blog-pager-older-link'>
+      <a class='blog-pager-older-link' expr:href='data:olderPageUrl' expr:id='data:widget.instanceId + &quot;_blog-pager-older-link&quot;' expr:title='data:olderPageTitle'>&amp;rsaquo;</a>
+      </div>
+    </b:if>
+
+    <div class='mobile-link-button' id='blog-pager-home-link'>
+    <a class='home-link' expr:href='data:blog.homepageUrl'><data:homeMsg/></a>
+    </div>
+
+    <div class='mobile-desktop-link'>
+      <a class='home-link' expr:href='data:desktopLinkUrl'><data:desktopLinkMsg/></a>
+    </div>
+
+  </div>
+  <div class='clear'/>
+</b:includable>
+        <b:includable id='mobile-post' var='post'>
+  <div class='date-outer'>
+    <b:if cond='data:post.dateHeader'>
+      <h2 class='date-header'><span><data:post.dateHeader/></span></h2>
+    </b:if>
+    <div class='date-posts'>
+      <div class='post-outer'>
+
+        <div class='post hentry uncustomized-post-template' itemscope='itemscope' itemtype='http://schema.org/BlogPosting'>
+          <b:if cond='data:post.thumbnailUrl'>
+            <meta expr:content='data:post.thumbnailUrl' itemprop='image_url'/>
+          </b:if>
+          <meta expr:content='data:blog.blogId' itemprop='blogId'/>
+          <meta expr:content='data:post.id' itemprop='postId'/>
+
+          <a expr:name='data:post.id'/>
+          <b:if cond='data:post.title'>
+            <h3 class='post-title entry-title' itemprop='name'>
+              <b:if cond='data:post.link'>
+                <a expr:href='data:post.link'><data:post.title/></a>
+              <b:elseif cond='data:post.url and data:blog.url != data:post.url'/>
+                <a expr:href='data:post.url'><data:post.title/></a>
+              <b:else/>
+                <data:post.title/>
+              </b:if>
+            </h3>
+          </b:if>
+
+          <div class='post-header'>
+            <div class='post-header-line-1'/>
+          </div>
+
+          <div class='post-body entry-content' expr:id='&quot;post-body-&quot; + data:post.id' itemprop='articleBody'>
+            <data:post.body/>
+            <div style='clear: both;'/> </div>
+
+          <div class='post-footer'>
+            <div class='post-footer-line post-footer-line-1'>
+              <span class='post-author vcard'>
+                <b:if cond='data:top.showAuthor'>
+                  <b:if cond='data:post.authorProfileUrl'>
+                    <span class='fn' itemprop='author' itemscope='itemscope' itemtype='http://schema.org/Person'>
+                      <meta expr:content='data:post.authorProfileUrl' itemprop='url'/>
+                      <a expr:href='data:post.authorProfileUrl' rel='author' title='author profile'>
+                        <span itemprop='name'><data:post.author/></span>
+                      </a>
+                    </span>
+                  <b:else/>
+                    <span class='fn' itemprop='author' itemscope='itemscope' itemtype='http://schema.org/Person'>
+                      <span itemprop='name'><data:post.author/></span>
+                    </span>
+                  </b:if>
+                </b:if>
+              </span>
+
+              <span class='post-timestamp'>
+                <b:if cond='data:top.showTimestamp'>
+                  <data:top.timestampLabel/>
+                  <b:if cond='data:post.url'>
+                    <meta expr:content='data:post.url.canonical' itemprop='url'/>
+                    <a class='timestamp-link' expr:href='data:post.url' rel='bookmark' title='permanent link'><abbr class='published' expr:title='data:post.timestampISO8601' itemprop='datePublished'><data:post.timestamp/></abbr></a>
+                  </b:if>
+                </b:if>
+              </span>
+
+              <span class='post-comment-link'>
+                <b:include cond='data:blog.pageType not in {&quot;item&quot;,&quot;static_page&quot;}                                  and data:post.allowComments' data='post' name='comment_count_picker'/>
+              </span>
+            </div>
+
+            <div class='post-footer-line post-footer-line-2'>
+              <b:if cond='data:top.showMobileShare'>
+                <div class='mobile-link-button goog-inline-block' id='mobile-share-button'>
+                  <a href='javascript:void(0);'><data:shareMsg/></a>
+                </div>
+              </b:if>
+            </div>
+
+          </div>
+        </div>
+
+        <b:include cond='data:blog.pageType in {&quot;static_page&quot;,&quot;item&quot;}' data='post' name='comment_picker'/>
+      </div>
+    </div>
+  </div>
+</b:includable>
+        <b:includable id='nextprev'>
+  <div class='blog-pager' id='blog-pager'>
+    <b:if cond='data:newerPageUrl'>
+      <span id='blog-pager-newer-link'>
+      <a class='blog-pager-newer-link' expr:href='data:newerPageUrl' expr:id='data:widget.instanceId + &quot;_blog-pager-newer-link&quot;' expr:title='data:newerPageTitle'><data:newerPageTitle/></a>
+      </span>
+    </b:if>
+
+    <b:if cond='data:olderPageUrl'>
+      <span id='blog-pager-older-link'>
+      <a class='blog-pager-older-link' expr:href='data:olderPageUrl' expr:id='data:widget.instanceId + &quot;_blog-pager-older-link&quot;' expr:title='data:olderPageTitle'><data:olderPageTitle/></a>
+      </span>
+    </b:if>
+
+    <a class='home-link' expr:href='data:blog.homepageUrl'><data:homeMsg/></a>
+
+    <b:if cond='data:mobileLinkUrl'>
+      <div class='blog-mobile-link'>
+        <a expr:href='data:mobileLinkUrl'><data:mobileLinkMsg/></a>
+      </div>
+    </b:if>
+
+  </div>
+  <div class='clear'/>
+</b:includable>
+        <b:includable id='post' var='post'>
+  <div class='post hentry uncustomized-post-template' itemprop='blogPost' itemscope='itemscope' itemtype='http://schema.org/BlogPosting'>
+    <b:if cond='data:post.firstImageUrl'>
+      <meta expr:content='data:post.firstImageUrl' itemprop='image_url'/>
+    </b:if>
+    <meta expr:content='data:blog.blogId' itemprop='blogId'/>
+    <meta expr:content='data:post.id' itemprop='postId'/>
+
+    <a expr:name='data:post.id'/>
+    <b:if cond='data:post.title'>
+      <h3 class='post-title entry-title' itemprop='name'>
+      <b:if cond='data:post.link or (data:post.url and data:blog.url != data:post.url)'>
+        <a expr:href='data:post.link ? data:post.link : data:post.url'><data:post.title/></a>
+      <b:else/>
+        <data:post.title/>
+      </b:if>
+      </h3>
+    </b:if>
+
+    <div class='post-header'>
+    <div class='post-header-line-1'/>
+    </div>
+
+    <div class='post-body entry-content' expr:id='&quot;post-body-&quot; + data:post.id' expr:itemprop='(data:blog.metaDescription ? &quot;&quot; : &quot;description &quot;) + &quot;articleBody&quot;'>
+      <data:post.body/>
+      <div style='clear: both;'/> </div>
+
+    <b:if cond='data:post.hasJumpLink'>
+      <div class='jump-link'>
+        <a expr:href='data:post.url + &quot;#more&quot;' expr:title='data:post.title'><data:post.jumpText/></a>
+      </div>
+    </b:if>
+
+    <div class='post-footer'>
+    <div class='post-footer-line post-footer-line-1'>
+      <span class='post-author vcard'>
+        <b:if cond='data:top.showAuthor'>
+          <data:top.authorLabel/>
+            <b:if cond='data:post.authorProfileUrl'>
+              <span class='fn' itemprop='author' itemscope='itemscope' itemtype='http://schema.org/Person'>
+                <meta expr:content='data:post.authorProfileUrl' itemprop='url'/>
+                <a class='g-profile' expr:href='data:post.authorProfileUrl' rel='author' title='author profile'>
+                  <span itemprop='name'><data:post.author/></span>
+                </a>
+              </span>
+            <b:else/>
+              <span class='fn' itemprop='author' itemscope='itemscope' itemtype='http://schema.org/Person'>
+                <span itemprop='name'><data:post.author/></span>
+              </span>
+            </b:if>
+        </b:if>
+      </span>
+
+      <span class='post-timestamp'>
+        <b:if cond='data:top.showTimestamp'>
+          <data:top.timestampLabel/>
+          <b:if cond='data:post.url'>
+            <meta expr:content='data:post.url.canonical' itemprop='url'/>
+            <a class='timestamp-link' expr:href='data:post.url' rel='bookmark' title='permanent link'><abbr class='published' expr:title='data:post.timestampISO8601' itemprop='datePublished'><data:post.timestamp/></abbr></a>
+          </b:if>
+        </b:if>
+      </span>
+
+      <span class='post-comment-link'>
+        <b:include cond='data:blog.pageType not in {&quot;item&quot;,&quot;static_page&quot;}                          and data:post.allowComments' data='post' name='comment_count_picker'/>
+      </span>
+
+      <span class='post-icons'>
+        <b:if cond='data:post.emailPostUrl'>
+          <span class='item-action'>
+          <a expr:href='data:post.emailPostUrl' expr:title='data:top.emailPostMsg'>
+            <img alt='' class='icon-action' height='13' src='https://resources.blogblog.com/img/icon18_email.gif' width='18'/>
+          </a>
+          </span>
+        </b:if>
+
+        <b:include data='post' name='postQuickEdit'/>
+      </span>
+
+      <div class='post-share-buttons goog-inline-block'>
+        <b:include cond='data:post.sharePostUrl' data='post' name='shareButtons'/>
+      </div>
+
+      </div>
+
+      <div class='post-footer-line post-footer-line-2'>
+      <span class='post-labels'>
+        <b:if cond='data:top.showPostLabels and data:post.labels'>
+          <data:postLabelsLabel/>
+          <b:loop values='data:post.labels' var='label'>
+            <a expr:href='data:label.url' rel='tag'><data:label.name/></a><b:if cond='not data:label.isLast'>,</b:if>
+          </b:loop>
+        </b:if>
+      </span>
+      </div>
+
+      <div class='post-footer-line post-footer-line-3'>
+      <span class='post-location'>
+        <b:if cond='data:top.showLocation and data:post.location'>
+          <data:postLocationLabel/>
+          <a expr:href='data:post.location.mapsUrl' target='_blank'><data:post.location.name/></a>
+        </b:if>
+      </span>
+      </div>
+      <b:if cond='data:post.authorAboutMe'>
+        <div class='author-profile' itemprop='author' itemscope='itemscope' itemtype='http://schema.org/Person'>
+          <b:if cond='data:post.authorPhoto.url'>
+            <img expr:src='data:post.authorPhoto.url' itemprop='image' width='50px'/>
+          </b:if>
+          <div>
+            <a class='g-profile' expr:href='data:post.authorProfileUrl' itemprop='url' rel='author' title='author profile'>
+              <span itemprop='name'><data:post.author/></span>
+            </a>
+          </div>
+          <span itemprop='description'><data:post.authorAboutMe/></span>
+        </div>
+      </b:if>
+    </div>
+  </div>
+</b:includable>
+        <b:includable id='postQuickEdit' var='post'>
+  <b:if cond='data:post.editUrl'>
+    <span expr:class='&quot;item-control &quot; + data:post.adminClass'>
+      <a expr:href='data:post.editUrl' expr:title='data:top.editPostMsg'>
+        <img alt='' class='icon-action' height='18' src='https://resources.blogblog.com/img/icon18_edit_allbkg.gif' width='18'/>
+      </a>
+    </span>
+  </b:if>
+</b:includable>
+        <b:includable id='shareButtons' var='post'>
+  <b:if cond='data:top.showEmailButton'><a class='goog-inline-block share-button sb-email' expr:href='data:post.sharePostUrl + &quot;&amp;target=email&quot;' expr:title='data:top.emailThisMsg' target='_blank'><span class='share-button-link-text'><data:top.emailThisMsg/></span></a></b:if><b:if cond='data:top.showBlogThisButton'><a class='goog-inline-block share-button sb-blog' expr:href='data:post.sharePostUrl + &quot;&amp;target=blog&quot;' expr:onclick='&quot;window.open(this.href, \&quot;_blank\&quot;, \&quot;height=270,width=475\&quot;); return false;&quot;' expr:title='data:top.blogThisMsg' target='_blank'><span class='share-button-link-text'><data:top.blogThisMsg/></span></a></b:if><b:if cond='data:top.showTwitterButton'><a class='goog-inline-block share-button sb-twitter' expr:href='data:post.sharePostUrl + &quot;&amp;target=twitter&quot;' expr:title='data:top.shareToTwitterMsg' target='_blank'><span class='share-button-link-text'><data:top.shareToTwitterMsg/></span></a></b:if><b:if cond='data:top.showFacebookButton'><a class='goog-inline-block share-button sb-facebook' expr:href='data:post.sharePostUrl + &quot;&amp;target=facebook&quot;' expr:onclick='&quot;window.open(this.href, \&quot;_blank\&quot;, \&quot;height=430,width=640\&quot;); return false;&quot;' expr:title='data:top.shareToFacebookMsg' target='_blank'><span class='share-button-link-text'><data:top.shareToFacebookMsg/></span></a></b:if><b:if cond='data:top.showPinterestButton'><a class='goog-inline-block share-button sb-pinterest' expr:href='data:post.sharePostUrl + &quot;&amp;target=pinterest&quot;' expr:title='data:top.shareToPinterestMsg' target='_blank'><span class='share-button-link-text'><data:top.shareToPinterestMsg/></span></a></b:if>
+</b:includable>
+        <b:includable id='status-message'>
+  <b:if cond='data:navMessage'>
+  <div class='status-msg-wrap'>
+    <div class='status-msg-body'>
+      <data:navMessage/>
+    </div>
+    <div class='status-msg-border'>
+      <div class='status-msg-bg'>
+        <div class='status-msg-hidden'><data:navMessage/></div>
+      </div>
+    </div>
+  </div>
+  <div style='clear: both;'/>
+  </b:if>
+</b:includable>
+        <b:includable id='threaded-comment-form' var='post'>
+  <div class='comment-form'>
+    <a name='comment-form'/>
+    <b:if cond='data:mobile'>
+      <p><data:blogCommentMessage/></p>
+      <data:blogTeamBlogMessage/>
+      <a expr:href='data:post.commentFormIframeSrc' id='comment-editor-src'/>
+      <iframe allowtransparency='true' class='blogger-iframe-colorize blogger-comment-from-post' expr:height='data:cmtIframeInitialHeight' frameborder='0' id='comment-editor' name='comment-editor' src='' style='display: none' width='100%'/>
+    <b:else/>
+      <p><data:blogCommentMessage/></p>
+      <data:blogTeamBlogMessage/>
+      <a expr:href='data:post.commentFormIframeSrc' id='comment-editor-src'/>
+      <iframe allowtransparency='true' class='blogger-iframe-colorize blogger-comment-from-post' expr:height='data:cmtIframeInitialHeight' frameborder='0' id='comment-editor' name='comment-editor' src='' width='100%'/>
+    </b:if>
+    <data:post.cmtfpIframe/>
+    <script type='text/javascript'>
+      BLOG_CMT_createIframe(&#39;<data:post.appRpcRelayPath/>&#39;);
+    </script>
+  </div>
+</b:includable>
+        <b:includable id='threaded_comment_js' var='post'>
+  <script async='async' expr:src='data:post.commentSrc' type='text/javascript'/>
+
+  <script type='text/javascript'>
+    (function() {
+      var items = <data:post.commentJso/>;
+      var msgs = <data:post.commentMsgs/>;
+      var config = <data:post.commentConfig/>;
+
+// <![CDATA[
+      var cursor = null;
+      if (items && items.length > 0) {
+        cursor = parseInt(items[items.length - 1].timestamp) + 1;
+      }
+
+      var bodyFromEntry = function(entry) {
+        var text = (entry &&
+                    ((entry.content && entry.content.$t) ||
+                     (entry.summary && entry.summary.$t))) ||
+            '';
+        if (entry && entry.gd$extendedProperty) {
+          for (var k in entry.gd$extendedProperty) {
+            if (entry.gd$extendedProperty[k].name == 'blogger.contentRemoved') {
+              return '<span class="deleted-comment">' + text + '</span>';
+            }
+          }
+        }
+        return text;
+      }
+
+      var parse = function(data) {
+        cursor = null;
+        var comments = [];
+        if (data && data.feed && data.feed.entry) {
+          for (var i = 0, entry; entry = data.feed.entry[i]; i++) {
+            var comment = {};
+            var id = /blog-(\d+).post-(\d+)/.exec(entry.id.$t);
+            comment.id = id ? id[2] : null;
+            comment.body = bodyFromEntry(entry);
+            comment.timestamp = Date.parse(entry.published.$t) + '';
+            if (entry.author && entry.author.constructor === Array) {
+              var auth = entry.author[0];
+              if (auth) {
+                comment.author = {
+                  name: (auth.name ? auth.name.$t : undefined),
+                  profileUrl: (auth.uri ? auth.uri.$t : undefined),
+                  avatarUrl: (auth.gd$image ? auth.gd$image.src : undefined)
+                };
+              }
+            }
+            if (entry.link) {
+              if (entry.link[2]) {
+                comment.link = comment.permalink = entry.link[2].href;
+              }
+              if (entry.link[3]) {
+                var pid = /.*comments\/default\/(\d+)\?.*/.exec(entry.link[3].href);
+                if (pid && pid[1]) {
+                  comment.parentId = pid[1];
+                }
+              }
+            }
+            comment.deleteclass = 'item-control blog-admin';
+            if (entry.gd$extendedProperty) {
+              for (var k in entry.gd$extendedProperty) {
+                if (entry.gd$extendedProperty[k].name == 'blogger.itemClass') {
+                  comment.deleteclass += ' ' + entry.gd$extendedProperty[k].value;
+                } else if (entry.gd$extendedProperty[k].name == 'blogger.displayTime') {
+                  comment.displayTime = entry.gd$extendedProperty[k].value;
+                }
+              }
+            }
+            comments.push(comment);
+          }
+        }
+        return comments;
+      };
+
+      var paginator = function(callback) {
+        if (hasMore()) {
+          var url = config.feed + '?alt=json&v=2&orderby=published&reverse=false&max-results=50';
+          if (cursor) {
+            url += '&published-min=' + new Date(cursor).toISOString();
+          }
+          window.bloggercomments = function(data) {
+            var parsed = parse(data);
+            cursor = parsed.length < 50 ? null
+                : parseInt(parsed[parsed.length - 1].timestamp) + 1
+            callback(parsed);
+            window.bloggercomments = null;
+          }
+          url += '&callback=bloggercomments';
+          var script = document.createElement('script');
+          script.type = 'text/javascript';
+          script.src = url;
+          document.getElementsByTagName('head')[0].appendChild(script);
+        }
+      };
+      var hasMore = function() {
+        return !!cursor;
+      };
+      var getMeta = function(key, comment) {
+        if ('iswriter' == key) {
+          var matches = !!comment.author
+              && comment.author.name == config.authorName
+              && comment.author.profileUrl == config.authorUrl;
+          return matches ? 'true' : '';
+        } else if ('deletelink' == key) {
+          return config.baseUri + '/comment/delete/'
+                + config.blogId + '/' + comment.id;
+        } else if ('deleteclass' == key) {
+          return comment.deleteclass;
+        }
+        return '';
+      };
+
+      var replybox = null;
+      var replyUrlParts = null;
+      var replyParent = undefined;
+
+      var onReply = function(commentId, domId) {
+        if (replybox == null) {
+          replybox = document.getElementById('comment-editor');
+          if (replybox != null) {
+            replybox.height = '250px';
+            replybox.style.display = 'block';
+            replyUrlParts = replybox.src.split('#');
+          }
+        }
+        if (replybox && (commentId !== replyParent)) {
+          replybox.src = '';
+          document.getElementById(domId).insertBefore(replybox, null);
+          replybox.src = replyUrlParts[0]
+              + (commentId ? '&parentID=' + commentId : '')
+              + '#' + replyUrlParts[1];
+          replyParent = commentId;
+        }
+      };
+
+      var hash = (window.location.hash || '#').substring(1);
+      var startThread, targetComment;
+      if (/^comment-form_/.test(hash)) {
+        startThread = hash.substring('comment-form_'.length);
+      } else if (/^c[0-9]+$/.test(hash)) {
+        targetComment = hash.substring(1);
+      }
+
+      var configJso = {
+        'maxDepth': config.maxThreadDepth
+      };
+      var provider = {
+        'id': config.postId,
+        'data': items,
+        'loadNext': paginator,
+        'hasMore': hasMore,
+        'getMeta': getMeta,
+        'onReply': onReply,
+        'rendered': true,
+        'initComment': targetComment,
+        'initReplyThread': startThread,
+        'config': configJso,
+        'messages': msgs
+      };
+
+      var render = function() {
+        if (window.goog && window.goog.comments) {
+          var holder = document.getElementById('comment-holder');
+          window.goog.comments.render(holder, provider);
+        }
+      };
+
+      if (window.goog && window.goog.comments) {
+        render();
+      } else {
+        window.goog = window.goog || {};
+        window.goog.comments = window.goog.comments || {};
+        window.goog.comments.loadQueue = window.goog.comments.loadQueue || [];
+        window.goog.comments.loadQueue.push(render);
+      }
+    })();
+// ]]>
+  </script>
+</b:includable>
+        <b:includable id='threaded_comments' var='post'>
+  <div class='comments' id='comments'>
+    <a name='comments'/>
+    <h4><data:post.commentLabelFull/>:</h4>
+
+    <div class='comments-content'>
+      <b:include cond='data:post.embedCommentForm' data='post' name='threaded_comment_js'/>
+      <div id='comment-holder'>
+         <data:post.commentHtml/>
+      </div>
+    </div>
+
+    <p class='comment-footer'>
+      <b:if cond='data:post.allowNewComments'>
+        <b:include data='post' name='threaded-comment-form'/>
+      <b:else/>
+        <data:post.noNewCommentsText/>
+      </b:if>
+    </p>
+
+    <b:if cond='data:showCmtPopup'>
+      <div id='comment-popup'>
+        <iframe allowtransparency='true' frameborder='0' id='comment-actions' name='comment-actions' scrolling='no'>
+        </iframe>
+      </div>
+    </b:if>
+
+    <div id='backlinks-container'>
+    <div expr:id='data:widget.instanceId + &quot;_backlinks-container&quot;'>
+    </div>
+    </div>
+  </div>
+</b:includable>
+      </b:widget>
+    </b:section>
+  </body>
+</html>
