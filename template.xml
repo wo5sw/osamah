@@ -414,8 +414,10 @@ header.hide-header{transform:translateY(-100%);}
 /* Fixed height so the card looks identical for ALL products (short or long content) */
 #product-modal .modal-panel{max-width:580px;position:relative;border-radius:22px 22px 0 0;transform:translateY(110%);transition:transform .32s cubic-bezier(0,.9,.4,1);height:80vh;height:calc(100dvh - 100px);max-height:calc(100dvh - 100px);background:#f3f4f6;overflow:hidden;}
 #product-modal.show .modal-panel{transform:translateY(0);}
-/* X button sits in the dark gap above the panel; fixed so it never overlaps content */
-.pm-close-float{position:fixed;top:26px;left:50%;margin-left:-27px;width:54px;height:54px;border-radius:50%;background:#1c1c1c;color:#fff;font-size:22px;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.5);opacity:0;transform:scale(.5);transition:opacity .25s,transform .32s cubic-bezier(0,.9,.4,1);z-index:1000002;}
+/* X button is a flex sibling directly above the panel: it rides with the
+   sheet (no position:fixed / dvh dependency) so it can never overlap the
+   white panel, even on the first open before the viewport height settles. */
+.pm-close-float{position:relative;margin:0 0 14px 0;flex-shrink:0;width:54px;height:54px;border-radius:50%;background:#1c1c1c;color:#fff;font-size:22px;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.5);opacity:0;transform:scale(.5);transition:opacity .25s,transform .32s cubic-bezier(0,.9,.4,1);z-index:1000002;}
 #product-modal.show .pm-close-float{opacity:1;transform:scale(1);}
 .pm-close-float:hover{background:var(--price-deal);}
 .drawer-slider{position:relative;height:300px;flex-shrink:0;background:#fff;border-radius:22px 22px 0 0;margin-bottom:8px;}
