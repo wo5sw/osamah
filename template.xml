@@ -710,6 +710,34 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
   .h-search input{padding:0 10px;font-size:13px;}
   .h-search-btn{width:38px;}
 }
+
+/* ── Discount badge floating on the slider image ── */
+.slider-badge{position:absolute;top:12px;left:12px;z-index:10;background:#e77600;color:#fff;font-size:13px;font-weight:800;padding:4px 10px;border-radius:6px 0 6px 0;}
+
+/* ── Size/capacity cards (big square pills) ── */
+.size-pills{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:12px;padding:4px 0;}
+.size-pills .pill{display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fafafa;border:2px solid #e6e6e6;border-radius:8px;padding:18px 10px;position:relative;overflow:hidden;min-width:0;height:auto;text-align:center;}
+.size-pills .pill.active{background:#fff9e6;border-color:#f7ca00;}
+.size-pill-title{font-size:17px;font-weight:800;color:#0f1111;margin-bottom:8px;}
+.size-pill-price{font-size:19px;font-weight:800;color:#0f1111;line-height:1;}
+.size-pill-old{font-size:12px;color:#767676;text-decoration:line-through;margin-top:6px;}
+.size-pill-badge{position:absolute;top:0;right:0;background:#cc0c39;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:0 0 0 6px;}
+.size-pills .pill.active .size-pill-badge{background:#e77600;}
+
+/* ── Drawer footer bar ── */
+.drawer-footer{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 18px;border-top:1px solid #e6e6e6;background:#fff;flex-shrink:0;}
+.drawer-foot-info{display:flex;flex-direction:column;align-items:flex-start;}
+.dfi-weight{font-size:12px;color:#767676;margin-bottom:2px;}
+.dfi-price{font-size:22px;font-weight:800;color:#0f1111;line-height:1;margin-bottom:2px;}
+.dfi-old{font-size:13px;color:#767676;text-decoration:line-through;display:inline-block;}
+.dfi-badge{background:#cc0c39;color:#fff;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:700;margin-right:6px;display:inline-block;}
+.btn-drawer-add{background:#ffd814!important;border:none!important;color:#0f1111!important;font-weight:800!important;font-size:16px!important;border-radius:50px!important;padding:14px!important;width:100%;height:auto!important;flex:1;box-shadow:0 2px 5px rgba(0,0,0,.05);}
+.btn-drawer-buy{display:none!important;}
+
+/* ── Drawer body: scrollable area above the fixed footer ── */
+#drawer-body{flex:1;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;}
+.modal-panel{display:flex;flex-direction:column;}
+
   ]]></b:skin>
 </head>
 <body>
@@ -900,16 +928,20 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
 <!-- PRODUCT DRAWER -->
 <div class='modal' id='product-modal' onclick='backdropClose(event,&quot;product-modal&quot;)'>
   <button class='pm-close-float' onclick='closeModal(&quot;product-modal&quot;)'>&#10005;</button>
-  <div class='modal-panel'>
-    <div class='drawer-slider'>
-      <div class='drawer-track' id='drawer-track'/>
-      <div class='drawer-dots' id='drawer-dots'/>
+  <div class='modal-panel' style='background:#fff;'>
+    <div class='drawer-body' id='drawer-body'>
+      <div class='drawer-slider' style='border-radius:0;margin-bottom:0;position:relative;'>
+        <div id='drawer-slider-badge' class='slider-badge' style='display:none'/>
+        <div class='drawer-track' id='drawer-track'/>
+        <div class='drawer-dots' id='drawer-dots'/>
+      </div>
+      <div id='drawer-content-dynamic'/>
     </div>
-    <div class='drawer-body' id='drawer-body'/>
     <div class='drawer-footer'>
       <div class='drawer-foot-info'>
-        <span class='dfi-price' id='drawer-foot-price'/>
         <span class='dfi-weight' id='drawer-foot-weight'/>
+        <span class='dfi-price' id='drawer-foot-price'/>
+        <div id='drawer-foot-old'/>
       </div>
       <div class='drawer-action-slot'>
         <div class='drawer-qty-wrap swap-hidden' id='drawer-qty-wrap'>
@@ -917,9 +949,8 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
           <span class='drawer-qty-num' id='drawer-qty-num'>1</span>
           <button onclick='drawerQtyChange(1)' aria-label='زيادة'>+</button>
         </div>
-        <button class='btn-drawer-add' id='drawer-add-btn'>أضف إلى السلة</button>
+        <button class='btn-drawer-add' id='drawer-add-btn'>إضافة إلى عربة التسوق</button>
       </div>
-      <button class='btn-drawer-buy' id='drawer-buy-btn'>اشترِ الآن</button>
     </div>
   </div>
 </div>
@@ -2251,64 +2282,48 @@ function openDrawer(id) {
   var p = productIndex[id]; if (!p) return;
   drawerOpen = true;
   currentDrawerProduct = p;
-  // Fixed card height (visible viewport − 100px) so the popup looks IDENTICAL for
-  // every product, leaving a consistent dark gap above where the X floats.
-  // Uses real visible height (window.innerHeight) — reliable on iOS Safari.
-  var _panel = document.querySelector('#product-modal .modal-panel');
-  if (_panel) {
-    var _h = (window.innerHeight - 100) + 'px';
-    _panel.style.height = _h;
-    _panel.style.maxHeight = _h;
-  }
+
   var hasVariants = p.variants && p.variants.length > 0;
   var firstV = hasVariants ? p.variants[0] : p;
   currentDrawerSelected = hasVariants ? { color: firstV.color, size: null, sizePrice: null } : { size: null, sizePrice: null };
-  // drawer-title removed
+
   renderDrawerSlider(firstV.images || p.images);
+
+  // Discount badge on image
   var d = getVariantDiscount(firstV);
-  var savings = firstV.oldPrice ? (firstV.oldPrice - firstV.price).toFixed(2) : 0;
+  var sliderBadge = document.getElementById('drawer-slider-badge');
+  if (sliderBadge) {
+    if (d > 0) { sliderBadge.textContent = 'خصم ' + d + '%'; sliderBadge.style.display = 'block'; }
+    else { sliderBadge.style.display = 'none'; }
+  }
+
   var ratingLine = (p.rating != null)
-    ? '<div class="rating-line"><span class="stars">' + starsHTML(p.rating) + '</span><span style="font-size:13px;color:var(--link)">' + p.rating + '</span>' + (p.ratingCount != null ? '<span style="font-size:13px;color:var(--link)">| ' + p.ratingCount + ' تقييم</span>' : '') + '</div>'
-    : '<div class="rating-line" style="border-bottom:none;padding-bottom:0;margin-bottom:8px;color:var(--text-3);font-size:12px">منتج جديد</div>';
-  var isFree = firstV.price >= CONFIG.freeShippingMin;
-  // Split the real product description into "highlights" (first lines) + "details".
+    ? '<div class="rating-line" style="border:none;padding:0;margin-bottom:8px;justify-content:flex-start;"><span style="font-size:15px;font-weight:800;margin-left:6px;color:#0f1111;">' + p.rating + '</span><span class="stars" style="letter-spacing:1px;font-size:16px;">' + starsHTML(p.rating) + '</span><span style="font-size:13px;color:var(--text-3);margin-right:6px;">(' + (p.ratingCount||0) + ')</span></div>'
+    : '';
+
   var descLines = (firstV.desc && firstV.desc.length) ? firstV.desc : [];
   var highlights = descLines.slice(0, 4);
   var detailLines = descLines.slice(4);
-  var weightTag = (firstV.size || firstV.shape) ? '<div style="color:#666;font-size:13px;margin-bottom:14px;">' + escapeHtml(firstV.size || firstV.shape) + '</div>' : '';
+  var isFree = firstV.price >= CONFIG.freeShippingMin;
 
-  document.getElementById('drawer-body').innerHTML =
-    // Box 1: rating + title + price
-    '<div class="app-section">'
+  document.getElementById('drawer-content-dynamic').innerHTML =
+    '<div class="app-section" style="padding-top:14px;">'
     + ratingLine
-    + '<h2 class="drawer-title">' + escapeHtml(p.title) + '</h2>'
-    + weightTag
-    + '<div class="drawer-price-box"><div class="drawer-price">' + priceHTML(firstV.price,{deal:!!firstV.oldPrice}) + '</div>'
-    + '<div id="drawer-old-price-box">' + (firstV.oldPrice ? '<div class="drawer-old-price">' + (d ? '<span class="disc">-' + d + '%</span>' : '') + '<span class="lbl">السعر القائمة:</span><span class="old">' + formatPrice(firstV.oldPrice) + ' ' + CONFIG.currency + '</span></div>' + (d > 0 ? '<div class="drawer-savings">💰 توفّر ' + savings + ' ' + CONFIG.currency + '</div>' : '') : '') + '</div>'
-    + '<div style="font-size:11px;color:#888;margin-top:4px;">شامل جميع الضرائب</div></div>'
+    + '<h2 class="drawer-title" style="font-size:19px;font-weight:800;line-height:1.5;color:#0f1111;margin-bottom:0;">' + escapeHtml(p.title) + '</h2>'
     + '</div>'
-    // Box 2: highlights (from real description) — only if we have any
-    + '<div class="app-section" id="drawer-highlights-box"' + (highlights.length ? '' : ' style="display:none"') + '><h3 class="sec-title">أهم النقاط البارزة</h3><ul class="app-highlights" id="drawer-highlights">'
-      + highlights.map(function(l) { return '<li>' + escapeHtml(l) + '</li>'; }).join('')
-      + '</ul></div>'
-    // Box 3: variant options (colors/sizes) — only rendered when the product has them
     + '<div class="app-section" id="drawer-options-box"' + ((buildOptionsHTML(p, firstV.color) || variantMetaHTML(firstV)) ? '' : ' style="display:none"') + '>' + variantMetaHTML(firstV) + buildOptionsHTML(p, firstV.color) + '</div>'
-    // Box 4: delivery
+    + '<div class="app-section" id="drawer-highlights-box"' + (highlights.length ? '' : ' style="display:none"') + '><h3 class="sec-title" style="font-size:16px;font-weight:800;">أهم النقاط البارزة</h3><ul class="app-highlights" id="drawer-highlights">'
+    + highlights.map(function(l) { return '<li style="margin-bottom:8px;">' + escapeHtml(l) + '</li>'; }).join('')
+    + '</ul></div>'
     + '<div class="app-section"><div class="delivery-block" style="margin:0;"><strong>التوصيل</strong>'
-    + (isFree ? '<div><span class="free">شحن مجاني</span> للطلبات فوق ' + CONFIG.freeShippingMin + ' ' + CONFIG.currency + '</div>' : '<div>تكلفة الشحن: <b>' + CONFIG.shippingFee + ' ' + CONFIG.currency + '</b></div><div style="margin-top:4px;font-size:12px;color:var(--text-2)">أضف ' + (CONFIG.freeShippingMin - firstV.price).toFixed(2) + ' ' + CONFIG.currency + ' للحصول على شحن مجاني</div>')
+    + (isFree ? '<div><span class="free">شحن مجاني</span> للطلبات فوق ' + CONFIG.freeShippingMin + ' ' + CONFIG.currency + '</div>' : '<div>تكلفة الشحن: <b>' + CONFIG.shippingFee + ' ' + CONFIG.currency + '</b></div>')
     + '</div></div>'
-    // Box 5: full description (collapsible) — only the remaining detail lines
     + '<div class="app-section desc-section acc-section acc-open" id="drawer-desc-section"' + (detailLines.length ? '' : ' style="display:none"') + '>'
     + '<button type="button" class="acc-head" onclick="toggleAccordion(this)"><span class="desc-heading">وصف المنتج</span><span class="acc-chevron">&#9662;</span></button>'
     + '<div class="acc-panel"><div class="desc-content" id="drawer-desc-content">' + detailLines.map(function(l) { return '<div>' + escapeHtml(l) + '</div>'; }).join('') + '</div></div></div>';
 
-  document.getElementById('drawer-add-btn').textContent = 'أضف إلى السلة';
-  document.getElementById('drawer-add-btn').style.background = '';
-  document.getElementById('drawer-add-btn').style.color = '';
-  document.getElementById('drawer-add-btn').style.border = '';
-  document.getElementById('drawer-buy-btn').style.opacity = '1';
+  document.getElementById('drawer-add-btn').textContent = 'إضافة إلى عربة التسوق';
   document.getElementById('drawer-add-btn').onclick = function() { addToCart(p.id, false); };
-  document.getElementById('drawer-buy-btn').onclick = function() { addToCart(p.id, true); };
   updateDrawerFootInfo(firstV);
   var _initCid = (hasVariants && p.variants.length > 1) ? p.id + '-' + firstV.color : p.id;
   updateDrawerAddBtn(_initCid);
@@ -2319,11 +2334,23 @@ function openDrawer(id) {
 function updateDrawerFootInfo(variant, priceOverride) {
   var pEl = document.getElementById('drawer-foot-price');
   var wEl = document.getElementById('drawer-foot-weight');
-  if (pEl) pEl.textContent = formatPrice(priceOverride != null ? priceOverride : (variant ? variant.price : 0)) + ' ' + CONFIG.currency;
+  var oEl = document.getElementById('drawer-foot-old');
+  var currentPrice = priceOverride != null ? priceOverride : (variant ? variant.price : 0);
+  var oldPrice = variant && variant.oldPrice ? variant.oldPrice : null;
+  if (pEl) pEl.innerHTML = formatPrice(currentPrice) + ' <span style="font-size:15px;font-weight:500">' + CONFIG.currency + '</span>';
   if (wEl) {
     var weight = (currentDrawerSelected && currentDrawerSelected.size) || (variant && (variant.size || variant.shape)) || '';
     wEl.textContent = weight;
     wEl.style.display = weight ? '' : 'none';
+  }
+  if (oEl) {
+    if (oldPrice && oldPrice > currentPrice) {
+      var d = Math.round(((oldPrice - currentPrice) / oldPrice) * 100);
+      oEl.innerHTML = '<span class="dfi-old">' + formatPrice(oldPrice) + ' ' + CONFIG.currency + '</span> <span class="dfi-badge">خصم ' + d + '%</span>';
+      oEl.style.display = '';
+    } else {
+      oEl.style.display = 'none';
+    }
   }
 }
 
@@ -2374,12 +2401,23 @@ function variantMetaHTML(v) {
 }
 
 function buildSizePillsHTML(pid, sizes) {
-  return '<div class="option-group" id="size-group">'
-    + '<div class="option-label">المقاس: <span id="sel-size-text" style="color:var(--text-3)">اختر المقاس</span></div>'
+  var p = productIndex[pid];
+  var baseOld = (p && p.variants && p.variants[0] && p.variants[0].oldPrice) || (p && p.oldPrice) || null;
+  return '<div class="option-group" id="size-group" style="border:none;padding:0;">'
     + '<div class="pills size-pills" id="size-pills">'
     + sizes.map(function(s) {
+        var discHtml = '', oldHtml = '';
+        if (baseOld && baseOld > s.price) {
+          var d = Math.round(((baseOld - s.price) / baseOld) * 100);
+          discHtml = '<div class="size-pill-badge">خصم ' + d + '%</div>';
+          oldHtml  = '<div class="size-pill-old">' + formatPrice(baseOld) + '</div>';
+        }
         return '<div class="pill" onclick="selectSize(\'' + escapeHtml(pid) + '\',' + s.price + ',\'' + s.label.replace(/'/g,"\\'") + '\',this)">'
-          + escapeHtml(s.label) + '<span class="size-price"> ' + formatPrice(s.price) + '</span></div>';
+          + discHtml
+          + '<div class="size-pill-title">' + escapeHtml(s.label) + '</div>'
+          + '<div class="size-pill-price">' + formatPrice(s.price) + ' <span style="font-size:13px;font-weight:500">' + CONFIG.currency + '</span></div>'
+          + oldHtml
+          + '</div>';
       }).join('')
     + '</div></div>';
 }
@@ -2391,8 +2429,6 @@ function selectSize(pid, price, label, el) {
   if (selText) { selText.textContent = label; selText.style.color = ''; }
   currentDrawerSelected.size = label;
   currentDrawerSelected.sizePrice = price;
-  var dp = document.querySelector('.drawer-price'); if (dp) dp.innerHTML = priceHTML(price, {});
-  var ob = document.getElementById('drawer-old-price-box'); if (ob) ob.innerHTML = '';
   updateDrawerFootInfo(null, price);
   var cid = pid + (currentDrawerSelected.color ? '-' + currentDrawerSelected.color : '') + '-' + label;
   updateDrawerAddBtn(cid);
@@ -2427,12 +2463,7 @@ function selectColor(pid, color, el) {
   var p = productIndex[pid]; if (!p) return;
   var variant = p.variants.find(function(v) { return v.color === color; }); if (!variant) return;
   currentDrawerSelected = { color: variant.color, size: null, sizePrice: null };
-  var dp = document.querySelector('.drawer-price'); if (dp) dp.innerHTML = priceHTML(variant.price,{deal:!!variant.oldPrice});
   updateDrawerFootInfo(variant);
-  var dv = getVariantDiscount(variant);
-  var sv = variant.oldPrice ? (variant.oldPrice - variant.price).toFixed(2) : 0;
-  var ob = document.getElementById('drawer-old-price-box');
-  if (ob) ob.innerHTML = variant.oldPrice ? '<div class="drawer-old-price">' + (dv ? '<span class="disc">-' + dv + '%</span>' : '') + '<span class="lbl">السعر القائمة:</span><span class="old">' + formatPrice(variant.oldPrice) + ' ' + CONFIG.currency + '</span></div>' + (dv > 0 ? '<div class="drawer-savings">💰 توفّر ' + sv + ' ' + CONFIG.currency + '</div>' : '') : '';
   // Use this variant's images; walk other variants as fallback before p.images
   var sliderImgs = (variant.images && variant.images.length) ? variant.images : null;
   if (!sliderImgs) { for (var vi2=0;vi2<p.variants.length;vi2++){if(p.variants[vi2].color===color&&p.variants[vi2].images&&p.variants[vi2].images.length){sliderImgs=p.variants[vi2].images;break;}} }
