@@ -186,9 +186,6 @@
       .stat-num   { font-size: 26px; font-weight: bold; }
       .stat-label { font-size: 11px; opacity: .65; letter-spacing: .5px; margin-top: 3px; }
 
-      .btn-remove { background: rgba(220,53,69,.22); color: #ff6b6b; border: 1px solid rgba(220,53,69,.4); padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
-      .btn-remove:hover { background: rgba(220,53,69,.4); }
-
       .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
 
       /* ── SIDEBAR ── */
@@ -343,7 +340,7 @@
 
         <h3 style='text-align:left; margin-bottom:6px; color:#17a2b8;'>&#9203; Current Queue</h3>
         <table class='queue-table'>
-          <thead><tr><th>Rank</th><th>Name</th><th>Time</th><th></th></tr></thead>
+          <thead><tr><th>Rank</th><th>Name</th><th>Time</th></tr></thead>
           <tbody id='tableBody'/>
         </table>
 
@@ -1115,21 +1112,6 @@
       }
     }
 
-    function removeFromQueue(id){
-      var idx=queue.findIndex(function(d){return String(d.id)===String(id);});
-      if(idx===-1) return;
-      var wasFirst=(idx===0);
-      queue.splice(idx,1);
-      ss('sys_queue',queue);
-      renderAdminUI();
-      syncStateToCloud();
-      showToast('🗑 تم حذف المندوب من الطابور','#f39c12');
-      // Notify the new #1 if someone was removed from ahead
-      if(wasFirst && queue.length>0 && queue[0].osPlayerId){
-        sendPushToNewFirst(queue[0].osPlayerId, queue[0].name);
-      }
-    }
-
     function sendPushToNewFirst(playerId, driverName){
       if(!playerId) return;
       if(ONESIGNAL_REST_KEY==='YOUR-ONESIGNAL-REST-API-KEY-HERE') return;
@@ -1186,12 +1168,11 @@
 
       var body=document.getElementById('tableBody'); body.innerHTML='';
       if(queue.length===0){
-        body.innerHTML='<tr><td colspan="4" style="text-align:center;color:rgba(255,255,255,0.4);padding:18px;">Queue is empty</td></tr>';
+        body.innerHTML='<tr><td colspan="3" style="text-align:center;color:rgba(255,255,255,0.4);padding:18px;">Queue is empty</td></tr>';
       } else {
         queue.forEach(function(d,i){
           var tr=document.createElement('tr');
-          tr.innerHTML='<td><strong>'+(i+1)+'</strong></td><td>'+esc(d.name)+'</td><td>'+esc(d.time)+'</td>'
-            +'<td><button class="btn-remove" onclick="removeFromQueue(\''+esc(String(d.id))+'\')">✕ حذف</button></td>';
+          tr.innerHTML='<td><strong>'+(i+1)+'</strong></td><td>'+esc(d.name)+'</td><td>'+esc(d.time)+'</td>';
           body.appendChild(tr);
         });
       }
