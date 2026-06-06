@@ -391,6 +391,7 @@
     var prevMyPos     = -1;       // rep's position on last cloud update (for #1 detection)
     var servedCooldown = false;   // block auto-rejoin after being served until rep physically leaves
     var systemActive  = true;     // master on/off (synced via cloud)
+    var wakeLock      = null;      // Screen Wake Lock — keeps GPS alive while app is open/backgrounded
     var ringInterval  = null, ringCount = 0;
     var mqttClient    = null;
     var myOSPlayerId  = null;
@@ -806,6 +807,7 @@
       }
 
       renderRepSystemBanner();
+      requestWakeLock();
       startLocationTracking();
     }
 
@@ -825,6 +827,19 @@
       if(window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone){
         var b=document.getElementById('installAppBtn'); if(b) b.style.display='none';
       }
+    });
+
+    // The moment the rep reopens / refocuses the app → re-acquire wake lock,
+    // re-arm the GPS watch, and do an instant location check so they get a number right away
+    document.addEventListener('visibilitychange', function(){
+      if(!document.hidden && currentDriver.id){
+        requestWakeLock();
+        if(geoWatchId === null) startLocationTracking();
+        quickLocationCheck();
+      }
+    });
+    window.addEventListener('focus', function(){
+      if(currentDriver.id){ requestWakeLock(); quickLocationCheck(); }
     });
 
     /* ═══════════════════════════════════════════════════════
@@ -943,6 +958,37 @@
 
     function stopLocationTracking(){
       if(geoWatchId!==null){ try{navigator.geolocation.clearWatch(geoWatchId);}catch(e){} geoWatchId=null; }
+      releaseWakeLock();
+    }
+
+    // Keeps the page (and GPS watch) alive while the phone is locked / app in background
+    function requestWakeLock(){
+      try{
+        if('wakeLock' in navigator && !wakeLock){
+          navigator.wakeLock.request('screen').then(function(wl){
+            wakeLock = wl;
+            wakeLock.addEventListener('release', function(){ wakeLock = null; });
+          }).catch(function(){});
+        }
+      }catch(e){}
+    }
+    function releaseWakeLock(){
+      try{ if(wakeLock){ wakeLock.release(); wakeLock = null; } }catch(e){}
+    }
+
+    // One-shot location read — runs the instant the rep glances at / reopens the app,
+    // so they get their number immediately without waiting for the next watch tick
+    function quickLocationCheck(){
+      if(!navigator.geolocation || !currentDriver.id) return;
+      navigator.geolocation.getCurrentPosition(function(pos){
+        var dist=haversineDistance(pos.coords.latitude,pos.coords.longitude,TARGET_LAT,TARGET_LNG);
+        if(dist>AUTO_LEAVE_METERS) servedCooldown=false;
+        var inQueue=queue.some(function(d){return String(d.id)===String(currentDriver.id);});
+        if(dist<=AUTO_JOIN_METERS&&!inQueue&&!servedCooldown&&systemActive){ autoJoinQueue(); }
+        else if(dist>AUTO_LEAVE_METERS&&inQueue){ autoLeaveQueue(); }
+        inQueue=queue.some(function(d){return String(d.id)===String(currentDriver.id);});
+        renderTracker(dist,inQueue);
+      }, function(){}, {enableHighAccuracy:true, timeout:10000, maximumAge:0});
     }
 
     /* ═══════════════════════════════════════════════════════
