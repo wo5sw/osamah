@@ -12,7 +12,6 @@
     <link href='data:application/json;charset=utf-8,%7B%22name%22%3A%22Queue%20System%22%2C%22short_name%22%3A%22Queue%22%2C%22start_url%22%3A%22%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230f2027%22%2C%22theme_color%22%3A%22%2317a2b8%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F679%2F679720.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D' rel='manifest'/>
 
     <script defer='defer' src='https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js'/>
-    <script src='https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js'/>
     <script src='https://unpkg.com/mqtt/dist/mqtt.min.js'/>
 
     <b:skin><![CDATA[
@@ -99,13 +98,36 @@
 
       .alert-msg { color: #ff6b6b; font-size: 13px; margin-top: 10px; display: none; font-weight: 600; }
 
-      /* ── READER ── */
-      #reader {
+      /* ── LIVE LOCATION TRACKER ── */
+      #liveTracker {
         width: 100%; max-width: 340px; margin: 15px auto;
-        border: 3px solid var(--teal); border-radius: 16px;
-        overflow: hidden; display: none;
-        box-shadow: 0 0 30px rgba(23,162,184,0.4);
+        border: 2px solid rgba(23,162,184,0.5); border-radius: 16px;
+        padding: 18px 16px; text-align: center;
+        background: rgba(23,162,184,0.08);
+        box-shadow: 0 0 24px rgba(23,162,184,0.18);
+        transition: all .35s ease;
       }
+      #liveTracker.in-range  { border-color:#55efc4; background:rgba(40,167,69,0.12); }
+      #liveTracker.out-range { border-color:#ff9f43; background:rgba(255,159,67,0.10); }
+      #liveTracker .lt-label    { font-size:12px; opacity:.7; letter-spacing:.5px; }
+      #liveTracker .lt-distance { font-size:34px; font-weight:bold; color:#17a2b8; margin:4px 0; }
+      #liveTracker.in-range .lt-distance { color:#55efc4; }
+      #liveTracker .lt-state    { font-size:13px; font-weight:600; opacity:.9; }
+
+      /* ── SYSTEM ON/OFF SWITCH (admin) ── */
+      .system-switch {
+        display:flex; align-items:center; justify-content:space-between;
+        gap:10px; padding:14px 16px; border-radius:14px;
+        margin:4px 0 16px; border:2px solid; transition:all .3s ease;
+      }
+      .system-switch.sys-on  { background:rgba(40,167,69,0.12);  border-color:#28a745; }
+      .system-switch.sys-off { background:rgba(220,53,69,0.12);  border-color:#dc3545; }
+      .system-switch .ssw-info { display:flex; align-items:center; gap:8px; font-weight:bold; font-size:15px; }
+      .system-switch .ssw-dot { width:12px; height:12px; border-radius:50%; display:inline-block; }
+      .system-switch.sys-on  .ssw-dot { background:#28a745; box-shadow:0 0 8px #28a745; }
+      .system-switch.sys-off .ssw-dot { background:#dc3545; box-shadow:0 0 8px #dc3545; }
+      .system-switch.sys-on  #sswBtn { background:#dc3545; color:#fff; }
+      .system-switch.sys-off #sswBtn { background:#28a745; color:#fff; }
 
       /* ── QUEUE STATUS BOX ── */
       .queue-status-box {
@@ -254,18 +276,24 @@
           <div id='pushEnabledMsg' style='display:none; color:#55efc4; font-size:13px; font-weight:600;'>&#9989; Alerts enabled &#8212; you&#39;ll be notified when it&#39;s your turn, even in the background!</div>
         </div>
 
+        <div id='repSystemStoppedBanner' style='display:none; background:rgba(220,53,69,0.15); border:2px solid #dc3545; color:#ff8787; padding:16px; border-radius:14px; margin:16px auto; max-width:320px; font-weight:bold;'>
+          🔴 النظام متوقف حالياً من قبل الإدارة
+        </div>
+
         <div class='queue-status-box' id='queuePositionBox'>
-          Scan barcode to book your turn
+          📍 Locating you…
+        </div>
+
+        <div id='liveTracker'>
+          <div class='lt-label'>📍 DISTANCE TO WAREHOUSE</div>
+          <div class='lt-distance' id='ltDistance'>—</div>
+          <div class='lt-state' id='ltState'>Locating you…</div>
         </div>
 
         <div id='rep-stats-container' style='margin-top:16px; margin-bottom:16px; background:rgba(255,255,255,0.05); padding:18px 14px; border-radius:14px; border:1px solid rgba(255,255,255,0.1);'>
           <p style='font-size:12px; opacity:0.7; letter-spacing:0.5px; margin-bottom:4px;'>📦 ORDERS COMPLETED TODAY</p>
           <div id='daily-count' style='font-size:38px; font-weight:bold; color:#17a2b8; text-shadow:0 2px 10px rgba(23,162,184,0.3);'>0</div>
         </div>
-
-        <p id='camInstructionsText'>Point camera at the wall barcode</p>
-        <button class='btn btn-success' id='startCamBtn' onclick='startScanner()'>&#9654; Start Scan</button>
-        <div id='reader'/>
 
         <div style='margin-top:20px; padding-top:16px; border-top: 1px solid rgba(255,255,255,0.1);'>
           <button class='btn btn-install' id='installAppBtn' onclick='promptAppInstall()' style='display:none;'>📱 Install App</button>
@@ -294,6 +322,14 @@
           </div>
         </div>
 
+        <div id='systemSwitchBox' class='system-switch sys-on'>
+          <div class='ssw-info'>
+            <span class='ssw-dot'/>
+            <span id='sswText'>النظام يعمل</span>
+          </div>
+          <button class='btn btn-sm' id='sswBtn' onclick='toggleSystem()'>إيقاف النظام</button>
+        </div>
+
         <div class='stats-row'>
           <div class='stat-card'><div class='stat-num' id='stat-waiting'>0</div><div class='stat-label'>Waiting</div></div>
           <div class='stat-card'><div class='stat-num' id='stat-assigned'>0</div><div class='stat-label'>Completed</div></div>
@@ -307,7 +343,7 @@
 
         <h3 style='text-align:left; margin-bottom:6px; color:#17a2b8;'>&#9203; Current Queue</h3>
         <table class='queue-table'>
-          <thead><tr><th>Rank</th><th>Name</th><th>Time</th></tr></thead>
+          <thead><tr><th>Rank</th><th>Name</th><th>Time</th><th></th></tr></thead>
           <tbody id='tableBody'/>
         </table>
 
@@ -331,19 +367,16 @@
 
     var ONESIGNAL_APP_ID = 'YOUR-ONESIGNAL-APP-ID-HERE';
     var ADMIN_PASSWORD = '7700';
-    var QR_CODE_VALUE = 'AMAZON_STORE_123';
     var ONESIGNAL_REST_KEY = 'YOUR-ONESIGNAL-REST-API-KEY-HERE';
 
-    var TOPIC_SYNC     = 'qs_sync_mandoobs_wh_8891';
-    var TOPIC_STATE    = 'qs_state_mandoobs_wh_8891';
+    var TOPIC_SYNC  = 'qs_sync_mandoobs_wh_8891';
+    var TOPIC_STATE = 'qs_state_mandoobs_wh_8891';
 
-    // ── Geolocation verification ──────────────────────────────────────────
-    // Open https://maps.app.goo.gl/EPnoynCvaZvM5bBS7 on your phone,
-    // tap Share → Copy Link, paste it — the full URL contains @LAT,LNG,ZOOM
-    // Copy those numbers here:
-    var TARGET_LAT          = 24.7745;   // ← replace with actual latitude
-    var TARGET_LNG          = 46.7382;   // ← replace with actual longitude
-    var MAX_DISTANCE_METERS = 200;       // allowed radius around the location
+    // ── GPS auto-queue ────────────────────────────────────────────────────
+    var TARGET_LAT        = 24.7993021;   // warehouse latitude
+    var TARGET_LNG        = 46.7590289;   // warehouse longitude
+    var AUTO_JOIN_METERS  = 100;          // ≤ this → auto-join queue
+    var AUTO_LEAVE_METERS = 130;          // > this → auto-leave (buffer avoids GPS jitter)
 
     /* ═══════════════════════════════════════════════════════
        STATE & STORAGE
@@ -352,21 +385,25 @@
     function ss(k,v) { try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} }
 
     var AUTHORIZED_DRIVERS = {};
-    var isAdmin = false;
-    var currentDriver  = { id: null, name: null };
-    var html5QrCode    = null;
-    var ringInterval   = null, ringCount = 0;
-    var mqttClient     = null;
-    var myOSPlayerId   = null; 
-    
+    var isAdmin       = false;
+    var currentDriver = { id: null, name: null };
+    var geoWatchId    = null;     // navigator.geolocation.watchPosition handle
+    var prevMyPos     = -1;       // rep's position on last cloud update (for #1 detection)
+    var servedCooldown = false;   // block auto-rejoin after being served until rep physically leaves
+    var systemActive  = true;     // master on/off (synced via cloud)
+    var ringInterval  = null, ringCount = 0;
+    var mqttClient    = null;
+    var myOSPlayerId  = null;
+
     // Unique Device Tracking for login prevention
-    var myDeviceId     = sg('my_device_id', Math.random().toString(36).substr(2,9));
+    var myDeviceId  = sg('my_device_id', Math.random().toString(36).substr(2,9));
     ss('my_device_id', myDeviceId);
-    var loginTimeout   = null;
+    var loginTimeout = null;
 
     // Load initial state from local storage
-    var queue      = sg('sys_queue',   []);
-    var historyLog = sg('sys_history', []);
+    var queue        = sg('sys_queue',   []);
+    var historyLog   = sg('sys_history', []);
+    systemActive     = sg('sys_active',  true);
 
     /* ═══════════════════════════════════════════════════════
        BLOGGER FEED
@@ -565,21 +602,38 @@
         try {
           var data = JSON.parse(message.toString());
 
-          // ☁️ CLOUD STATE SYNC: Replaces the need for the admin laptop to be turned on
+          // ☁️ CLOUD STATE SYNC
           if(topic === TOPIC_STATE) {
              if(data.queue)      { queue = data.queue;            ss('sys_queue', queue); }
              if(data.historyLog) { historyLog = data.historyLog; ss('sys_history', historyLog); }
+             if(typeof data.systemActive === 'boolean') {
+               systemActive = data.systemActive; ss('sys_active', systemActive);
+             }
 
              if(isAdmin) {
-               renderAdminUI(); // Update admin screen with cloud data
+               renderSystemSwitch();
+               renderAdminUI();
              } else if(currentDriver.id) {
-               // The driver looks at the cloud data to see their own position!
                var myPos = queue.findIndex(function(x){ return String(x.id) === String(currentDriver.id); });
-               updateDriverQueueUI(myPos, 'waiting');
-               renderDriverQueueUI(); // Update the live table on driver screen
-               if(data.historyLog) {
-                 updateDailyCounter(data.historyLog); // Update live orders taken today
+
+               // Detect promotion to #1 → ring + push even when app is in background
+               if(myPos === 0 && prevMyPos !== 0 && prevMyPos !== -1) {
+                 startContinuousRing();
+                 showNotifBanner('🔔 أنت الآن رقم 1 — توجّه فوراً!');
+                 // Also fire a local notification if page is hidden
+                 if(document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+                   try{ new Notification('🚨 دورك الآن!', { body: 'أنت رقم 1 — توجّه للاستلام فوراً', icon: 'https://cdn-icons-png.flaticon.com/512/679/679720.png', requireInteraction: true }); }catch(e){}
+                 }
                }
+
+               // If served (no longer in queue after being in it), re-arm cooldown
+               if(prevMyPos >= 0 && myPos === -1) servedCooldown = true;
+               prevMyPos = myPos;
+
+               renderRepSystemBanner();
+               updateDriverQueueUI(myPos, 'waiting');
+               renderDriverQueueUI();
+               if(data.historyLog) updateDailyCounter(data.historyLog);
              }
           }
 
@@ -654,8 +708,9 @@
       if(pw.value === ADMIN_PASSWORD){
         document.getElementById('adminError').style.display = 'none';
         pw.value = ''; isAdmin = true;
-        showScreen('dashboardScreen'); 
-        renderAdminUI(); // Read local DB instantly
+        showScreen('dashboardScreen');
+        renderSystemSwitch();
+        renderAdminUI();
       } else {
         document.getElementById('adminError').style.display = 'block';
         pw.value = ''; pw.focus();
@@ -750,21 +805,17 @@
         }
       }
 
-      setTimeout(function(){
-        if(!html5QrCode) startScanner();
-      }, 400);
+      renderRepSystemBanner();
+      startLocationTracking();
     }
 
     function logoutDriver(){
-      stopScanner(); stopContinuousRing();
+      stopLocationTracking(); stopContinuousRing();
+      servedCooldown=false; prevMyPos=-1;
       ss('logged_in_driver', null);
       currentDriver = { id:null, name:null }; myOSPlayerId = null;
       var box = document.getElementById('queuePositionBox');
-      box.textContent = 'Scan barcode to book your turn';
-      box.style.background=''; box.style.borderColor='';
-      document.getElementById('startCamBtn').style.display='inline-flex';
-      document.getElementById('startCamBtn').textContent='▶ Start Scan';
-      document.getElementById('camInstructionsText').style.display='block';
+      if(box){ box.textContent='📍 Locating you…'; box.style.background=''; box.style.borderColor=''; }
       showScreen('homeScreen');
     }
 
@@ -818,105 +869,80 @@
     }
 
     /* ═══════════════════════════════════════════════════════
-       GEOLOCATION
+       GEOLOCATION — HAVERSINE + LIVE TRACKER
        ═══════════════════════════════════════════════════════ */
     function haversineDistance(lat1, lng1, lat2, lng2){
       var R = 6371000;
-      var dLat = (lat2 - lat1) * Math.PI / 180;
-      var dLng = (lng2 - lng1) * Math.PI / 180;
-      var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-              Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
-              Math.sin(dLng/2) * Math.sin(dLng/2);
-      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      var dLat = (lat2-lat1)*Math.PI/180, dLng = (lng2-lng1)*Math.PI/180;
+      var a = Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);
+      return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
     }
 
-    function checkLocation(onSuccess, onFail){
-      if(!navigator.geolocation){ onFail('الجهاز لا يدعم تحديد الموقع'); return; }
-      document.getElementById('queuePositionBox').innerHTML = '📍 جارٍ التحقق من موقعك...';
-      navigator.geolocation.getCurrentPosition(
+    function renderTracker(dist, inQueue){
+      var box=document.getElementById('liveTracker'), dEl=document.getElementById('ltDistance'), sEl=document.getElementById('ltState');
+      if(!box||!dEl||!sEl) return;
+      dEl.textContent = dist>=1000 ? (dist/1000).toFixed(2)+' كم' : Math.round(dist)+' م';
+      box.classList.remove('in-range','out-range');
+      if(!systemActive){
+        box.classList.add('out-range'); sEl.textContent='🔴 النظام متوقف من قبل الإدارة';
+      } else if(dist<=AUTO_JOIN_METERS){
+        box.classList.add('in-range'); sEl.textContent=inQueue?'✅ داخل النطاق — لديك رقم في الطابور':'✅ داخل النطاق — جارٍ الحجز…';
+      } else {
+        box.classList.add('out-range'); sEl.textContent='🚶 اقترب إلى المستودع للحصول على رقم';
+      }
+    }
+
+    function autoJoinQueue(){
+      if(!(mqttClient&&mqttClient.connected)) return;
+      if(queue.some(function(d){return String(d.id)===String(currentDriver.id);})) return;
+      var t=Date.now();
+      queue.push({id:String(currentDriver.id),name:currentDriver.name,time:new Date(t).toLocaleTimeString('en-US'),timestamp:t,osPlayerId:myOSPlayerId||null,status:'waiting'});
+      queue.sort(function(a,b){return (a.timestamp||0)-(b.timestamp||0);});
+      ss('sys_queue',queue);
+      var myPos=queue.findIndex(function(x){return String(x.id)===String(currentDriver.id);});
+      prevMyPos=myPos;
+      renderDriverQueueUI();
+      updateDriverQueueUI(myPos,'waiting');
+      syncStateToCloud();
+      playSuccessSound();
+    }
+
+    function autoLeaveQueue(){
+      if(!(mqttClient&&mqttClient.connected)) return;
+      if(!queue.some(function(d){return String(d.id)===String(currentDriver.id);})) return;
+      queue=queue.filter(function(d){return String(d.id)!==String(currentDriver.id);});
+      ss('sys_queue',queue); ss('last_pos_'+currentDriver.id,-1);
+      prevMyPos=-1;
+      renderDriverQueueUI();
+      updateDriverQueueUI(-1,'left');
+      syncStateToCloud();
+    }
+
+    function startLocationTracking(){
+      if(geoWatchId!==null) return;
+      servedCooldown=false;
+      var sEl=document.getElementById('ltState');
+      if(!navigator.geolocation){ if(sEl) sEl.textContent='⚠️ الجهاز لا يدعم تحديد الموقع'; return; }
+      geoWatchId=navigator.geolocation.watchPosition(
         function(pos){
-          var dist = haversineDistance(pos.coords.latitude, pos.coords.longitude, TARGET_LAT, TARGET_LNG);
-          if(dist <= MAX_DISTANCE_METERS){
-            onSuccess();
-          } else {
-            onFail('أنت خارج نطاق الموقع المسموح به (' + Math.round(dist) + ' م)');
-          }
+          var dist=haversineDistance(pos.coords.latitude,pos.coords.longitude,TARGET_LAT,TARGET_LNG);
+          if(dist>AUTO_LEAVE_METERS) servedCooldown=false;
+          var inQueue=queue.some(function(d){return String(d.id)===String(currentDriver.id);});
+          if(dist<=AUTO_JOIN_METERS&&!inQueue&&!servedCooldown&&systemActive){ autoJoinQueue(); }
+          else if(dist>AUTO_LEAVE_METERS&&inQueue){ autoLeaveQueue(); }
+          inQueue=queue.some(function(d){return String(d.id)===String(currentDriver.id);});
+          renderTracker(dist,inQueue);
         },
-        function(){ onFail('تعذّر الحصول على موقعك — تأكد من تفعيل GPS والسماح للتطبيق'); },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        function(err){
+          var sEl=document.getElementById('ltState');
+          if(sEl) sEl.textContent=(err&&err.code===1)?'⚠️ فعّل صلاحية الموقع للتطبيق':'⚠️ تعذّر تحديد موقعك — تأكد من تفعيل GPS';
+        },
+        {enableHighAccuracy:true, timeout:15000, maximumAge:2000}
       );
     }
 
-    /* ═══════════════════════════════════════════════════════
-       SCANNER
-       ═══════════════════════════════════════════════════════ */
-    function stopScanner(){
-      if(html5QrCode){ try{html5QrCode.stop().catch(function(){});}catch(e){} try{html5QrCode.clear();}catch(e){} html5QrCode=null; }
-      document.getElementById('reader').style.display='none';
-    }
-
-    function startScanner(){
-      var lastPos = sg('last_pos_' + (currentDriver.id||''), -1);
-      if(lastPos >= 0 && html5QrCode === null){
-        return;
-      }
-
-      stopContinuousRing();
-      document.getElementById('reader').style.display='block';
-      document.getElementById('startCamBtn').style.display='none';
-      document.getElementById('camInstructionsText').style.display='none';
-
-      html5QrCode = new Html5Qrcode('reader');
-      html5QrCode.start({facingMode:'environment'},{fps:10,qrbox:{width:240,height:240}},
-        function onScan(text){
-          if(text === QR_CODE_VALUE){
-            stopScanner();
-            document.getElementById('startCamBtn').style.display='inline-flex';
-            document.getElementById('startCamBtn').textContent='🔄 Scan Again';
-            playSuccessSound();
-
-            checkLocation(
-              function(){
-                // ✅ Within allowed radius — proceed with queue entry
-                document.getElementById('queuePositionBox').innerHTML = '⏳ جارٍ المعالجة...';
-                if(mqttClient && mqttClient.connected){
-                  // THE MAGIC: The rep adds themselves directly to the array, independent of the admin laptop!
-                  var exists = queue.some(function(d){ return String(d.id)===String(currentDriver.id); });
-                  if(!exists){
-                    var t = Date.now();
-                    queue.push({
-                      id: String(currentDriver.id),
-                      name: currentDriver.name,
-                      time: new Date(t).toLocaleTimeString('en-US'),
-                      timestamp: t,
-                      osPlayerId: myOSPlayerId || null,
-                      status: 'waiting'
-                    });
-                    // Sort by time just in case multiple reps scan simultaneously
-                    queue.sort(function(a,b){ return (a.timestamp||0)-(b.timestamp||0); });
-                    ss('sys_queue', queue);
-                    renderDriverQueueUI(); // Update their local screen immediately
-                    syncStateToCloud(); // Push the newly calculated queue back up to the MQTT broker
-                  }
-                } else {
-                  document.getElementById('queuePositionBox').innerHTML='📡 No connection — please check internet';
-                }
-              },
-              function(msg){
-                // ❌ Outside radius or GPS error — block queue entry
-                document.getElementById('queuePositionBox').innerHTML = '🚫 ' + msg;
-                showToast('🚫 ' + msg, '#dc3545', 6);
-              }
-            );
-          }
-        },
-        function(){}
-      ).catch(function(){
-        showToast('⚠️ Camera denied — close overlays, refresh and try again','#dc3545',8);
-        document.getElementById('startCamBtn').style.display='inline-flex';
-        document.getElementById('camInstructionsText').style.display='block';
-        document.getElementById('reader').style.display='none';
-      });
+    function stopLocationTracking(){
+      if(geoWatchId!==null){ try{navigator.geolocation.clearWatch(geoWatchId);}catch(e){} geoWatchId=null; }
     }
 
     /* ═══════════════════════════════════════════════════════
@@ -925,28 +951,19 @@
     function updateDriverQueueUI(pos, status){
       ss('last_pos_'+currentDriver.id, pos);
       var box=document.getElementById('queuePositionBox');
-      var camBtn=document.getElementById('startCamBtn');
-      var camTxt=document.getElementById('camInstructionsText');
       if(!box) return;
-
       if(pos===0){
         box.innerHTML="You are number <span class='big-number'>1</span><span style='font-size:15px;'>Head to pickup immediately! 🎉</span>";
         box.style.background='rgba(40,167,69,0.3)'; box.style.borderColor='#55efc4';
-        if(camBtn) camBtn.style.display='none';
-        if(camTxt) camTxt.style.display='none';
-        startContinuousRing(); 
+        startContinuousRing();
       } else if(pos>0){
         stopContinuousRing();
         box.innerHTML="You are number <span class='big-number'>"+(pos+1)+"</span>";
         box.style.background='rgba(23,162,184,0.3)'; box.style.borderColor='#17a2b8';
-        if(camBtn) camBtn.style.display='none';
-        if(camTxt) camTxt.style.display='none';
       } else {
         stopContinuousRing();
-        box.innerHTML='Scan barcode to book your turn';
+        box.innerHTML='📍 اقترب من المستودع للحصول على رقم';
         box.style.background='rgba(255,255,255,0.05)'; box.style.borderColor='rgba(255,255,255,0.3)';
-        if(camBtn){ camBtn.style.display='inline-flex'; camBtn.textContent='▶ Start Scan'; }
-        if(camTxt) camTxt.style.display='block';
       }
     }
 
@@ -1022,10 +1039,63 @@
 
     function syncStateToCloud(){
       if(mqttClient && mqttClient.connected){
-        // Publish the full data arrays with retain: true. This acts as our cloud database!
-        var payload = { queue: queue, historyLog: historyLog };
+        var payload = { queue: queue, historyLog: historyLog, systemActive: systemActive };
         mqttClient.publish(TOPIC_STATE, JSON.stringify(payload), {retain: true, qos: 1});
       }
+    }
+
+    function removeFromQueue(id){
+      var idx=queue.findIndex(function(d){return String(d.id)===String(id);});
+      if(idx===-1) return;
+      var wasFirst=(idx===0);
+      queue.splice(idx,1);
+      ss('sys_queue',queue);
+      renderAdminUI();
+      syncStateToCloud();
+      showToast('🗑 تم حذف المندوب من الطابور','#f39c12');
+      // Notify the new #1 if someone was removed from ahead
+      if(wasFirst && queue.length>0 && queue[0].osPlayerId){
+        sendPushToNewFirst(queue[0].osPlayerId, queue[0].name);
+      }
+    }
+
+    function sendPushToNewFirst(playerId, driverName){
+      if(!playerId) return;
+      if(ONESIGNAL_REST_KEY==='YOUR-ONESIGNAL-REST-API-KEY-HERE') return;
+      fetch('https://onesignal.com/api/v1/notifications',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Accept':'application/json','Authorization':'Basic '+ONESIGNAL_REST_KEY},
+        body:JSON.stringify({
+          app_id:ONESIGNAL_APP_ID,
+          include_player_ids:[playerId],
+          headings:{en:'🔔 أنت الآن رقم 1!'},
+          contents:{en:driverName+' — أصبحت رقم واحد في الطابور. توجّه فوراً للاستلام!'},
+          priority:10, android_visibility:1,
+          ios_sound:'default', android_sound:'default', ttl:300
+        })
+      }).catch(function(){});
+    }
+
+    function toggleSystem(){
+      systemActive=!systemActive;
+      ss('sys_active',systemActive);
+      renderSystemSwitch();
+      renderAdminUI();
+      syncStateToCloud();
+      showToast(systemActive?'🟢 تم تشغيل النظام':'🔴 تم إيقاف النظام', systemActive?'#28a745':'#dc3545');
+    }
+
+    function renderSystemSwitch(){
+      var box=document.getElementById('systemSwitchBox'), txt=document.getElementById('sswText'), btn=document.getElementById('sswBtn');
+      if(!box||!txt||!btn) return;
+      box.classList.remove('sys-on','sys-off');
+      if(systemActive){ box.classList.add('sys-on'); txt.textContent='النظام يعمل'; btn.textContent='إيقاف النظام'; }
+      else             { box.classList.add('sys-off'); txt.textContent='النظام متوقف'; btn.textContent='تشغيل النظام'; }
+    }
+
+    function renderRepSystemBanner(){
+      var b=document.getElementById('repSystemStoppedBanner');
+      if(b) b.style.display=systemActive?'none':'block';
     }
 
     function renderAdminUI(){
@@ -1033,20 +1103,24 @@
       document.getElementById('stat-assigned').textContent = historyLog.length;
 
       var nextEl=document.getElementById('nextDriver'), btn=document.getElementById('assignBtn');
-      
-      if(queue.length>0){ 
-        nextEl.textContent='🧑 '+queue[0].name; 
-        btn.style.display = 'inline-flex'; 
+      if(!systemActive){
+        nextEl.textContent='⏸️ النظام متوقف';
+        btn.style.display='none';
+      } else if(queue.length>0){
+        nextEl.textContent='🧑 '+queue[0].name;
+        btn.style.display='inline-flex';
+      } else {
+        nextEl.textContent='No reps waiting'; btn.style.display='none';
       }
-      else{ nextEl.textContent='No reps waiting'; btn.style.display='none'; }
 
       var body=document.getElementById('tableBody'); body.innerHTML='';
       if(queue.length===0){
-        body.innerHTML='<tr><td colspan="3" style="text-align:center;color:rgba(255,255,255,0.4);padding:18px;">Queue is empty</td></tr>';
+        body.innerHTML='<tr><td colspan="4" style="text-align:center;color:rgba(255,255,255,0.4);padding:18px;">Queue is empty</td></tr>';
       } else {
         queue.forEach(function(d,i){
           var tr=document.createElement('tr');
-          tr.innerHTML='<td><strong>'+(i+1)+'</strong></td><td>'+esc(d.name)+'</td><td>'+esc(d.time)+'</td>';
+          tr.innerHTML='<td><strong>'+(i+1)+'</strong></td><td>'+esc(d.name)+'</td><td>'+esc(d.time)+'</td>'
+            +'<td><button class="btn-remove" onclick="removeFromQueue(\''+esc(String(d.id))+'\')">✕ حذف</button></td>';
           body.appendChild(tr);
         });
       }
@@ -1065,23 +1139,17 @@
       updateUnscannedUI();
     }
 
-    // 🚀 ONE-CLICK WORKFLOW: Instantly completes the order and alerts the rep
     function assignNextOrder(){
+      if(!systemActive){ showToast('🔴 النظام متوقف — شغّل النظام أولاً','#dc3545'); return; }
       if(!queue.length) return;
 
-      // 1. Remove the first rep from the queue and mark them as done
-      var done = queue.shift(); 
+      var done = queue.shift();
       done.time = new Date().toLocaleTimeString('en-US');
-      done.completedAt = Date.now(); // Inject explicit completion timestamp for driver counter metrics
-      
-      // 2. Add them to the completed history log
+      done.completedAt = Date.now();
       historyLog.push(done);
-
-      // 3. Save locally
       ss('sys_queue', queue);
       ss('sys_history', historyLog);
 
-      // 4. Notify the rep and update the admin screen
       if(done.osPlayerId){
         sendPushToDriver(done.osPlayerId, done.name);
         showToast('✅ Order assigned to ' + done.name + ' — push sent 🔔', '#28a745');
@@ -1089,8 +1157,13 @@
         showToast('✅ Order assigned to ' + done.name, '#28a745');
       }
 
-      renderAdminUI(); 
-      syncStateToCloud(); // Publish the changes to the cloud!
+      // Notify the rep who just became #1
+      if(queue.length>0 && queue[0].osPlayerId){
+        sendPushToNewFirst(queue[0].osPlayerId, queue[0].name);
+      }
+
+      renderAdminUI();
+      syncStateToCloud();
     }
 
     function clearAllData(){
@@ -1121,7 +1194,7 @@
           list.appendChild(li);
         }
       });
-      if(count===0) list.innerHTML='<li style="opacity:.5;text-align:center;">All reps have scanned! 🎉</li>';
+      if(count===0) list.innerHTML='<li style="opacity:.5;text-align:center;">All reps are at the warehouse! 🎉</li>';
       var badge=document.getElementById('unscannedBadge'); if(badge) badge.textContent=count;
     }
 
