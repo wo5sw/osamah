@@ -389,7 +389,9 @@
     var currentDriver = { id: null, name: null };
     var geoWatchId    = null;     // navigator.geolocation.watchPosition handle
     var prevMyPos     = -1;       // rep's position on last cloud update (for #1 detection)
-    var servedCooldown = false;   // block auto-rejoin after being served until rep physically leaves
+    var servedCooldown = false;   // block auto-rejoin after being served for 3 min at location
+    var servedAt      = 0;        // timestamp when cooldown started (Date.now())
+    var lastDist      = 9999;     // last known distance in metres (for countdown refresh)
     var systemActive  = true;     // master on/off (synced via cloud)
     var wakeLock      = null;      // Screen Wake Lock — keeps GPS alive while app is open/backgrounded
     var ringInterval  = null, ringCount = 0;
@@ -627,8 +629,8 @@
                  }
                }
 
-               // If served (no longer in queue after being in it), re-arm cooldown
-               if(prevMyPos >= 0 && myPos === -1) servedCooldown = true;
+               // If served (no longer in queue after being in it), re-arm cooldown + record time
+               if(prevMyPos >= 0 && myPos === -1){ servedCooldown = true; servedAt = Date.now(); }
                prevMyPos = myPos;
 
                renderRepSystemBanner();
@@ -900,6 +902,11 @@
       box.classList.remove('in-range','out-range');
       if(!systemActive){
         box.classList.add('out-range'); sEl.textContent='🔴 النظام متوقف من قبل الإدارة';
+      } else if(dist<=AUTO_JOIN_METERS && servedCooldown){
+        var remaining = Math.max(0, 180 - Math.floor((Date.now()-servedAt)/1000));
+        var mins = Math.floor(remaining/60), secs = remaining%60;
+        box.classList.add('in-range');
+        sEl.textContent = '⏳ انتظر ' + mins + ':' + (secs<10?'0':'') + secs + ' دقيقة ثم ستحصل على رقم';
       } else if(dist<=AUTO_JOIN_METERS){
         box.classList.add('in-range'); sEl.textContent=inQueue?'✅ داخل النطاق — لديك رقم في الطابور':'✅ داخل النطاق — جارٍ الحجز…';
       } else {
@@ -941,10 +948,14 @@
       geoWatchId=navigator.geolocation.watchPosition(
         function(pos){
           var dist=haversineDistance(pos.coords.latitude,pos.coords.longitude,TARGET_LAT,TARGET_LNG);
-          if(dist>AUTO_LEAVE_METERS) servedCooldown=false;
+          lastDist=dist;
+          if(dist>AUTO_LEAVE_METERS){ servedCooldown=false; servedAt=0; }
           var inQueue=queue.some(function(d){return String(d.id)===String(currentDriver.id);});
-          if(dist<=AUTO_JOIN_METERS&&!inQueue&&!servedCooldown&&systemActive){ autoJoinQueue(); }
-          else if(dist>AUTO_LEAVE_METERS&&inQueue){ autoLeaveQueue(); }
+          if(dist<=AUTO_JOIN_METERS&&!inQueue&&systemActive){
+            if(servedCooldown){
+              if(servedAt>0 && (Date.now()-servedAt)>=180000){ servedCooldown=false; servedAt=0; autoJoinQueue(); }
+            } else { autoJoinQueue(); }
+          } else if(dist>AUTO_LEAVE_METERS&&inQueue){ autoLeaveQueue(); }
           inQueue=queue.some(function(d){return String(d.id)===String(currentDriver.id);});
           renderTracker(dist,inQueue);
         },
@@ -960,6 +971,16 @@
       if(geoWatchId!==null){ try{navigator.geolocation.clearWatch(geoWatchId);}catch(e){} geoWatchId=null; }
       releaseWakeLock();
     }
+
+    // Refresh countdown display every second while rep is in served-cooldown zone
+    setInterval(function(){
+      if(!servedCooldown || !servedAt || !currentDriver.id) return;
+      var inQueue=queue.some(function(d){return String(d.id)===String(currentDriver.id);});
+      renderTracker(lastDist, inQueue);
+      if(lastDist<=AUTO_JOIN_METERS && (Date.now()-servedAt)>=180000){
+        servedCooldown=false; servedAt=0; autoJoinQueue();
+      }
+    }, 1000);
 
     // Keeps the page (and GPS watch) alive while the phone is locked / app in background
     function requestWakeLock(){
@@ -982,10 +1003,14 @@
       if(!navigator.geolocation || !currentDriver.id) return;
       navigator.geolocation.getCurrentPosition(function(pos){
         var dist=haversineDistance(pos.coords.latitude,pos.coords.longitude,TARGET_LAT,TARGET_LNG);
-        if(dist>AUTO_LEAVE_METERS) servedCooldown=false;
+        lastDist=dist;
+        if(dist>AUTO_LEAVE_METERS){ servedCooldown=false; servedAt=0; }
         var inQueue=queue.some(function(d){return String(d.id)===String(currentDriver.id);});
-        if(dist<=AUTO_JOIN_METERS&&!inQueue&&!servedCooldown&&systemActive){ autoJoinQueue(); }
-        else if(dist>AUTO_LEAVE_METERS&&inQueue){ autoLeaveQueue(); }
+        if(dist<=AUTO_JOIN_METERS&&!inQueue&&systemActive){
+          if(servedCooldown){
+            if(servedAt>0 && (Date.now()-servedAt)>=180000){ servedCooldown=false; servedAt=0; autoJoinQueue(); }
+          } else { autoJoinQueue(); }
+        } else if(dist>AUTO_LEAVE_METERS&&inQueue){ autoLeaveQueue(); }
         inQueue=queue.some(function(d){return String(d.id)===String(currentDriver.id);});
         renderTracker(dist,inQueue);
       }, function(){}, {enableHighAccuracy:true, timeout:10000, maximumAge:0});
