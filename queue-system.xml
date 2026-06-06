@@ -373,8 +373,8 @@
     var TOPIC_STATE = 'qs_state_mandoobs_wh_8891';
 
     // ── GPS auto-queue ────────────────────────────────────────────────────
-    var TARGET_LAT        = 24.7993021;   // warehouse latitude
-    var TARGET_LNG        = 46.7590289;   // warehouse longitude
+    var TARGET_LAT        = 24.7993316;   // warehouse latitude
+    var TARGET_LNG        = 46.7590946;   // warehouse longitude
     var AUTO_JOIN_METERS  = 100;          // ≤ this → auto-join queue
     var AUTO_LEAVE_METERS = 130;          // > this → auto-leave (buffer avoids GPS jitter)
 
