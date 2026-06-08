@@ -330,7 +330,6 @@
         //<![CDATA[
 
         var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbys4Xysb4sOxm7i8PVj3cHRhLe2iHdgWrgKzQULQnyWPtgH65ZExSdKxs2tE11ser2uIg/exec";
-        var PAGE_FEED_URL   = "/feeds/pages/default/280206546608680039?alt=json";
 
         var currentUser = null;
         var vcCount = 0;
@@ -351,39 +350,23 @@
           if(!u||!p){err.textContent='الرجاء إدخال اسم المستخدم وكلمة المرور';return;}
           btn.textContent='جاري التحقق...'; btn.disabled=true; err.textContent='';
           try {
-            var res=await fetch(PAGE_FEED_URL);
-            if(!res.ok) throw new Error('تأكد أن صفحة الصلاحيات منشورة ومتاحة للعموم.');
-            var json=await res.json();
-            if(!json||!json.entry||!json.entry.content) throw new Error('صفحة الصلاحيات فارغة أو تنسيقها غير صحيح.');
-            var raw=json.entry.content.$t.replace(/<[^>]+>/g,'\n');
-            var lines=raw.split('\n');
-            var found=null;
-            for(var i=0;i<lines.length;i++){
-              var parts=lines[i].split(':').map(function(s){return s.trim();}).filter(Boolean);
-              if(parts.length<2) continue;
-              if(parts[1]==='AD'&&parts.length>=3){
-                // Admin: username:AD:password
-                if(parts[0]===u&&parts[2]===p){found={name:parts[0],pass:p,isAdmin:true,section:'all'};break;}
-              } else {
-                // Rep: username:password[:section]
-                if(parts[0]===u&&parts[1]===p){found={name:parts[0],pass:p,isAdmin:false,section:parts[2]||''};break;}
-              }
-            }
-            if(found){
-              currentUser=found;
+            var res=await fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'login',username:u,password:p})});
+            var data=await res.json();
+            if(data&&data.success){
+              currentUser={name:u,pass:p,isAdmin:!!data.isAdmin,section:data.section||''};
               $('login-screen').classList.add('hidden');
               $('dashboard').classList.remove('hidden');
-              $('user-badge').textContent=found.name+(found.isAdmin?' 👑':' 🏪');
-              $('hdr-sub').textContent=found.isAdmin?'مدير — صلاحية جميع الأقسام':'قسمك: '+found.section;
-              if(!found.isAdmin&&found.section){
-                $('pcat').value=found.section;
+              $('user-badge').textContent=u+(currentUser.isAdmin?' 👑':' 🏪');
+              $('hdr-sub').textContent=currentUser.isAdmin?'مدير — صلاحية جميع الأقسام':'قسمك: '+currentUser.section;
+              if(!currentUser.isAdmin&&currentUser.section){
+                $('pcat').value=currentUser.section;
                 $('pcat').readOnly=true;
               }
               if(!vcCount) addV();
             } else {
-              err.textContent='❌ اسم المستخدم أو كلمة المرور غير صحيحة.';
+              err.textContent='❌ '+((data&&data.message)||'اسم المستخدم أو كلمة المرور غير صحيحة.');
             }
-          } catch(e){ err.textContent='❌ '+e.message; }
+          } catch(e){ err.textContent='❌ تعذّر الاتصال بالخادم — تأكد من نشر Apps Script وصحة الرابط. ('+e.message+')'; }
           finally { btn.textContent='تسجيل الدخول'; btn.disabled=false; }
         }
 
@@ -492,7 +475,7 @@
             oldp: ($('vc'+i+'-oldp') ||{value:''}).value,
             extra:($('vc'+i+'-extra')||{value:''}).value,
             sizes:szRows,
-            imgs:(varImgs[i]||[]).map(function(x){return {src:x.src,status:x.status||'ready'};})
+            imgs:(varImgs[i]||[]).filter(function(x){return x.status!=='uploading'&&/^https?:\/\//i.test(x.src);}).map(function(x){return {src:x.src};})
           };
         }
 
@@ -568,6 +551,7 @@
         }
         function addUrlImg(i,url){
           if(!varImgs[i])varImgs[i]=[];
+          if(!/^https?:\/\/[^\s"'<>]+$/i.test(url))return;
           if(varImgs[i].some(function(x){return x.src===url;}))return;
           varImgs[i].push({id:++imgSeq,src:url,status:'ready'});
           renderThumbs(i);
@@ -605,8 +589,8 @@
           box.innerHTML=imgs.map(function(img){
             var ov='';
             if(img.status==='uploading') ov='<div class="overlay" style="background:rgba(15,23,42,.6);">⏳</div>';
-            else if(img.status==='error') ov='<div class="overlay" title="'+(img.err||'')+'" style="background:rgba(220,38,38,.7);">⚠️</div>';
-            return '<div class="img-thumb"><img src="'+img.src+'" />'+ov+'<button class="rm" onclick="removeImgById('+i+','+img.id+')">✕</button></div>';
+            else if(img.status==='error') ov='<div class="overlay" title="'+esc(img.err||'')+'" style="background:rgba(220,38,38,.7);">⚠️</div>';
+            return '<div class="img-thumb"><img src="'+esc(img.src)+'" />'+ov+'<button class="rm" onclick="removeImgById('+i+','+img.id+')">✕</button></div>';
           }).join('');
         }
         document.addEventListener('paste',function(e){
@@ -668,7 +652,7 @@
               if(hasSzLbls){lines.push('الحجم:');szLabels.forEach(function(l,k){lines.push(l||('خيار '+(k+1)));});}
             }
             var html=lines.map(function(l){return '<div>'+esc(l)+'</div>';}).join('\n');
-            imgs.forEach(function(img){html+='\n<div>'+img.src+'</div>';});
+            imgs.forEach(function(img){html+='\n<div>'+esc(img.src)+'</div>';});
             if(html.trim()) sections.push(html);
           });
           if(!sections.length){alert('يرجى إدخال بيانات على الأقل للخيار الأول');return null;}
@@ -722,7 +706,7 @@
                 password:currentUser.pass,
                 title:title,
                 content:result.html,
-                labels:[cat]
+                category:cat
               })
             });
             var data=await res.json();
@@ -733,7 +717,7 @@
                 $('ptitle').value='';
                 if(currentUser.isAdmin) $('pcat').value='';
                 $('prating').value=''; $('pratcount').value='';
-                $('vc').innerHTML=''; vcCount=0; varImgs={}; addV();
+                $('vc').innerHTML=''; vcCount=0; varImgs={}; addV(); window._focusedV=1;
                 statusDiv.innerHTML='';
                 showToast('✅ الفورم جاهز لمنتج جديد','#059669');
               },4000);
@@ -763,7 +747,7 @@
               oldp: ($('vc'+i+'-oldp') ||{value:''}).value,
               extra:($('vc'+i+'-extra')||{value:''}).value,
               sizes:szRows,
-              imgs:(varImgs[i]||[]).map(function(x){return {src:x.src,status:x.status||'ready'};})
+              imgs:(varImgs[i]||[]).filter(function(x){return x.status!=='uploading'&&/^https?:\/\//i.test(x.src);}).map(function(x){return {src:x.src};})
             });
           });
           return data;

@@ -4,34 +4,37 @@
  * ============================================================
  *
  *  WHAT IT DOES
- *  Receives a product (title + HTML content + category) from the
- *  Store Bro publisher tool, verifies the rep's username/password
- *  against the same credentials page the tool uses, then publishes
- *  the post to your Blogger blog with the category as a label.
+ *  - Authenticates reps/admin for the Store Bro publisher tool
+ *    (action:'login') against a PRIVATE user list kept inside this
+ *    script — credentials are NEVER exposed to any browser.
+ *  - Publishes a product (title + content + category) to your Blogger
+ *    blog (action:'publishPost'), after verifying the same credentials
+ *    server-side and SANITIZING the HTML content.
  *
- *  It returns JSON:  { "success": true,  "message": "..." }
- *                or  { "success": false, "message": "..." }
- *  — exactly what the tool's publishDirectly() expects.
+ *  Returns JSON:
+ *    login   → { success:true, isAdmin, section }  |  { success:false, message }
+ *    publish → { success:true, message }           |  { success:false, message }
  *
- *  ── HOW TO DEPLOY (one time, free) ──────────────────────────
- *  1. Go to  https://script.google.com  →  New project.
- *  2. Delete the sample code, paste THIS whole file, click Save 💾.
- *  3. Set your blog address below in CONFIG (BLOG_URL).
- *  4. Click  Deploy ▾  →  New deployment.
- *  5. Gear icon ⚙ → select type "Web app".
- *  6. Settings:
- *        Execute as:        Me (the Google account that OWNS the blog)
- *        Who has access:    Anyone
- *  7. Click Deploy → Authorize access → choose your account → Allow.
- *        (It asks for Blogger permission — this is required to publish.)
- *  8. Copy the "Web app URL" (it ends with /exec).
- *  9. Open store-bro-publisher.html, find:
- *        const APPS_SCRIPT_URL = "...";
- *     and paste your URL between the quotes. Re-upload to Blogger. Done.
+ *  ── ONE-TIME SETUP ──────────────────────────────────────────
+ *  1. script.google.com → New project → paste this whole file → Save 💾.
+ *  2. In CONFIG below: set BLOG_URL, and set SALT to any random text
+ *     ONCE (changing it later invalidates every stored hash).
+ *  3. Add your users:
+ *       - Edit runSetup() at the bottom, choose it from the function
+ *         dropdown, click Run, then open  View → Logs (Execution log).
+ *       - Copy each printed line into the USERS array below.
+ *  4. Deploy ▾ → New deployment → type "Web app".
+ *        Execute as:     Me (the account that OWNS the blog)
+ *        Who has access: Anyone
+ *     Deploy → Authorize access → Allow. Copy the "/exec" URL.
+ *  5. Put that URL into store-bro-publisher.xml (APPS_SCRIPT_URL) and
+ *     re-upload the widget to Blogger.
  *
- *  TEST after deploy: open  <your /exec url>  in a browser — you should
- *  see  {"success":false,"message":"This endpoint accepts POST only."}
- *  That confirms it is live.
+ *  After ANY change to USERS / CONFIG:  Deploy ▾ → Manage deployments
+ *  → Edit ✏ → Version: "New version" → Deploy, or it won't take effect.
+ *
+ *  TEST: open the /exec URL in a browser — you should see
+ *        {"success":false,"message":"This endpoint accepts POST only..."}
  * ============================================================
  */
 
@@ -40,62 +43,79 @@ var CONFIG = {
   // Your blog address (no trailing slash). Used to auto-detect the Blog ID.
   BLOG_URL: 'https://broo1stoor.blogspot.com',
 
-  // The published page that holds the rep credentials (one per line):
-  //   username:password:section      ← normal rep
-  //   username:AD:password           ← admin (can publish to any category)
-  // This is the SAME page your tool's login reads.
-  CREDENTIALS_FEED_URL: 'https://broo1stoor.blogspot.com/feeds/pages/default/280206546608680039?alt=json',
+  // Set ONCE to any random text. It is mixed into every password hash.
+  // Changing it later invalidates all existing hashes in USERS.
+  SALT: 'store-bro-salt-CHANGE-ME-7f3ad9',
 
-  // Set to true to require a valid username/password before publishing.
-  // Set to false to skip the check (NOT recommended).
+  // Require a valid username/password before publishing. Keep true.
   REQUIRE_AUTH: true
 };
-/* ─────────────────────────────────────────────────── */
+
+/* ────────────── USERS — your PRIVATE credential list ──────────────
+   This is never sent to browsers. Passwords are stored as salted
+   SHA-256 hashes, not plain text.
+
+   To add someone, run makeUser / makeAdmin (see runSetup) and copy the
+   printed line here. 'section' must match the Blogger Label exactly.
+   Admins may publish to any category; their section is 'الكل'.
+*/
+var USERS = [
+  // { user:'ahmad',  hash:'....', section:'ايفون', admin:false },
+  // { user:'osamah', hash:'....', section:'الكل',  admin:true  },
+];
+/* ─────────────────────────────────────────────────────────────── */
 
 
-/** GET — just a liveness check so you can confirm the URL works. */
+/** GET — liveness check so you can confirm the URL works. */
 function doGet(e) {
   return json({ success: false, message: 'This endpoint accepts POST only. Deployment is live ✅' });
 }
 
-/** POST — the publish entry point called by the tool. */
+/** POST — login + publish entry point called by the tool. */
 function doPost(e) {
   try {
     if (!e || !e.postData || !e.postData.contents) {
       return json({ success: false, message: 'لا توجد بيانات في الطلب.' });
     }
 
-    var payload = JSON.parse(e.postData.contents);
+    var payload  = JSON.parse(e.postData.contents);
+    var action   = (payload.action   || 'publishPost').toString();
     var username = (payload.username || '').toString().trim();
-    var password = (payload.password || '').toString().trim();
-    var title    = (payload.title    || '').toString().trim();
-    var content  = (payload.content  || '').toString();
-    var category = (payload.category || '').toString().trim();
+    var password = (payload.password || '').toString();
+
+    /* ---- LOGIN ---- */
+    if (action === 'login') {
+      var a = verifyCredentials(username, password);
+      if (!a.ok) return json({ success: false, message: 'اسم المستخدم أو كلمة المرور غير صحيحة.' });
+      return json({ success: true, isAdmin: a.isAdmin, section: a.section });
+    }
+
+    /* ---- PUBLISH ---- */
+    var title    = (payload.title   || '').toString().trim();
+    var content  = (payload.content || '').toString();
+    var category = (payload.category ||
+                    (Array.isArray(payload.labels) ? payload.labels.join(',') : payload.labels) ||
+                    '').toString().trim();
 
     if (!title)   return json({ success: false, message: 'عنوان المنتج مفقود.' });
     if (!content) return json({ success: false, message: 'محتوى المنتج مفقود.' });
 
-    /* 1) Verify credentials (same rules as the tool's login) */
     if (CONFIG.REQUIRE_AUTH) {
       var auth = verifyCredentials(username, password);
       if (!auth.ok) return json({ success: false, message: 'بيانات الدخول غير صحيحة — لا يمكن النشر.' });
-
       // A normal rep may only publish to their own section.
-      if (!auth.isAdmin) {
-        category = auth.section; // force the rep's assigned section
-      }
+      if (!auth.isAdmin) category = auth.section;
     }
 
-    /* 2) Build labels list (category → Blogger label) */
+    // Never trust client HTML — strip anything but safe, structural tags.
+    content = sanitizeContent(content);
+
+    /* Build labels list (category → Blogger label) */
     var labels = [];
     if (category && category !== 'الكل') {
-      category.split(/[,،]/).forEach(function (c) {
-        c = c.trim();
-        if (c) labels.push(c);
-      });
+      category.split(/[,،]/).forEach(function (c) { c = c.trim(); if (c) labels.push(c); });
     }
 
-    /* 3) Publish to Blogger */
     var blogId = getBlogId();
     var result = publishPost(blogId, title, content, labels);
 
@@ -111,45 +131,105 @@ function doPost(e) {
 
 
 /* ============================================================
-   HELPERS
+   AUTH (server-side, private)
    ============================================================ */
 
-/** Verify username/password against the credentials page feed. */
+/** Salted SHA-256 of a password → lowercase hex string. */
+function hashPw(p) {
+  var bytes = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256, CONFIG.SALT + ':' + String(p), Utilities.Charset.UTF_8);
+  var hex = '';
+  for (var i = 0; i < bytes.length; i++) hex += ('0' + (bytes[i] & 0xFF).toString(16)).slice(-2);
+  return hex;
+}
+
+/** Length-checked, constant-time-ish string comparison. */
+function safeEquals(a, b) {
+  a = String(a); b = String(b);
+  if (a.length !== b.length) return false;
+  var r = 0;
+  for (var i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return r === 0;
+}
+
+/** Verify a username/password against the private USERS list. */
 function verifyCredentials(u, p) {
   if (!u || !p) return { ok: false };
-  try {
-    var resp = UrlFetchApp.fetch(CONFIG.CREDENTIALS_FEED_URL, { muteHttpExceptions: true });
-    var data = JSON.parse(resp.getContentText());
-    var rawHtml = data.entry.content.$t;
-    var lines = rawHtml.replace(/<[^>]+>/g, '\n').split('\n');
-
-    for (var i = 0; i < lines.length; i++) {
-      var line = lines[i].trim();
-      if (!line) continue;
-      var parts = line.split(':');
-
-      if (parts.length === 3) {
-        if (parts[1] === 'AD') {
-          if (parts[0] === u && parts[2] === p) return { ok: true, isAdmin: true, section: 'الكل' };
-        } else {
-          if (parts[0] === u && parts[1] === p) return { ok: true, isAdmin: false, section: parts[2].trim() };
-        }
-      } else if (parts.length === 2) {
-        if (parts[0] === u && parts[1] === p) return { ok: true, isAdmin: false, section: u };
-      }
+  var h = hashPw(p);
+  for (var i = 0; i < USERS.length; i++) {
+    var entry = USERS[i];
+    if (entry && entry.user === u && safeEquals(entry.hash || '', h)) {
+      return { ok: true, isAdmin: !!entry.admin, section: (entry.section || u) };
     }
-  } catch (e) { /* fall through to failure */ }
+  }
   return { ok: false };
 }
 
-/** Resolve the numeric Blog ID from BLOG_URL (cached for speed). */
+/* ── Setup helpers — run in the editor to mint a USERS line, then copy
+      it from View → Logs into the USERS array above. ── */
+function makeUser(user, password, section) {
+  var line = "  { user:'" + user + "', hash:'" + hashPw(password) + "', section:'" + (section || '') + "', admin:false },";
+  Logger.log(line);
+  return line;
+}
+function makeAdmin(user, password) {
+  var line = "  { user:'" + user + "', hash:'" + hashPw(password) + "', section:'الكل', admin:true },";
+  Logger.log(line);
+  return line;
+}
+/** Edit these calls with your real users, choose runSetup from the
+    function dropdown, click Run, then copy the printed lines from Logs. */
+function runSetup() {
+  // makeAdmin('osamah', 'your-admin-password');
+  // makeUser('ahmad', 'his-password', 'ايفون');
+  // makeUser('sara',  'her-password', 'عطور');
+}
+
+
+/* ============================================================
+   CONTENT SANITIZER
+   ============================================================ */
+
+/**
+ * Allow only safe structural tags. The publisher only emits <div> lines
+ * plus image URLs as plain text, so this never alters legitimate output —
+ * but it removes <script>, <iframe>, on* handlers, styles, etc. if anyone
+ * ever sends crafted HTML. Text (including image URLs) is preserved.
+ */
+function sanitizeContent(html) {
+  if (!html) return '';
+  var s = String(html);
+
+  // Drop dangerous elements together with their contents.
+  s = s.replace(/<\s*(script|style|iframe|object|embed|form|svg|math|link|meta|base|noscript)[\s\S]*?<\s*\/\s*\1\s*>/gi, '');
+  // Drop any leftover / unclosed dangerous opening tags.
+  s = s.replace(/<\s*(script|style|iframe|object|embed|form|svg|math|link|meta|base|noscript)\b[^>]*>/gi, '');
+
+  var ALLOWED = { div:1, br:1, p:1, b:1, strong:1, i:1, em:1, u:1, span:1, ul:1, ol:1, li:1, h3:1, h4:1 };
+
+  // Keep allowed tags but STRIP ALL ATTRIBUTES; drop every other tag (keep its text).
+  s = s.replace(/<\s*(\/?)\s*([a-zA-Z0-9]+)\b[^>]*?(\/?)\s*>/g, function (m, slash, name, selfClose) {
+    name = name.toLowerCase();
+    if (!ALLOWED[name]) return '';
+    if (slash) return '</' + name + '>';
+    return '<' + name + (selfClose ? '/' : '') + '>';
+  });
+
+  return s;
+}
+
+
+/* ============================================================
+   BLOGGER
+   ============================================================ */
+
+/** Resolve the numeric Blog ID from BLOG_URL (cached 6h). */
 function getBlogId() {
   var cache = CacheService.getScriptCache();
   var cached = cache.get('blog_id');
   if (cached) return cached;
 
-  var url = 'https://www.googleapis.com/blogger/v3/blogs/byurl?url='
-          + encodeURIComponent(CONFIG.BLOG_URL);
+  var url = 'https://www.googleapis.com/blogger/v3/blogs/byurl?url=' + encodeURIComponent(CONFIG.BLOG_URL);
   var resp = UrlFetchApp.fetch(url, {
     headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() },
     muteHttpExceptions: true
@@ -185,7 +265,5 @@ function publishPost(blogId, title, content, labels) {
 
 /** JSON response helper. */
 function json(o) {
-  return ContentService
-    .createTextOutput(JSON.stringify(o))
-    .setMimeType(ContentService.MimeType.JSON);
+  return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
 }
