@@ -2,16 +2,25 @@
 <!DOCTYPE html>
 <html b:css='false' b:defaultwidgetversion='2' b:layoutVersion='3' b:responsive='true' expr:dir='data:blog.languageDirection' xmlns='http://www.w3.org/1999/xhtml' xmlns:b='http://www.google.com/2005/gml/b' xmlns:data='http://www.google.com/2005/gml/data' xmlns:expr='http://www.google.com/2005/gml/expr'>
 <head>
-  <script async='async' src='https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX'/>
+  <!-- Google Analytics — replace G-XXXXXXXXXX with your real Measurement ID to enable.
+       Stays inert (no request is sent) while the placeholder ID is present. -->
   <script>
-    window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}
-    gtag('js',new Date());gtag('config','G-XXXXXXXXXX');
+    (function(){
+      var GA_ID='G-XXXXXXXXXX';
+      if(GA_ID.indexOf('XXXX')!==-1)return;
+      var g=document.createElement('script');
+      g.async=true;g.src='https://www.googletagmanager.com/gtag/js?id='+GA_ID;
+      document.head.appendChild(g);
+      window.dataLayer=window.dataLayer||[];
+      window.gtag=function(){dataLayer.push(arguments);};
+      gtag('js',new Date());gtag('config',GA_ID);
+    })();
   </script>
 
   <script async='async' defer='defer' src='https://accounts.google.com/gsi/client'/>
 
   <meta charset='UTF-8'/>
-  <meta content='width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no' name='viewport'/>
+  <meta content='width=device-width,initial-scale=1.0,viewport-fit=cover' name='viewport'/>
   <title><data:blog.title/></title>
   <meta content='yes' name='apple-mobile-web-app-capable'/>
   <meta content='yes' name='mobile-web-app-capable'/>
@@ -891,9 +900,9 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
   <div class='pp-card'>
     <div class='pp-lock'>&#128274;</div>
     <div class='pp-spinner'/>
-    <div class='pp-title'>جاري المعالجة بشكل آمن...</div>
-    <div class='pp-sub'>يتم تجهيز طلبك وتحويلك إلى واتساب، لحظات من فضلك</div>
-    <div class='pp-secure'><span>&#128274;</span> اتصال آمن ومشفّر</div>
+    <div class='pp-title'>جاري تجهيز طلبك...</div>
+    <div class='pp-sub'>سيتم تحويلك إلى واتساب لتأكيد الطلب، لحظات من فضلك</div>
+    <div class='pp-secure'><span>&#128172;</span> الدفع بالاتفاق عبر واتساب — لا تُدفع أي مبالغ الآن</div>
   </div>
 </div>
 
@@ -988,22 +997,7 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
   </div>
 </div>
 
-<!-- ADDRESS MODAL (legacy - kept for compatibility) -->
-<div class='modal bottom-sheet' id='address-modal' onclick='backdropClose(event,&quot;address-modal&quot;)'>
-  <div class='modal-panel'>
-    <div class='sheet-handle'/>
-    <div class='modal-head' style='background:#fff;color:var(--text);'>
-      <h2>📍 عنوان التوصيل</h2>
-      <button class='modal-close' onclick='closeModal(&quot;address-modal&quot;)' style='background:#f3f3f3;color:#333;border-color:#ddd;'>&#10005;</button>
-    </div>
-    <div style='padding:0 18px 30px'>
-      <input class='pro-input' id='addr-city' placeholder='المدينة' type='text'/>
-      <input class='pro-input' id='addr-district' placeholder='الحي' type='text'/>
-      <input class='pro-input' id='addr-street' placeholder='الشارع / تفاصيل العنوان' type='text'/>
-      <button onclick='saveAddress()' style='background:var(--btn-yellow);border:1px solid var(--btn-yellow-border);color:var(--text);width:100%;padding:12px;border-radius:var(--r-pill);font-weight:500;font-size:14px;cursor:pointer;font-family:Cairo,sans-serif;'>حفظ العنوان</button>
-    </div>
-  </div>
-</div>
+<!-- (legacy address modal removed — superseded by #add-addr-modal) -->
 
 <!-- ============================================================
      FIRST VISIT WELCOME MODAL (NEW)
@@ -1128,6 +1122,8 @@ var CONFIG = {
   defaultCategory: 'الكل',
   // Leave as 'YOUR_GOOGLE_MAPS_API_KEY' to disable the map picker cleanly (manual
   // address entry stays available). Put a real key here to enable it.
+  // SECURITY: a Maps key is necessarily public — restrict it by HTTP referrer
+  // (your own domain) in Google Cloud Console so it cannot be reused elsewhere.
   mapsApiKey: 'AIzaSyCWIpeIbxU8EQpjZuc-_-f01RhhKKg13VA',
   // Google Sign-In. Replace with a Client ID created for YOUR domain, or leave
   // empty to hide the Google button (the store works fully without login).
@@ -1357,11 +1353,11 @@ function closeAddAddrModal() {
 }
 
 function saveNewAddress() {
-  var city     = (document.getElementById('na-city')     || {}).value.trim() || '';
-  var district = (document.getElementById('na-district') || {}).value.trim() || '';
-  var street   = (document.getElementById('na-street')   || {}).value.trim() || '';
-  var name     = (document.getElementById('na-name')     || {}).value.trim() || '';
-  var phone    = (document.getElementById('na-phone')    || {}).value.trim() || '';
+  var city     = ((document.getElementById('na-city')     || {}).value || '').trim();
+  var district = ((document.getElementById('na-district') || {}).value || '').trim();
+  var street   = ((document.getElementById('na-street')   || {}).value || '').trim();
+  var name     = ((document.getElementById('na-name')     || {}).value || '').trim();
+  var phone    = ((document.getElementById('na-phone')    || {}).value || '').trim();
 
   // If GPS was used without manual city entry, extract from pending
   if (!city && pendingMapLocation && pendingMapLocation.city) city = pendingMapLocation.city;
@@ -1476,24 +1472,7 @@ function showCheckoutFlow() {
   }
 }
 
-/* Legacy saveAddress() kept for the old #address-modal */
-function saveAddress() {
-  var city     = (document.getElementById('addr-city')     || {}).value.trim() || '';
-  var district = (document.getElementById('addr-district') || {}).value.trim() || '';
-  var street   = (document.getElementById('addr-street')   || {}).value.trim() || '';
-  if (!city) { toast('أدخل المدينة','warn'); return; }
-  localStorage.setItem('sp_addr_v5', JSON.stringify({ city: city, district: district, street: street }));
-  // Also push into new system
-  var dup = savedAddresses.some(function(a) { return a.city === city && a.district === district && a.street === street; });
-  if (!dup) {
-    savedAddresses.push({ id: 'addr_' + Date.now(), label: '🏠 المنزل', name: currentUser ? (currentUser.name || '') : '', phone: '', city: city, district: district, street: street, formatted: [street, district, city].filter(Boolean).join('، ') });
-    selectedAddressIndex = savedAddresses.length - 1;
-    persistAddresses();
-  }
-  updateDeliveryDisplay();
-  closeModal('address-modal');
-  toast('تم حفظ العنوان ✅','success');
-}
+/* legacy saveAddress() + #address-modal removed (dead code) */
 
 /* ============================================================
    GOOGLE MAPS INTEGRATION
@@ -2205,7 +2184,7 @@ function renderProducts(list) {
       + '<img loading="lazy" decoding="async" src="' + img + '" alt="' + titleSafe + '" onerror="this.src=\'https://placehold.co/600x600/f5f5f5/aaaaaa?text=Image+Error\'"/>'
       + '</div>'
       + '<div class="card-info">'
-      + '<h3 class="product-title" onclick="openDrawer(\'' + p.id + '\')">' + p.title + '</h3>'
+      + '<h3 class="product-title" onclick="openDrawer(\'' + p.id + '\')">' + titleSafe + '</h3>'
       + ratingBlock
       + '<div class="card-foot"><div class="price-area">' + priceBlock + '</div>';
     var isMultiV = p.variants && p.variants.length > 1;
@@ -2927,36 +2906,9 @@ function submitOrderFromSheet() {
   showPayProcessing();
 
   setTimeout(function() {
-    var subtotal = cart.reduce(function(s,i) { return s + i.price * i.qty; }, 0);
-    var shipping = subtotal >= CONFIG.freeShippingMin ? 0 : CONFIG.shippingFee;
-    var total    = subtotal + shipping;
-    var emailStr = currentUser ? '\n✉️ *الإيميل:* ' + currentUser.email : '';
-
-    var lines = cart.map(function(i, n) {
-      var line = (n + 1) + '. *' + i.title + '*';
-      if (i.variant && i.variant.trim()) line += ' — ' + i.variant;
-      line += '\n   الكمية: ' + i.qty + ' × ' + i.price.toFixed(2) + ' ' + CONFIG.currency;
-      line += '\n   المجموع: *' + (i.price * i.qty).toFixed(2) + ' ' + CONFIG.currency + '*';
-      return line;
-    }).join('\n\n');
-
-    var msg = '🛒 *طلب جديد من ' + CONFIG.storeName + '*\n\n'
-      + '👤 *الاسم:* ' + name + emailStr + '\n'
-      + '📍 *العنوان/الموقع:* ' + addr + '\n\n'
-      + '*المنتجات:*\n' + lines + '\n\n'
-      + '📦 *الشحن:* ' + (shipping === 0 ? 'مجاني' : shipping.toFixed(2) + ' ' + CONFIG.currency) + '\n'
-      + '💰 *الإجمالي النهائي: ' + total.toFixed(2) + ' ' + CONFIG.currency + '*'
-      + (notes ? '\n\n📝 *ملاحظات:* ' + notes : '');
-
-    var order = { id: 'ORD-' + Date.now(), date: new Date().toLocaleDateString('ar-SA'), items: cart.slice(), total: total, status: 'جديد', name: name, phone: '', addr: addr, pay: 'عبر واتساب' };
-    orderHistory.unshift(order); if (orderHistory.length > 20) orderHistory.pop(); saveHistory();
-
-    hidePayProcessing();
-    cart = []; saveCart();
-    checkoutFormVisible = false; checkoutPrefillAddr = null;
-    closeCartSheet(); closeModal('cart-modal'); updateCartUI();
+    var built = buildOrderMessage(name, addr, notes);
     if (btn) { btn.innerHTML = orig; btn.disabled = false; btn.style.opacity = '1'; }
-    window.location.href = 'https://wa.me/' + CONFIG.whatsapp + '?text=' + encodeURIComponent(msg);
+    finalizeOrder(name, addr, built);
   }, 1500);
 }
 
@@ -3066,6 +3018,45 @@ function prefillCheckoutForm() {
 /* ============================================================
    SUBMIT ORDER → WHATSAPP
    ============================================================ */
+/* Shared: build the WhatsApp order message + total from the current cart. */
+function buildOrderMessage(name, addr, notes) {
+  var subtotal = cart.reduce(function(s,i) { return s + i.price * i.qty; }, 0);
+  var shipping = subtotal >= CONFIG.freeShippingMin ? 0 : CONFIG.shippingFee;
+  var total    = subtotal + shipping;
+  var emailStr = currentUser ? '\n✉️ *الإيميل:* ' + currentUser.email : '';
+  var sa = checkoutPrefillAddr || (savedAddresses.length ? savedAddresses[selectedAddressIndex] : null);
+  var phone = (sa && sa.phone) ? sa.phone : '';
+  var phoneStr = phone ? '\n📱 *الجوال:* ' + phone : '';
+  var lines = cart.map(function(i, n) {
+    var line = (n + 1) + '. *' + i.title + '*';
+    if (i.variant && i.variant.trim()) line += ' — ' + i.variant;
+    line += '\n   الكمية: ' + i.qty + ' × ' + i.price.toFixed(2) + ' ' + CONFIG.currency;
+    line += '\n   المجموع: *' + (i.price * i.qty).toFixed(2) + ' ' + CONFIG.currency + '*';
+    return line;
+  }).join('\n\n');
+  var msg = '🛒 *طلب جديد من ' + CONFIG.storeName + '*\n\n'
+    + '👤 *الاسم:* ' + name + phoneStr + emailStr + '\n'
+    + '📍 *العنوان/الموقع:* ' + addr + '\n\n'
+    + '*المنتجات:*\n' + lines + '\n\n'
+    + '📦 *الشحن:* ' + (shipping === 0 ? 'مجاني' : shipping.toFixed(2) + ' ' + CONFIG.currency) + '\n'
+    + '💰 *الإجمالي النهائي: ' + total.toFixed(2) + ' ' + CONFIG.currency + '*'
+    + (notes ? '\n\n📝 *ملاحظات:* ' + notes : '');
+  return { msg: msg, total: total, phone: phone };
+}
+
+/* Shared: save order to history, clear cart/UI, then open WhatsApp. */
+function finalizeOrder(name, addr, built) {
+  var order = { id: 'ORD-' + Date.now(), date: new Date().toLocaleDateString('ar-SA'), items: cart.slice(), total: built.total, status: 'جديد', name: name, phone: built.phone, addr: addr, pay: 'عبر واتساب' };
+  orderHistory.unshift(order);
+  if (orderHistory.length > 20) orderHistory.pop();
+  saveHistory();
+  hidePayProcessing();
+  cart = []; saveCart();
+  checkoutFormVisible = false; checkoutPrefillAddr = null;
+  closeCartSheet(); closeModal('cart-modal'); updateCartUI();
+  window.location.href = 'https://wa.me/' + CONFIG.whatsapp + '?text=' + encodeURIComponent(built.msg);
+}
+
 function submitOrder() {
   var name  = ((document.getElementById('c-name')  || {}).value || '').trim();
   var addr  = ((document.getElementById('c-addr')  || {}).value || '').trim();
@@ -3079,38 +3070,9 @@ function submitOrder() {
   if (btn) { btn.innerHTML = 'جاري المعالجة... ⏳'; btn.disabled = true; btn.style.opacity = '0.7'; }
 
   setTimeout(function() {
-    var subtotal = cart.reduce(function(s,i) { return s + i.price * i.qty; }, 0);
-    var shipping = subtotal >= CONFIG.freeShippingMin ? 0 : CONFIG.shippingFee;
-    var total    = subtotal + shipping;
-    var emailStr = currentUser ? '\n✉️ *الإيميل:* ' + currentUser.email : '';
-
-    var lines = cart.map(function(i, n) {
-      var line = (n + 1) + '. *' + i.title + '*';
-      if (i.variant && i.variant.trim()) line += ' — ' + i.variant;
-      line += '\n   الكمية: ' + i.qty + ' × ' + i.price.toFixed(2) + ' ' + CONFIG.currency;
-      line += '\n   المجموع: *' + (i.price * i.qty).toFixed(2) + ' ' + CONFIG.currency + '*';
-      return line;
-    }).join('\n\n');
-
-    var msg = '🛒 *طلب جديد من ' + CONFIG.storeName + '*\n\n'
-      + '👤 *الاسم:* ' + name + emailStr + '\n'
-      + '📍 *العنوان/الموقع:* ' + addr + '\n\n'
-      + '*المنتجات:*\n' + lines + '\n\n'
-      + '📦 *الشحن:* ' + (shipping === 0 ? 'مجاني' : shipping.toFixed(2) + ' ' + CONFIG.currency) + '\n'
-      + '💰 *الإجمالي النهائي: ' + total.toFixed(2) + ' ' + CONFIG.currency + '*'
-      + (notes ? '\n\n📝 *ملاحظات:* ' + notes : '');
-
-    var order = { id: 'ORD-' + Date.now(), date: new Date().toLocaleDateString('ar-SA'), items: cart.slice(), total: total, status: 'جديد', name: name, phone: '', addr: addr, pay: 'عبر واتساب' };
-    orderHistory.unshift(order);
-    if (orderHistory.length > 20) orderHistory.pop();
-    saveHistory();
-
-    hidePayProcessing();
-    cart = []; saveCart();
-    checkoutFormVisible = false; checkoutPrefillAddr = null;
-    closeCartSheet(); closeModal('cart-modal'); updateCartUI();
+    var built = buildOrderMessage(name, addr, notes);
     if (btn) { btn.innerHTML = orig; btn.disabled = false; btn.style.opacity = '1'; }
-    window.location.href = 'https://wa.me/' + CONFIG.whatsapp + '?text=' + encodeURIComponent(msg);
+    finalizeOrder(name, addr, built);
   }, 800);
 }
 
@@ -3219,7 +3181,7 @@ function backdropClose(e, id) { if (e.target === e.currentTarget) closeModal(id)
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
     var cs = document.getElementById('cart-sheet'); if (cs && cs.classList.contains('show')) closeCartSheet();
-    ['product-modal','cart-modal','history-modal','contact-modal','address-modal','first-visit-modal','add-addr-modal','maps-picker-modal','addr-select-modal']
+    ['product-modal','cart-modal','history-modal','contact-modal','first-visit-modal','add-addr-modal','maps-picker-modal','addr-select-modal']
       .forEach(function(id) { var m = document.getElementById(id); if (m && m.classList.contains('show')) closeModal(id); });
     var zo = document.getElementById('zoom-overlay'); if (zo && zo.classList.contains('active')) closeZoom();
   }
