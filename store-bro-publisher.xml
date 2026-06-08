@@ -605,8 +605,8 @@
           box.innerHTML=imgs.map(function(img){
             var ov='';
             if(img.status==='uploading') ov='<div class="overlay" style="background:rgba(15,23,42,.6);">⏳</div>';
-            else if(img.status==='error') ov='<div class="overlay" title="'+(img.err||'')+'" style="background:rgba(220,38,38,.7);">⚠️</div>';
-            return '<div class="img-thumb"><img src="'+img.src+'" />'+ov+'<button class="rm" onclick="removeImgById('+i+','+img.id+')">✕</button></div>';
+            else if(img.status==='error') ov='<div class="overlay" title="'+esc(img.err||'')+'" style="background:rgba(220,38,38,.7);">⚠️</div>';
+            return '<div class="img-thumb"><img src="'+esc(img.src)+'" />'+ov+'<button class="rm" onclick="removeImgById('+i+','+img.id+')">✕</button></div>';
           }).join('');
         }
         document.addEventListener('paste',function(e){
@@ -668,7 +668,7 @@
               if(hasSzLbls){lines.push('الحجم:');szLabels.forEach(function(l,k){lines.push(l||('خيار '+(k+1)));});}
             }
             var html=lines.map(function(l){return '<div>'+esc(l)+'</div>';}).join('\n');
-            imgs.forEach(function(img){html+='\n<div>'+img.src+'</div>';});
+            imgs.forEach(function(img){html+='\n<div>'+esc(img.src)+'</div>';});
             if(html.trim()) sections.push(html);
           });
           if(!sections.length){alert('يرجى إدخال بيانات على الأقل للخيار الأول');return null;}
@@ -722,7 +722,7 @@
                 password:currentUser.pass,
                 title:title,
                 content:result.html,
-                labels:[cat]
+                category:cat
               })
             });
             var data=await res.json();
@@ -733,7 +733,7 @@
                 $('ptitle').value='';
                 if(currentUser.isAdmin) $('pcat').value='';
                 $('prating').value=''; $('pratcount').value='';
-                $('vc').innerHTML=''; vcCount=0; varImgs={}; addV();
+                $('vc').innerHTML=''; vcCount=0; varImgs={}; addV(); window._focusedV=1;
                 statusDiv.innerHTML='';
                 showToast('✅ الفورم جاهز لمنتج جديد','#059669');
               },4000);

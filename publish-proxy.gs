@@ -70,7 +70,7 @@ function doPost(e) {
     var password = (payload.password || '').toString().trim();
     var title    = (payload.title    || '').toString().trim();
     var content  = (payload.content  || '').toString();
-    var category = (payload.category || '').toString().trim();
+    var category = (payload.category || (Array.isArray(payload.labels) ? payload.labels.join(',') : payload.labels) || '').toString().trim();
 
     if (!title)   return json({ success: false, message: 'عنوان المنتج مفقود.' });
     if (!content) return json({ success: false, message: 'محتوى المنتج مفقود.' });
