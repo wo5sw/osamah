@@ -138,7 +138,9 @@ function doPost(e) {
 function hashPw(p) {
   var bytes = Utilities.computeDigest(
     Utilities.DigestAlgorithm.SHA_256, CONFIG.SALT + ':' + String(p), Utilities.Charset.UTF_8);
-  return bytes.map(function (b) { return ('0' + (b & 0xFF).toString(16)).slice(-2); }).join('');
+  var hex = '';
+  for (var i = 0; i < bytes.length; i++) hex += ('0' + (bytes[i] & 0xFF).toString(16)).slice(-2);
+  return hex;
 }
 
 /** Length-checked, constant-time-ish string comparison. */
