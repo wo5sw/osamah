@@ -266,14 +266,10 @@
                 <div class='card'>
                   <div class='card-hd'><div class='card-icon'>📦</div><div><h2>معلومات المنتج</h2><p>البيانات الأساسية للمنتج الحالي</p></div></div>
                   <div class='field'><label>عنوان المنتج <span class='badge-req'>مطلوب</span></label><input id='ptitle' onchange='syncCurrentToMemory()' oninput='this.classList.remove(&quot;error-border&quot;)' placeholder='مثال: جوال آيفون 17 برو — 256 جيجا' type='text'/></div>
-                  <div class='field'><label>التصنيف / القسم <span class='badge-req'>مطلوب</span></label><input id='pcat' onchange='applySectionCfg(true)' oninput='this.classList.remove(&quot;error-border&quot;)' type='text'/></div>
+                  <div class='field'><label>التصنيف / القسم <span class='badge-req'>مطلوب</span></label><input id='pcat' oninput='this.classList.remove(&quot;error-border&quot;)' type='text'/></div>
                   <div class='grid2'>
                     <div class='field'><label>التقييم <span class='badge-opt'>اختياري</span></label><input id='prating' max='5' min='0' step='0.1' type='number'/></div>
                     <div class='field'><label>عدد التقييمات <span class='badge-opt'>اختياري</span></label><input id='pratcount' type='number'/></div>
-                  </div>
-                  <div class='grid2'>
-                    <div class='field'><label>مدة توصيل القسم <span class='badge-opt'>تُحفظ لكل قسم</span></label><input id='pdelivery' onchange='rememberSection()' placeholder='مثال: خلال 94 دقيقة' type='text'/></div>
-                    <div class='field'><label>رقم واتساب تاجر القسم <span class='badge-opt'>يحوّل الطلب للتاجر</span></label><input id='pmerchant' inputmode='tel' onchange='rememberSection()' placeholder='9665XXXXXXXX (بدون +)' type='text'/></div>
                   </div>
                 </div>
 
@@ -666,8 +662,10 @@
 
         function buildPostData(){
           var title=($('ptitle').value||'').trim(), rating=($('prating').value||'').trim(), ratcount=($('pratcount').value||'').trim();
-          var delivery=(($('pdelivery')||{}).value||'').trim(), merchant=(($('pmerchant')||{}).value||'').trim().replace(/[^0-9]/g,'');
-          rememberSection();
+          // رقم التاجر + مدة التوصيل يأتيان من جدول Users حسب القسم (لا من واجهة المنتج)
+          var cat=($('pcat').value||'').trim();
+          var secCfg = sectionCfgMap[cat] || ((currentUser && currentUser.section===cat) ? { merchant: currentUser.merchant, delivery: currentUser.delivery } : {});
+          var delivery=(secCfg.delivery||'').toString().trim(), merchant=(secCfg.merchant||'').toString().replace(/[^0-9]/g,'');
           var globalLines=[]; if(rating) globalLines.push('التقييم: '+rating); if(ratcount) globalLines.push('عدد التقييمات: '+ratcount);
           if(delivery) globalLines.push('مدة التوصيل: '+delivery); if(merchant) globalLines.push('رقم التاجر: '+merchant);
           var sections=[], waMsgArr=[];
