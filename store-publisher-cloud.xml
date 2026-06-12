@@ -266,7 +266,7 @@
                 <div class='card'>
                   <div class='card-hd'><div class='card-icon'>📦</div><div><h2>معلومات المنتج</h2><p>البيانات الأساسية للمنتج الحالي</p></div></div>
                   <div class='field'><label>عنوان المنتج <span class='badge-req'>مطلوب</span></label><input id='ptitle' onchange='syncCurrentToMemory()' oninput='this.classList.remove(&quot;error-border&quot;)' placeholder='مثال: جوال آيفون 17 برو — 256 جيجا' type='text'/></div>
-                  <div class='field'><label>التصنيف / القسم <span class='badge-req'>مطلوب</span></label><input id='pcat' onchange='applySectionCfg()' oninput='this.classList.remove(&quot;error-border&quot;)' type='text'/></div>
+                  <div class='field'><label>التصنيف / القسم <span class='badge-req'>مطلوب</span></label><input id='pcat' onchange='applySectionCfg(true)' oninput='this.classList.remove(&quot;error-border&quot;)' type='text'/></div>
                   <div class='grid2'>
                     <div class='field'><label>التقييم <span class='badge-opt'>اختياري</span></label><input id='prating' max='5' min='0' step='0.1' type='number'/></div>
                     <div class='field'><label>عدد التقييمات <span class='badge-opt'>اختياري</span></label><input id='pratcount' type='number'/></div>
@@ -359,7 +359,7 @@
 
         var currentUser = null; var vcCount = 0; var varImgs = {}; var imgSeq = 0; var _copiedVariant = null;
         var multiDraft = []; var activeDraftId = null; var autoSaveTimer = null;
-        var userHistory = []; var adminItems = [];
+        var userHistory = []; var adminItems = []; var sectionCfgMap = {};
 
         function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,5); }
         function loginKey(e){ if(e.key==='Enter') doLogin(); }
@@ -368,11 +368,22 @@
         function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
         /* مدة التوصيل + رقم التاجر تُحفظ لكل قسم (لا لكل منتج) في هذا المتصفّح. */
         function sectionStore(){ try { return JSON.parse(localStorage.getItem('sb_sections')||'{}'); } catch(e){ return {}; } }
-        function applySectionCfg(){
+        function applySectionCfg(force){
           var cat=($('pcat').value||'').trim(); if(!cat) return;
-          var cfg=sectionStore()[cat]; if(!cfg) return;
-          if($('pdelivery')) $('pdelivery').value = cfg.delivery||'';
-          if($('pmerchant')) $('pmerchant').value = cfg.merchant||'';
+          var cfg=sectionCfgMap[cat];
+          if(!cfg && currentUser && currentUser.section===cat) cfg={ merchant:currentUser.merchant||'', delivery:currentUser.delivery||'' };
+          if(!cfg) cfg=sectionStore()[cat];
+          if(!cfg) return;
+          if($('pdelivery') && (force || !$('pdelivery').value)) $('pdelivery').value = cfg.delivery||'';
+          if($('pmerchant') && (force || !$('pmerchant').value)) $('pmerchant').value = cfg.merchant||'';
+        }
+        /* يجلب رقم التاجر + مدة التوصيل لكل قسم من جدول Users (مصدر مركزي). */
+        async function loadSections(){
+          try {
+            var res = await fetch(DB_SCRIPT_URL, { method:'POST', body: JSON.stringify({ action:'getSections', username: currentUser.name, password: currentUser.pass }) });
+            var data = await res.json();
+            if (data && data.success && data.sections) { sectionCfgMap = data.sections; applySectionCfg(false); }
+          } catch(e) {}
         }
         function rememberSection(){
           var cat=($('pcat').value||'').trim(); if(!cat) return;
@@ -426,6 +437,7 @@
 
         async function initWorkspace() {
           showToast('جاري استرداد البيانات...');
+          loadSections();
           try {
             var res = await fetch(DB_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'getUserWorkspace', username: currentUser.name, password: currentUser.pass, isAdmin: currentUser.isAdmin }) });
             var data = await res.json();
@@ -585,6 +597,7 @@
           $('ptitle').value=data.title||''; if(!currentUser||currentUser.isAdmin) $('pcat').value=data.cat||'';
           $('prating').value=data.rating||''; $('pratcount').value=data.ratcount||''; if($('pdelivery'))$('pdelivery').value=data.delivery||''; if($('pmerchant'))$('pmerchant').value=data.merchant||''; $('vc').innerHTML='';vcCount=0;varImgs={};
           if(data.variants && data.variants.length > 0) { data.variants.forEach(function(v){ addV(); applyVariantData(vcCount,v); }); } else { addV(); }
+          applySectionCfg(false);
         }
         function applyVariantData(i,v){
           if($('vc'+i+'-optName')) $('vc'+i+'-optName').value=v.optName||(v.color?'اللون':'الخيار'); if($('vc'+i+'-optVal')) $('vc'+i+'-optVal').value=v.optVal||v.color||'';

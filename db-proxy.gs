@@ -50,7 +50,9 @@ function doPost(e) {
             user: {
               name: data[i][0],
               isAdmin: (data[i][2] === 'admin'),
-              section: data[i][3] || ''
+              section: data[i][3] || '',
+              merchant: (data[i][4] || '').toString().replace(/[^0-9]/g, ''),
+              delivery: data[i][5] || ''
             }
           };
           found = true;
@@ -58,6 +60,26 @@ function doPost(e) {
         }
       }
       if (!found) response.message = 'بيانات الدخول غير صحيحة';
+    }
+
+    // 1.5 إعدادات الأقسام: رقم التاجر (E) + مدة التوصيل (F) لكل قسم من جدول Users
+    else if (action === 'getSections') {
+      var auth = verifyUser(usersSheet, params);
+      if (!auth.ok) {
+        response = { success: false, message: 'غير مصرّح — سجّل الدخول من جديد' };
+      } else {
+        var u = usersSheet.getDataRange().getValues();
+        var sections = {};
+        for (var i = 1; i < u.length; i++) {
+          var sec = (u[i][3] || '').toString().trim();
+          if (!sec) continue;
+          sections[sec] = {
+            merchant: (u[i][4] || '').toString().replace(/[^0-9]/g, ''),
+            delivery: (u[i][5] || '').toString().trim()
+          };
+        }
+        response = { success: true, sections: sections };
+      }
     }
 
     // 2. حفظ منتج (مسودة أو تحديث) — يتطلب تحقق + ملكية
