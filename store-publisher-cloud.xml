@@ -355,7 +355,7 @@
 
         var currentUser = null; var vcCount = 0; var varImgs = {}; var imgSeq = 0; var _copiedVariant = null;
         var multiDraft = []; var activeDraftId = null; var autoSaveTimer = null;
-        var userHistory = []; var adminItems = []; var sectionCfgMap = {};
+        var userHistory = []; var adminItems = []; var sectionCfgMap = {}; var bloggerLabels = [];
 
         function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,5); }
         function loginKey(e){ if(e.key==='Enter') doLogin(); }
@@ -381,13 +381,32 @@
             if (data && data.success && data.sections) { sectionCfgMap = data.sections; populateCategoryOptions(); applySectionCfg(false); }
           } catch(e) {}
         }
-        /* قائمة الأقسام: المدير يرى كل الأقسام (من الجدول)، والمندوب يرى قسمه فقط. */
+        /* رابط مدوّنة المتجر — لقراءة تسميات (أقسام) Blogger الفعلية. غيّره لرابط متجرك إن لزم. */
+        var STORE_FEED = 'https://www.store1bro.com';
+        /* يجلب أقسام المتجر تلقائياً من تسميات Blogger (للمدير فقط) عبر JSONP. */
+        function loadBloggerLabels(){
+          if (!(currentUser && currentUser.isAdmin)) return;
+          window.__sbLabels = function(json){
+            try {
+              var set = {};
+              ((json.feed && json.feed.category) || []).forEach(function(c){ if(c && c.term) set[c.term]=1; });
+              ((json.feed && json.feed.entry) || []).forEach(function(e){ (e.category||[]).forEach(function(c){ if(c && c.term) set[c.term]=1; }); });
+              bloggerLabels = Object.keys(set);
+              populateCategoryOptions();
+            } catch(e){}
+          };
+          var s = document.createElement('script');
+          s.src = STORE_FEED.replace(/\/+$/,'') + '/feeds/posts/summary?alt=json-in-script&max-results=150&callback=__sbLabels';
+          document.body.appendChild(s);
+        }
+        /* قائمة الأقسام: المدير يرى أقسام Blogger الفعلية، والمندوب يرى قسمه فقط. */
         function populateCategoryOptions(keepVal){
           var sel = $('pcat'); if(!sel) return;
           var cur = (keepVal!=null) ? keepVal : sel.value;
           var opts;
           if (currentUser && currentUser.isAdmin) {
-            opts = Object.keys(sectionCfgMap||{});
+            opts = bloggerLabels.slice();
+            Object.keys(sectionCfgMap||{}).forEach(function(s){ if(opts.indexOf(s)<0) opts.push(s); });
             if (cur && opts.indexOf(cur) < 0) opts = opts.concat([cur]);
           } else {
             opts = (currentUser && currentUser.section) ? [currentUser.section] : [];
@@ -452,6 +471,7 @@
         async function initWorkspace() {
           showToast('جاري استرداد البيانات...');
           loadSections();
+          loadBloggerLabels();
           try {
             var res = await fetch(DB_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'getUserWorkspace', username: currentUser.name, password: currentUser.pass, isAdmin: currentUser.isAdmin }) });
             var data = await res.json();
