@@ -266,10 +266,14 @@
                 <div class='card'>
                   <div class='card-hd'><div class='card-icon'>📦</div><div><h2>معلومات المنتج</h2><p>البيانات الأساسية للمنتج الحالي</p></div></div>
                   <div class='field'><label>عنوان المنتج <span class='badge-req'>مطلوب</span></label><input id='ptitle' onchange='syncCurrentToMemory()' oninput='this.classList.remove(&quot;error-border&quot;)' placeholder='مثال: جوال آيفون 17 برو — 256 جيجا' type='text'/></div>
-                  <div class='field'><label>التصنيف / القسم <span class='badge-req'>مطلوب</span></label><input id='pcat' oninput='this.classList.remove(&quot;error-border&quot;)' type='text'/></div>
+                  <div class='field'><label>التصنيف / القسم <span class='badge-req'>مطلوب</span></label><input id='pcat' onchange='applySectionCfg()' oninput='this.classList.remove(&quot;error-border&quot;)' type='text'/></div>
                   <div class='grid2'>
                     <div class='field'><label>التقييم <span class='badge-opt'>اختياري</span></label><input id='prating' max='5' min='0' step='0.1' type='number'/></div>
                     <div class='field'><label>عدد التقييمات <span class='badge-opt'>اختياري</span></label><input id='pratcount' type='number'/></div>
+                  </div>
+                  <div class='grid2'>
+                    <div class='field'><label>مدة توصيل القسم <span class='badge-opt'>تُحفظ لكل قسم</span></label><input id='pdelivery' onchange='rememberSection()' placeholder='مثال: خلال 94 دقيقة' type='text'/></div>
+                    <div class='field'><label>رقم واتساب تاجر القسم <span class='badge-opt'>يحوّل الطلب للتاجر</span></label><input id='pmerchant' inputmode='tel' onchange='rememberSection()' placeholder='9665XXXXXXXX (بدون +)' type='text'/></div>
                   </div>
                 </div>
 
@@ -362,6 +366,20 @@
         function $(id){ return document.getElementById(id); }
         /* HTML/attribute escape — used on every value rendered into innerHTML. */
         function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+        /* مدة التوصيل + رقم التاجر تُحفظ لكل قسم (لا لكل منتج) في هذا المتصفّح. */
+        function sectionStore(){ try { return JSON.parse(localStorage.getItem('sb_sections')||'{}'); } catch(e){ return {}; } }
+        function applySectionCfg(){
+          var cat=($('pcat').value||'').trim(); if(!cat) return;
+          var cfg=sectionStore()[cat]; if(!cfg) return;
+          if($('pdelivery')) $('pdelivery').value = cfg.delivery||'';
+          if($('pmerchant')) $('pmerchant').value = cfg.merchant||'';
+        }
+        function rememberSection(){
+          var cat=($('pcat').value||'').trim(); if(!cat) return;
+          var all=sectionStore();
+          all[cat]={ delivery:(($('pdelivery')||{}).value||'').trim(), merchant:(($('pmerchant')||{}).value||'').trim().replace(/[^0-9]/g,'') };
+          try { localStorage.setItem('sb_sections', JSON.stringify(all)); } catch(e){}
+        }
 
         async function doLogin(){
           var u=($('login-user').value||'').trim(), pRaw=($('login-pass').value||'').trim();
@@ -458,7 +476,7 @@
           var draft = multiDraft.find(function(d){ return d.id === id; });
           document.querySelectorAll('.error-border').forEach(e => e.classList.remove('error-border'));
           if (draft && draft.data && draft.data.variants && draft.data.variants.length > 0) { applyData(draft.data); }
-          else { $('ptitle').value = ''; $('pcat').value = currentUser.isAdmin?'':(currentUser.section||''); $('prating').value = ''; $('pratcount').value = ''; $('vc').innerHTML = ''; vcCount = 0; varImgs = {}; addV(); }
+          else { $('ptitle').value = ''; $('pcat').value = currentUser.isAdmin?'':(currentUser.section||''); $('prating').value = ''; $('pratcount').value = ''; if($('pdelivery'))$('pdelivery').value=''; if($('pmerchant'))$('pmerchant').value=''; applySectionCfg(); $('vc').innerHTML = ''; vcCount = 0; varImgs = {}; addV(); }
         }
 
         function startAutoSave() { if(autoSaveTimer) clearInterval(autoSaveTimer); autoSaveTimer = setInterval(function() { if(!$('dashboard').classList.contains('hidden') && !$('workspace-panel').classList.contains('hidden')){ syncCurrentToMemory(); saveToLocal(); } }, 2500); }
@@ -545,7 +563,7 @@
         function addSpec(i){ var c=$('vc'+i+'-specs'); var rid='sp'+uid(); var r=document.createElement('div'); r.className='sr-spec'; r.id=rid; r.innerHTML='<input type="text" placeholder="الخاصية" /><input type="text" placeholder="القيمة" /><button class="btn btn-danger" onclick="document.getElementById(\''+rid+'\').remove()">✕</button>'; c.appendChild(r); }
 
         function readAllSettings(){
-          var data={v:'1',title:$('ptitle').value||'',cat:$('pcat').value||'',rating:$('prating').value||'',ratcount:$('pratcount').value||'',variants:[]};
+          var data={v:'1',title:$('ptitle').value||'',cat:$('pcat').value||'',rating:$('prating').value||'',ratcount:$('pratcount').value||'',delivery:($('pdelivery')||{}).value||'',merchant:($('pmerchant')||{}).value||'',variants:[]};
           document.querySelectorAll('.vc-wrap').forEach(function(card){
             var i=parseInt(card.id.replace('v',''));
             var szRows=[]; card.querySelectorAll('#vc'+i+'-sizes .sr').forEach(function(row){var ins=row.querySelectorAll('input');if(ins[0]||ins[1])szRows.push({label:ins[0]?ins[0].value:'',price:ins[1]?ins[1].value:''});});
@@ -565,7 +583,7 @@
         }
         function applyData(data){
           $('ptitle').value=data.title||''; if(!currentUser||currentUser.isAdmin) $('pcat').value=data.cat||'';
-          $('prating').value=data.rating||''; $('pratcount').value=data.ratcount||''; $('vc').innerHTML='';vcCount=0;varImgs={};
+          $('prating').value=data.rating||''; $('pratcount').value=data.ratcount||''; if($('pdelivery'))$('pdelivery').value=data.delivery||''; if($('pmerchant'))$('pmerchant').value=data.merchant||''; $('vc').innerHTML='';vcCount=0;varImgs={};
           if(data.variants && data.variants.length > 0) { data.variants.forEach(function(v){ addV(); applyVariantData(vcCount,v); }); } else { addV(); }
         }
         function applyVariantData(i,v){
@@ -635,7 +653,10 @@
 
         function buildPostData(){
           var title=($('ptitle').value||'').trim(), rating=($('prating').value||'').trim(), ratcount=($('pratcount').value||'').trim();
+          var delivery=(($('pdelivery')||{}).value||'').trim(), merchant=(($('pmerchant')||{}).value||'').trim().replace(/[^0-9]/g,'');
+          rememberSection();
           var globalLines=[]; if(rating) globalLines.push('التقييم: '+rating); if(ratcount) globalLines.push('عدد التقييمات: '+ratcount);
+          if(delivery) globalLines.push('مدة التوصيل: '+delivery); if(merchant) globalLines.push('رقم التاجر: '+merchant);
           var sections=[], waMsgArr=[];
 
           document.querySelectorAll('.vc-wrap').forEach(function(card){

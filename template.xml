@@ -1733,7 +1733,7 @@ function fetchProducts() {
         var sections = rawHTML.replace(/&nbsp;|​/gi,' ').split(/(?:\s*(?:<[^>]+>\s*)*[.·•‧⋅·]{5,})/);
 
         var variants = [];
-        var productRating = null, productRatingCount = null, publishedTs = 0;
+        var productRating = null, productRatingCount = null, productDelivery = null, productMerchant = null, publishedTs = 0;
         try { publishedTs = entry.published && entry.published.$t ? Date.parse(entry.published.$t) : 0; } catch(e) {}
         var isNew = publishedTs && (Date.now() - publishedTs) < 30*24*60*60*1000;
 
@@ -1800,7 +1800,7 @@ function fetchProducts() {
             }
 
             // Detect a keyword label (always stops collection modes)
-            var isLabel = /^(?:السعر|سعر|الثمن|Price|Cost|السعر القديم|سعر قديم|السعر قبل|قبل الخصم|Old Price|Was|الحجم|الأحجام|المقاس|المقاسات|Size|Sizes|اللون|Color|Colour|الشكل|شكل|Shape|التقييم|تقييم|Rating|عدد التقييمات|عدد المراجعات|Reviews|Ratings|النوع|الاسم|الخيار|Type|Variant|الوصف|الوصف|Description|Desc|التفاصيل|المواصفات|محتويات العلبة|محتويات|Box Contents|In the Box)\b/i.test(line);
+            var isLabel = /^(?:السعر|سعر|الثمن|Price|Cost|السعر القديم|سعر قديم|السعر قبل|قبل الخصم|Old Price|Was|الحجم|الأحجام|المقاس|المقاسات|Size|Sizes|اللون|Color|Colour|الشكل|شكل|Shape|التقييم|تقييم|Rating|عدد التقييمات|عدد المراجعات|Reviews|Ratings|النوع|الاسم|الخيار|Type|Variant|الوصف|الوصف|Description|Desc|التفاصيل|المواصفات|محتويات العلبة|محتويات|Box Contents|In the Box|مدة التوصيل|وقت التوصيل|مدة الشحن|Delivery|رقم التاجر|واتساب التاجر|رقم التواصل|Merchant)\b/i.test(line);
             // Detect a "pure price" line: starts with digit, optional currency/discount suffix
             var priceM = line.match(/^([0-9][0-9,.]*)(?:\s*(?:ريال|SAR|SR|ر\.س|رس|riyal|ryal|\$|€|USD))?(?:\s*[-+]\s*\d+%?)?\s*$/i);
 
@@ -1840,6 +1840,12 @@ function fetchProducts() {
             if (rm) { productRating = Math.max(0, Math.min(5, parseFloat(rm[1]))); return; }
             var cm = line.match(new RegExp('^(?:عدد التقييمات|عدد المراجعات|Reviews|Ratings)' + SEP + '([0-9]+)', 'i'));
             if (cm) { productRatingCount = parseInt(cm[1],10); return; }
+            // Delivery time (product-level) e.g. "مدة التوصيل: خلال 94 دقيقة"
+            var dlm = line.match(/^(?:مدة التوصيل|وقت التوصيل|التوصيل خلال|مدة الشحن|Delivery)\s*[:\-.=]?\s*(.+)/i);
+            if (dlm && dlm[1].trim()) { productDelivery = dlm[1].trim(); return; }
+            // Merchant WhatsApp (product-level) → checkout routes the order here
+            var mrm = line.match(/^(?:رقم التاجر|واتساب التاجر|رقم التواصل|هاتف التاجر|Merchant)\s*[:\-.=]?\s*(.+)/i);
+            if (mrm && mrm[1].replace(/[^0-9]/g,'')) { productMerchant = mrm[1].replace(/[^0-9]/g,''); return; }
             // Color / variant identifier
             var clm = line.match(/^(?:اللون|Color|Colour)\s*[:\-.=]?\s*(.+)/i);
             if (clm && clm[1].trim()) { vColor = clm[1].trim(); return; }
@@ -1920,6 +1926,8 @@ function fetchProducts() {
             desc: first.desc,
             rating: productRating,
             ratingCount: productRatingCount,
+            delivery: productDelivery,
+            merchant: productMerchant,
             publishedTs: publishedTs,
             isNew: isNew
           };
@@ -2213,7 +2221,7 @@ function cardQtyInc(e, pid) {
   if (existing) { existing.qty++; }
   else {
     var v = (p.variants && p.variants[0]) ? p.variants[0] : p;
-    cart.push({ id: p.id, cid: cid, title: p.title, variant: '', price: v.price, image: v.image || p.image, imageFull: v.imageFull || p.imageFull, qty: 1 });
+    cart.push({ id: p.id, cid: cid, title: p.title, variant: '', price: v.price, image: v.image || p.image, imageFull: v.imageFull || p.imageFull, qty: 1, merchant: p.merchant });
     toast('تمت الإضافة للسلة ✅', 'success');
   }
   saveCart(); updateCartUI(); updateCardQty(pid);
@@ -2296,6 +2304,7 @@ function openDrawer(id) {
     + '</ul></div>'
     + '<div class="app-section"><div class="delivery-block" style="margin:0;"><strong>التوصيل</strong>'
     + (isFree ? '<div><span class="free">شحن مجاني</span> للطلبات فوق ' + CONFIG.freeShippingMin + ' ' + CONFIG.currency + '</div>' : '<div>تكلفة الشحن: <b>' + CONFIG.shippingFee + ' ' + CONFIG.currency + '</b></div>')
+    + (p.delivery ? '<div>⏱️ يصل خلال: <b>' + escapeHtml(p.delivery) + '</b></div>' : '')
     + '</div></div>'
     + '<div class="app-section desc-section acc-section acc-open" id="drawer-desc-section"' + (detailLines.length ? '' : ' style="display:none"') + '>'
     + '<button type="button" class="acc-head" onclick="toggleAccordion(this)"><span class="desc-heading">وصف المنتج</span><span class="acc-chevron">&#9662;</span></button>'
@@ -2502,7 +2511,7 @@ function addToCart(pid, buyNow) {
   var cid = p.id + (varLabel ? '-' + varLabel : '');
   var existing = cart.find(function(i) { return i.cid === cid; });
   if (existing) existing.qty++;
-  else cart.push({ id: p.id, cid: cid, title: p.title, variant: varLabel, price: finalPrice, image: varImage, imageFull: varImageFull, qty: 1 });
+  else cart.push({ id: p.id, cid: cid, title: p.title, variant: varLabel, price: finalPrice, image: varImage, imageFull: varImageFull, qty: 1, merchant: p.merchant });
   saveCart(); updateCartUI();
   updateDrawerAddBtn(cid);
   toast('تمت الإضافة للسلة ✅', 'success');
@@ -3018,6 +3027,15 @@ function prefillCheckoutForm() {
 /* ============================================================
    SUBMIT ORDER → WHATSAPP
    ============================================================ */
+/* Checkout target: the cart's merchant when all items share one number
+   (multi-vendor routing); otherwise the main store number (CONFIG.whatsapp). */
+function cartMerchantPhone() {
+  var set = {};
+  cart.forEach(function(i) { if (i.merchant) set[i.merchant] = 1; });
+  var keys = Object.keys(set);
+  return keys.length === 1 ? keys[0] : '';
+}
+
 /* Shared: build the WhatsApp order message + total from the current cart. */
 function buildOrderMessage(name, addr, notes) {
   var subtotal = cart.reduce(function(s,i) { return s + i.price * i.qty; }, 0);
@@ -3041,7 +3059,7 @@ function buildOrderMessage(name, addr, notes) {
     + '📦 *الشحن:* ' + (shipping === 0 ? 'مجاني' : shipping.toFixed(2) + ' ' + CONFIG.currency) + '\n'
     + '💰 *الإجمالي النهائي: ' + total.toFixed(2) + ' ' + CONFIG.currency + '*'
     + (notes ? '\n\n📝 *ملاحظات:* ' + notes : '');
-  return { msg: msg, total: total, phone: phone };
+  return { msg: msg, total: total, phone: phone, target: cartMerchantPhone() };
 }
 
 /* Shared: save order to history, clear cart/UI, then open WhatsApp. */
@@ -3054,7 +3072,7 @@ function finalizeOrder(name, addr, built) {
   cart = []; saveCart();
   checkoutFormVisible = false; checkoutPrefillAddr = null;
   closeCartSheet(); closeModal('cart-modal'); updateCartUI();
-  window.location.href = 'https://wa.me/' + CONFIG.whatsapp + '?text=' + encodeURIComponent(built.msg);
+  window.location.href = 'https://wa.me/' + (built.target || CONFIG.whatsapp) + '?text=' + encodeURIComponent(built.msg);
 }
 
 function submitOrder() {
