@@ -181,10 +181,13 @@
       .history-table th { background: rgba(108,117,125,.55); }
       .history-table tr:first-child td { background: transparent; }
 
-      .stats-row { display: flex; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
-      .stat-card { flex: 1; min-width: 90px; background: var(--glass2); border-radius: 12px; padding: 14px 10px; }
-      .stat-num   { font-size: 26px; font-weight: bold; }
+      .stats-row { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; justify-content: space-between;}
+      .stat-card { flex: 1; min-width: 75px; background: var(--glass2); border-radius: 12px; padding: 14px 8px; }
+      .stat-num   { font-size: 24px; font-weight: bold; }
       .stat-label { font-size: 11px; opacity: .65; letter-spacing: .5px; margin-top: 3px; }
+
+      .btn-remove { background: rgba(220,53,69,.22); color: #ff6b6b; border: 1px solid rgba(220,53,69,.4); padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+      .btn-remove:hover { background: rgba(220,53,69,.4); }
 
       .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
 
@@ -217,7 +220,13 @@
 
       #toast-wrap { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); z-index: 9998; display: flex; flex-direction: column; gap: 8px; align-items: center; }
 
-      .blog-posts, .post-outer, .date-outer, #blog-pager, .blog-feeds { display: none !important; }
+      /* ── HIDE BLOGGER DEFAULT UI ON ALL DEVICES ── */
+      .blog-posts, .post-outer, .date-outer, #blog-pager, .blog-feeds,
+      .mobile-post-outer, .mobile-index-contents, .mobile-link-button,
+      .mobile-desktop-link, .Attribution, #main, .main, footer, #footer,
+      #header, .header, .mobile-header, .Header, h1.title, .titlewrapper {
+        display: none !important;
+      }
     ]]></b:skin>
   </head>
   <body>
@@ -252,14 +261,17 @@
         <h2>📝 Rep Login</h2>
         <p style='margin-bottom:16px;'>Enter your secret code &#8212; it will be saved on this device</p>
         <input class='input-field' id='regSecret' onkeydown='if(event.key===&quot;Enter&quot;)registerDriver()' placeholder='Secret code…' type='password'/>
-        
+
         <button class='btn btn-driver' id='loginSubmitBtn' onclick='registerDriver()'>Login</button>
         <button class='btn btn-back' onclick='showScreen(&quot;homeScreen&quot;)'>Back</button>
         <div class='alert-msg' id='regError'>&#10060; Invalid or unregistered code</div>
       </div>
 
       <div class='box screen' id='driverCameraScreen'>
-        <h2 id='welcomeDriverText'>Welcome 👋</h2>
+        <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;'>
+          <h2 id='welcomeDriverText' style='margin: 0;'>Welcome 👋</h2>
+          <button class='btn btn-back btn-sm' onclick='logoutDriver()'>🚪 تسجيل خروج</button>
+        </div>
 
         <div class='push-permission-box' id='pushPermBox'>
           <div class='push-status' id='pushStatusBadge'>
@@ -274,17 +286,17 @@
         </div>
 
         <div id='repSystemStoppedBanner' style='display:none; background:rgba(220,53,69,0.15); border:2px solid #dc3545; color:#ff8787; padding:16px; border-radius:14px; margin:16px auto; max-width:320px; font-weight:bold;'>
-          🔴 النظام متوقف حالياً من قبل الإدارة
+          🔴 النظام متوقف حاليا&#1611; من قبل الإدارة
         </div>
 
         <div class='queue-status-box' id='queuePositionBox'>
-          📍 Locating you…
+          📍 Locating you&#8230;
         </div>
 
         <div id='liveTracker'>
           <div class='lt-label'>📍 DISTANCE TO WAREHOUSE</div>
-          <div class='lt-distance' id='ltDistance'>—</div>
-          <div class='lt-state' id='ltState'>Locating you…</div>
+          <div class='lt-distance' id='ltDistance'>&#8212;</div>
+          <div class='lt-state' id='ltState'>Locating you&#8230;</div>
         </div>
 
         <div id='rep-stats-container' style='margin-top:16px; margin-bottom:16px; background:rgba(255,255,255,0.05); padding:18px 14px; border-radius:14px; border:1px solid rgba(255,255,255,0.1);'>
@@ -319,7 +331,7 @@
           </div>
         </div>
 
-        <div id='systemSwitchBox' class='system-switch sys-on'>
+        <div class='system-switch sys-on' id='systemSwitchBox'>
           <div class='ssw-info'>
             <span class='ssw-dot'/>
             <span id='sswText'>النظام يعمل</span>
@@ -328,6 +340,7 @@
         </div>
 
         <div class='stats-row'>
+          <div class='stat-card'><div class='stat-num' id='stat-online' style='color:#55efc4;'>0</div><div class='stat-label'>🟢 Online</div></div>
           <div class='stat-card'><div class='stat-num' id='stat-waiting'>0</div><div class='stat-label'>Waiting</div></div>
           <div class='stat-card'><div class='stat-num' id='stat-assigned'>0</div><div class='stat-label'>Completed</div></div>
         </div>
@@ -340,7 +353,7 @@
 
         <h3 style='text-align:left; margin-bottom:6px; color:#17a2b8;'>&#9203; Current Queue</h3>
         <table class='queue-table'>
-          <thead><tr><th>Rank</th><th>Name</th><th>Time</th></tr></thead>
+          <thead><tr><th>Rank</th><th>Name</th><th>Time</th><th/></tr></thead>
           <tbody id='tableBody'/>
         </table>
 
@@ -363,18 +376,18 @@
        ═══════════════════════════════════════════════════════ */
 
     var ONESIGNAL_APP_ID = 'YOUR-ONESIGNAL-APP-ID-HERE';
-    var ADMIN_PASSWORD = '7700';
+    var ADMIN_PASSWORD = '05533';
     var ONESIGNAL_REST_KEY = 'YOUR-ONESIGNAL-REST-API-KEY-HERE';
 
-    var TOPIC_SYNC  = 'qs_sync_mandoobs_wh_8891';
-    var TOPIC_STATE = 'qs_state_mandoobs_wh_8891';
+    var TOPIC_SYNC     = 'qs_sync_mandoobs_wh_8891';
+    var TOPIC_STATE    = 'qs_state_mandoobs_wh_8891';
+    var TOPIC_PRESENCE = 'qs_presence_mandoobs_wh_8891';
 
-    // ── GPS auto-queue ────────────────────────────────────────────────────
-    var TARGET_LAT        = 24.7993316;   // warehouse latitude
-    var TARGET_LNG        = 46.7590946;   // warehouse longitude
+// ── GPS auto-queue ────────────────────────────────────────────────────
+    var TARGET_LAT        = 26.3273350;    // warehouse latitude
+    var TARGET_LNG        = 43.9929207;    // warehouse longitude
     var AUTO_JOIN_METERS  = 100;          // ≤ this → auto-join queue
     var AUTO_LEAVE_METERS = 130;          // > this → auto-leave (buffer avoids GPS jitter)
-
     /* ═══════════════════════════════════════════════════════
        STATE & STORAGE
        ═══════════════════════════════════════════════════════ */
@@ -394,6 +407,7 @@
     var ringInterval  = null, ringCount = 0;
     var mqttClient    = null;
     var myOSPlayerId  = null;
+    var onlineReps    = {};       // Stores dynamic active connection pings
 
     // Unique Device Tracking for login prevention
     var myDeviceId  = sg('my_device_id', Math.random().toString(36).substr(2,9));
@@ -404,6 +418,43 @@
     var queue        = sg('sys_queue',   []);
     var historyLog   = sg('sys_history', []);
     systemActive     = sg('sys_active',  true);
+
+    /* ═══════════════════════════════════════════════════════
+       BREAK SYSTEM FUNCTIONS
+       ═══════════════════════════════════════════════════════ */
+    function getRemainingBreakTime() {
+      if(!currentDriver || !currentDriver.id) return 0;
+      var breakUntil = sg('break_until_' + currentDriver.id, 0);
+      var now = Date.now();
+      return (now < breakUntil) ? (breakUntil - now) : 0;
+    }
+
+    function giveBreak(id) {
+      if(!confirm('إعطاء المندوب بريك لمدة ساعة؟ سيتم إخراجه من الطابور.')) return;
+
+      if(mqttClient && mqttClient.connected) {
+        mqttClient.publish(TOPIC_SYNC, JSON.stringify({
+          command: 'FORCE_BREAK',
+          id: String(id),
+          duration: 3600000
+        }), { qos: 1 });
+      }
+
+      var idx = queue.findIndex(function(d){ return String(d.id) === String(id); });
+      if(idx !== -1) {
+        var wasFirst = (idx === 0);
+        var removedName = queue[idx].name;
+        queue.splice(idx, 1);
+        ss('sys_queue', queue);
+        renderAdminUI();
+        syncStateToCloud();
+        showToast('☕ تم إخراج ' + removedName + ' لفترة راحة لمدة ساعة', '#f39c12');
+
+        if(wasFirst && queue.length > 0 && queue[0].osPlayerId) {
+          sendPushToNewFirst(queue[0].osPlayerId, queue[0].name);
+        }
+      }
+    }
 
     /* ═══════════════════════════════════════════════════════
        BLOGGER FEED
@@ -435,7 +486,7 @@
         .then(function(r){ return r.json(); })
         .then(function(data){
           var count = 0;
-          AUTHORIZED_DRIVERS = {}; 
+          AUTHORIZED_DRIVERS = {};
           if(data.feed && data.feed.entry){
             data.feed.entry.forEach(function(e){
               var div = document.createElement('div');
@@ -452,7 +503,7 @@
               });
             });
           }
-          if(isAdmin) updateUnscannedUI(); 
+          if(isAdmin) updateUnscannedUI();
           showToast('✅ Successfully updated! Loaded ' + count + ' reps.', '#28a745', 5);
         }).catch(function(){
           showToast('❌ Failed to update. Please check internet connection.', '#dc3545', 5);
@@ -519,8 +570,7 @@
       document.getElementById('pushEnableBtn').style.display = 'none';
       document.getElementById('pushEnabledMsg').style.display = 'block';
       document.getElementById('pushExplainText').style.display = 'none';
-      
-      // If the driver is already in the queue, sync their Push ID up to the cloud automatically
+
       var idx = queue.findIndex(function(q){ return String(q.id) === String(currentDriver.id); });
       if(idx !== -1 && queue[idx].osPlayerId !== pid) {
          queue[idx].osPlayerId = pid;
@@ -547,7 +597,7 @@
     }
 
     function sendPushToDriver(playerId, driverName) {
-      if(!playerId) return; 
+      if(!playerId) return;
       if(ONESIGNAL_REST_KEY === 'YOUR-ONESIGNAL-REST-API-KEY-HERE') return;
 
       fetch('https://onesignal.com/api/v1/notifications', {
@@ -562,17 +612,15 @@
           include_player_ids: [playerId],
           headings:  { en: '🚨 You are Number 1! 🚨' },
           contents:  { en: driverName + ' — You are number one and must take the order immediately.' },
-          
-          // 🚀 FORCES WAKE-UP & HIGH PRIORITY DELIVERY
+
           priority: 10,
-          android_visibility: 1, 
-          
-          // 🔊 ATTEMPTS TO TRIGGER NATIVE SOUNDS
+          android_visibility: 1,
+
           ios_sound: 'default',
           android_sound: 'default',
-          android_channel_id: '', 
-          
-          ttl: 300  
+          android_channel_id: '',
+
+          ttl: 300
         })
       }).catch(function(){});
     }
@@ -583,15 +631,14 @@
     try {
       mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
         clientId: 'qs_' + Math.random().toString(36).substr(2,10),
-        clean: true, 
-        connectTimeout: 15000, 
+        clean: true,
+        connectTimeout: 15000,
         reconnectPeriod: 2000,
-        keepalive: 30 
+        keepalive: 30
       });
 
       mqttClient.on('connect', function(){
-        // Automatically fetch the latest retained cloud data upon connecting
-        mqttClient.subscribe([TOPIC_SYNC, TOPIC_STATE], { qos: 1 });
+        mqttClient.subscribe([TOPIC_SYNC, TOPIC_STATE, TOPIC_PRESENCE], { qos: 1 });
       });
 
       mqttClient.on('error', function(err) {
@@ -601,6 +648,13 @@
       mqttClient.on('message', function(topic, message){
         try {
           var data = JSON.parse(message.toString());
+
+          // 🟢 ONLINE PRESENCE TRACKING
+          if(topic === TOPIC_PRESENCE && isAdmin && data.id) {
+             onlineReps[data.id] = Date.now();
+             updateOnlineCount();
+             return;
+          }
 
           // ☁️ CLOUD STATE SYNC
           if(topic === TOPIC_STATE) {
@@ -616,17 +670,14 @@
              } else if(currentDriver.id) {
                var myPos = queue.findIndex(function(x){ return String(x.id) === String(currentDriver.id); });
 
-               // Detect promotion to #1 → ring + push even when app is in background
                if(myPos === 0 && prevMyPos !== 0 && prevMyPos !== -1) {
                  startContinuousRing();
                  showNotifBanner('🔔 أنت الآن رقم 1 — توجّه فوراً!');
-                 // Also fire a local notification if page is hidden
                  if(document.hidden && 'Notification' in window && Notification.permission === 'granted') {
                    try{ new Notification('🚨 دورك الآن!', { body: 'أنت رقم 1 — توجّه للاستلام فوراً', icon: 'https://cdn-icons-png.flaticon.com/512/679/679720.png', requireInteraction: true }); }catch(e){}
                  }
                }
 
-               // If served (no longer in queue after being in it), re-arm cooldown + record time
                if(prevMyPos >= 0 && myPos === -1){ servedCooldown = true; servedAt = Date.now(); }
                prevMyPos = myPos;
 
@@ -637,17 +688,27 @@
              }
           }
 
-          // Peer-to-Peer PIN Verification Logic for Representatives
+          // Peer-to-Peer PIN & BREAK Verification
           if(topic === TOPIC_SYNC && !isAdmin) {
+
+            // BREAK COMMAND
+            if(data.command === 'FORCE_BREAK' && String(currentDriver.id) === String(data.id)) {
+              var breakEndTime = Date.now() + data.duration;
+              ss('break_until_' + currentDriver.id, breakEndTime);
+              autoLeaveQueue();
+              showNotifBanner('☕ الإدارة أعطتك فترة راحة لمدة ساعة');
+            }
+
+            // PIN IN USE
             if(data.command === 'PIN_CHECK' && currentDriver.id === data.id && data.deviceId !== myDeviceId) {
               mqttClient.publish(TOPIC_SYNC, JSON.stringify({
                 command: 'PIN_IN_USE',
                 id: data.id,
                 targetDevice: data.deviceId
-              }), { qos: 1 }); 
+              }), { qos: 1 });
             }
             if(data.command === 'PIN_IN_USE' && data.targetDevice === myDeviceId) {
-              clearTimeout(loginTimeout); 
+              clearTimeout(loginTimeout);
               var btn = document.getElementById('loginSubmitBtn');
               if(btn) { btn.textContent = 'Login'; btn.disabled = false; }
               var err = document.getElementById('regError');
@@ -718,14 +779,12 @@
     }
     function logoutAdmin(){ isAdmin=false; document.getElementById('adminSidebar').classList.remove('open'); showScreen('homeScreen'); }
 
-    // 🚀 RESTORES SAVED SECRET IF LOGGED OUT
-    function openRegScreen(){ 
-      document.getElementById('regError').style.display='none'; 
-      document.getElementById('regSecret').value = sg('saved_rep_secret', ''); // Populate saved password
-      showScreen('driverRegScreen'); 
+    function openRegScreen(){
+      document.getElementById('regError').style.display='none';
+      document.getElementById('regSecret').value = sg('saved_rep_secret', '');
+      showScreen('driverRegScreen');
     }
 
-    // Peer-to-Peer verification login flow
     function registerDriver(){
       var secret = document.getElementById('regSecret').value.trim();
       var err = document.getElementById('regError');
@@ -749,7 +808,7 @@
             btn.disabled = false;
             executeLogin(secret);
           }, 2000);
-          
+
         } else {
           executeLogin(secret);
         }
@@ -766,7 +825,7 @@
     function executeLogin(secret) {
       currentDriver = { id: secret, name: AUTHORIZED_DRIVERS[secret] };
       ss('logged_in_driver', currentDriver);
-      ss('saved_rep_secret', secret); 
+      ss('saved_rep_secret', secret);
       openDriverDashboard();
     }
 
@@ -777,11 +836,10 @@
       var savedPid = sg('os_player_id_' + currentDriver.id, null);
       if(savedPid) myOSPlayerId = savedPid;
 
-      // Initial local UI load
       var lastPos = sg('last_pos_' + currentDriver.id, -1);
       if(lastPos >= 0) updateDriverQueueUI(lastPos, 'waiting');
-      renderDriverQueueUI(); 
-      updateDailyCounter(historyLog); // Instantly pull up today's performance history on load
+      renderDriverQueueUI();
+      updateDailyCounter(historyLog);
 
       if(oneSignalReady){
         OneSignalDeferred.push(function(OS){
@@ -808,6 +866,10 @@
       renderRepSystemBanner();
       requestWakeLock();
       startLocationTracking();
+
+      if(mqttClient && mqttClient.connected) {
+         mqttClient.publish(TOPIC_PRESENCE, JSON.stringify({ id: currentDriver.id }), {qos: 0});
+      }
     }
 
     function logoutDriver(){
@@ -828,13 +890,12 @@
       }
     });
 
-    // The moment the rep reopens / refocuses the app → re-acquire wake lock,
-    // re-arm the GPS watch, and do an instant location check so they get a number right away
     document.addEventListener('visibilitychange', function(){
       if(!document.hidden && currentDriver.id){
         requestWakeLock();
         if(geoWatchId === null) startLocationTracking();
         quickLocationCheck();
+        if(mqttClient && mqttClient.connected) mqttClient.publish(TOPIC_PRESENCE, JSON.stringify({ id: currentDriver.id }), {qos: 0});
       }
     });
     window.addEventListener('focus', function(){
@@ -842,7 +903,7 @@
     });
 
     /* ═══════════════════════════════════════════════════════
-       AUDIO 
+       AUDIO
        ═══════════════════════════════════════════════════════ */
     function playSuccessSound(){
       try{
@@ -895,10 +956,19 @@
     function renderTracker(dist, inQueue){
       var box=document.getElementById('liveTracker'), dEl=document.getElementById('ltDistance'), sEl=document.getElementById('ltState');
       if(!box||!dEl||!sEl) return;
+
+      var breakTimeRemaining = getRemainingBreakTime();
+
       dEl.textContent = dist>=1000 ? (dist/1000).toFixed(2)+' كم' : Math.round(dist)+' م';
       box.classList.remove('in-range','out-range');
+
       if(!systemActive){
         box.classList.add('out-range'); sEl.textContent='🔴 النظام متوقف من قبل الإدارة';
+      } else if (breakTimeRemaining > 0) {
+        var mins = Math.floor(breakTimeRemaining / 60000);
+        box.classList.add('out-range');
+        box.style.borderColor = '#f39c12'; box.style.background = 'rgba(243,156,18,0.1)';
+        sEl.textContent = '☕ أنت في فترة راحة. يتبقى: ' + mins + ' دقيقة';
       } else if(dist<=AUTO_JOIN_METERS && servedCooldown){
         var remaining = Math.max(0, 180 - Math.floor((Date.now()-servedAt)/1000));
         var mins = Math.floor(remaining/60), secs = remaining%60;
@@ -947,12 +1017,16 @@
           var dist=haversineDistance(pos.coords.latitude,pos.coords.longitude,TARGET_LAT,TARGET_LNG);
           lastDist=dist;
           if(dist>AUTO_LEAVE_METERS){ servedCooldown=false; servedAt=0; }
+
           var inQueue=queue.some(function(d){return String(d.id)===String(currentDriver.id);});
-          if(dist<=AUTO_JOIN_METERS&&!inQueue&&systemActive){
+          var breakTimeRemaining = getRemainingBreakTime();
+
+          if(dist<=AUTO_JOIN_METERS && !inQueue && systemActive && breakTimeRemaining === 0){
             if(servedCooldown){
               if(servedAt>0 && (Date.now()-servedAt)>=180000){ servedCooldown=false; servedAt=0; autoJoinQueue(); }
             } else { autoJoinQueue(); }
-          } else if(dist>AUTO_LEAVE_METERS&&inQueue){ autoLeaveQueue(); }
+          }
+
           inQueue=queue.some(function(d){return String(d.id)===String(currentDriver.id);});
           renderTracker(dist,inQueue);
         },
@@ -969,17 +1043,22 @@
       releaseWakeLock();
     }
 
-    // Refresh countdown display every second while rep is in served-cooldown zone
+    // Refresh countdown display every second
     setInterval(function(){
-      if(!servedCooldown || !servedAt || !currentDriver.id) return;
-      var inQueue=queue.some(function(d){return String(d.id)===String(currentDriver.id);});
-      renderTracker(lastDist, inQueue);
-      if(lastDist<=AUTO_JOIN_METERS && (Date.now()-servedAt)>=180000){
+      if(!currentDriver || !currentDriver.id) return;
+
+      var inQueue = queue.some(function(d){return String(d.id)===String(currentDriver.id);});
+      var breakTime = getRemainingBreakTime();
+
+      if(breakTime > 0 || (servedCooldown && servedAt)) {
+        renderTracker(lastDist, inQueue);
+      }
+
+      if(breakTime === 0 && servedCooldown && servedAt && lastDist<=AUTO_JOIN_METERS && (Date.now()-servedAt)>=180000){
         servedCooldown=false; servedAt=0; autoJoinQueue();
       }
     }, 1000);
 
-    // Keeps the page (and GPS watch) alive while the phone is locked / app in background
     function requestWakeLock(){
       try{
         if('wakeLock' in navigator && !wakeLock){
@@ -994,20 +1073,22 @@
       try{ if(wakeLock){ wakeLock.release(); wakeLock = null; } }catch(e){}
     }
 
-    // One-shot location read — runs the instant the rep glances at / reopens the app,
-    // so they get their number immediately without waiting for the next watch tick
     function quickLocationCheck(){
       if(!navigator.geolocation || !currentDriver.id) return;
       navigator.geolocation.getCurrentPosition(function(pos){
         var dist=haversineDistance(pos.coords.latitude,pos.coords.longitude,TARGET_LAT,TARGET_LNG);
         lastDist=dist;
         if(dist>AUTO_LEAVE_METERS){ servedCooldown=false; servedAt=0; }
+
         var inQueue=queue.some(function(d){return String(d.id)===String(currentDriver.id);});
-        if(dist<=AUTO_JOIN_METERS&&!inQueue&&systemActive){
+        var breakTimeRemaining = getRemainingBreakTime();
+
+        if(dist<=AUTO_JOIN_METERS && !inQueue && systemActive && breakTimeRemaining === 0){
           if(servedCooldown){
             if(servedAt>0 && (Date.now()-servedAt)>=180000){ servedCooldown=false; servedAt=0; autoJoinQueue(); }
           } else { autoJoinQueue(); }
-        } else if(dist>AUTO_LEAVE_METERS&&inQueue){ autoLeaveQueue(); }
+        }
+
         inQueue=queue.some(function(d){return String(d.id)===String(currentDriver.id);});
         renderTracker(dist,inQueue);
       }, function(){}, {enableHighAccuracy:true, timeout:10000, maximumAge:0});
@@ -1035,7 +1116,6 @@
       }
     }
 
-    // Renders the live table on the Representative's phone
     function renderDriverQueueUI() {
       var container = document.getElementById('driverQueueContainer');
       var tbody = document.getElementById('driverQueueBody');
@@ -1048,11 +1128,9 @@
 
       container.style.display = 'block';
       tbody.innerHTML = '';
-      
+
       queue.forEach(function(d, i){
         var tr = document.createElement('tr');
-        
-        // Highlight the current driver's row in green so they can find themselves
         if(String(d.id) === String(currentDriver.id)) {
           tr.style.background = 'rgba(23,162,184,0.15)';
           tr.innerHTML = '<td><strong>' + (i+1) + '</strong></td><td style="color:#55efc4;"><strong>' + esc(d.name) + ' (You)</strong></td>';
@@ -1063,29 +1141,23 @@
       });
     }
 
-    // 🚀 NEW: Processes background order history logs to build the daily performance sheet
     function updateDailyCounter(cloudHistory) {
       var now = new Date();
-      // Creates a key for the current day
       var currentDayKey = now.getDate() + '-' + now.getMonth() + '-' + now.getFullYear();
-      
-      // Load current local tracking instance
+
       var record = sg('rep_daily_record_' + currentDriver.id, { day: currentDayKey, countedTimestamps: [], count: 0 });
-      
-      // Smart Auto-Reset when the rolling calendar changes days (resets at midnight)
+
       if (record.day !== currentDayKey) {
         record = { day: currentDayKey, countedTimestamps: [], count: 0 };
       }
-      
+
       var hasUpdates = false;
       cloudHistory.forEach(function(item) {
         if (String(item.id) === String(currentDriver.id) && item.completedAt) {
-          // Double-count preventative safeguard logic
           if (record.countedTimestamps.indexOf(item.completedAt) === -1) {
             var orderDate = new Date(item.completedAt);
             var orderDayKey = orderDate.getDate() + '-' + orderDate.getMonth() + '-' + orderDate.getFullYear();
-            
-            // Only count if the order happened today
+
             if (orderDayKey === currentDayKey) {
               record.countedTimestamps.push(item.completedAt);
               record.count++;
@@ -1094,11 +1166,11 @@
           }
         }
       });
-      
+
       if (hasUpdates || !document.getElementById('daily-count')) {
         ss('rep_daily_record_' + currentDriver.id, record);
       }
-      
+
       var countEl = document.getElementById('daily-count');
       if (countEl) {
         countEl.textContent = record.count;
@@ -1109,6 +1181,20 @@
       if(mqttClient && mqttClient.connected){
         var payload = { queue: queue, historyLog: historyLog, systemActive: systemActive };
         mqttClient.publish(TOPIC_STATE, JSON.stringify(payload), {retain: true, qos: 1});
+      }
+    }
+
+    function removeFromQueue(id){
+      var idx=queue.findIndex(function(d){return String(d.id)===String(id);});
+      if(idx===-1) return;
+      var wasFirst=(idx===0);
+      queue.splice(idx,1);
+      ss('sys_queue',queue);
+      renderAdminUI();
+      syncStateToCloud();
+      showToast('🗑 تم حذف المندوب من الطابور','#f39c12');
+      if(wasFirst && queue.length>0 && queue[0].osPlayerId){
+        sendPushToNewFirst(queue[0].osPlayerId, queue[0].name);
       }
     }
 
@@ -1168,11 +1254,14 @@
 
       var body=document.getElementById('tableBody'); body.innerHTML='';
       if(queue.length===0){
-        body.innerHTML='<tr><td colspan="3" style="text-align:center;color:rgba(255,255,255,0.4);padding:18px;">Queue is empty</td></tr>';
+        body.innerHTML='<tr><td colspan="4" style="text-align:center;color:rgba(255,255,255,0.4);padding:18px;">Queue is empty</td></tr>';
       } else {
         queue.forEach(function(d,i){
           var tr=document.createElement('tr');
-          tr.innerHTML='<td><strong>'+(i+1)+'</strong></td><td>'+esc(d.name)+'</td><td>'+esc(d.time)+'</td>';
+          tr.innerHTML='<td><strong>'+(i+1)+'</strong></td><td>'+esc(d.name)+'</td><td>'+esc(d.time)+'</td>'
+            +'<td style="display:flex; gap:6px; justify-content:center;">'
+            +'<button class="btn-remove" style="background:rgba(243,156,18,0.15); color:#f39c12; border-color:#f39c12;" onclick="giveBreak(\''+esc(String(d.id))+'\')">☕ بريك</button>'
+            +'<button class="btn-remove" onclick="removeFromQueue(\''+esc(String(d.id))+'\')">✕ حذف</button></td>';
           body.appendChild(tr);
         });
       }
@@ -1209,7 +1298,6 @@
         showToast('✅ Order assigned to ' + done.name, '#28a745');
       }
 
-      // Notify the rep who just became #1
       if(queue.length>0 && queue[0].osPlayerId){
         sendPushToNewFirst(queue[0].osPlayerId, queue[0].name);
       }
@@ -1223,7 +1311,7 @@
       queue=[]; historyLog=[];
       ss('sys_queue',[]); ss('sys_history',[]);
       renderAdminUI();
-      syncStateToCloud(); // Overwrites the cloud database with empty arrays
+      syncStateToCloud();
       showToast('🗑️ All data cleared','#adb5bd');
     }
 
@@ -1251,6 +1339,34 @@
     }
 
     function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    /* ═══════════════════════════════════════════════════════
+       PRESENCE SYSTEM (PING & CLEANUP)
+       ═══════════════════════════════════════════════════════ */
+
+    setInterval(function() {
+      if (mqttClient && mqttClient.connected && currentDriver && currentDriver.id && !isAdmin) {
+        mqttClient.publish(TOPIC_PRESENCE, JSON.stringify({ id: currentDriver.id }), {qos: 0});
+      }
+    }, 10000);
+
+    setInterval(function() {
+      if (isAdmin) updateOnlineCount();
+    }, 5000);
+
+    function updateOnlineCount() {
+      var now = Date.now();
+      var count = 0;
+      for(var id in onlineReps) {
+        if(now - onlineReps[id] < 25000) {
+          count++;
+        } else {
+          delete onlineReps[id];
+        }
+      }
+      var el = document.getElementById('stat-online');
+      if(el) el.textContent = count;
+    }
 
     //]]>
     </script>
