@@ -268,8 +268,8 @@
                   <div class='field'><label>عنوان المنتج <span class='badge-req'>مطلوب</span></label><input id='ptitle' onchange='syncCurrentToMemory()' oninput='this.classList.remove(&quot;error-border&quot;)' placeholder='مثال: جوال آيفون 17 برو — 256 جيجا' type='text'/></div>
                   <div class='field'><label>التصنيف / القسم <span class='badge-req'>مطلوب</span></label><select id='pcat' onchange='onCatChange(this)'></select></div>
                   <div class='grid2'>
-                    <div class='field'><label>التقييم <span class='badge-opt'>اختياري</span></label><input id='prating' max='5' min='0' step='0.1' type='number'/></div>
-                    <div class='field'><label>عدد التقييمات <span class='badge-opt'>اختياري</span></label><input id='pratcount' type='number'/></div>
+                    <div class='field'><label>التقييم <span class='badge-opt'>اختياري</span></label><input id='prating' max='5' min='0' step='0.1' type='number' value='5'/></div>
+                    <div class='field'><label>عدد التقييمات <span class='badge-opt'>اختياري</span></label><input id='pratcount' type='number' value='100'/></div>
                   </div>
                 </div>
 
@@ -278,12 +278,6 @@
 
                 <div class='sec-div'><hr/><span>الإعدادات والنشر</span><hr/></div>
 
-                <div class='settings-bar'>
-                  <button class='btn btn-ghost' onclick='copySettings()'>📋 نسخ بيانات المنتج</button>
-                  <button class='btn btn-ghost' onclick='pasteSettings()'>📥 استيراد</button>
-                </div>
-
-                <button class='btn-publish hidden' id='pub-btn' onclick='publishDirectly()'>🚀 إنشاء ونشر هذا المنتج مباشرة</button>
                 <button class='btn-publish hidden' id='user-draft-btn' onclick='syncDraftToCloud(false)' style='background:linear-gradient(135deg,#007aff,#005bb5); box-shadow:0 10px 30px rgba(0,122,255,0.25);'>&#9729;&#65039; حفظ المنتج كمسودة (بانتظار مراجعة الإدارة)</button>
 
                 <div class='pub-status' id='pub-status'/>
@@ -294,11 +288,6 @@
                   <div class='out-card' style='border-color:rgba(0,122,255,0.3); background:rgba(0,122,255,0.05);'>
                     <div class='out-card-hd'><span style='color:var(--pr);font-weight:800;'>🏷&#65039; عنوان المنتج</span><button class='btn btn-primary' id='cbtn-title' onclick='copyTxt(&quot;out-title&quot;)' style='padding:8px 16px;font-size:13.5px;'>نسخ</button></div>
                     <input id='out-title' readonly='' style='width:100%;padding:16px;border-radius:var(--r3);border:1px solid rgba(0,122,255,0.2);background:rgba(255,255,255,0.8);color:var(--txt);font-weight:800;font-family:inherit;' type='text'/>
-                  </div>
-
-                  <div class='out-card' style='border-color:rgba(52,199,89,0.3); background:rgba(52,199,89,0.05);'>
-                    <div class='out-card-hd'><span style='color:#248a3d;font-weight:800;'>💬 نص الطلب المختصر لواتساب</span><button class='btn' onclick='copyTxt(&quot;out-wa&quot;)' style='background:#34c759;color:#fff;padding:8px 16px;font-size:13.5px;'>نسخ</button></div>
-                    <textarea id='out-wa' readonly='' style='width:100%;padding:16px;border-radius:var(--r3);border:1px solid rgba(52,199,89,0.2);background:rgba(255,255,255,0.8);color:var(--txt);font-weight:700;font-family:inherit;min-height:90px;'/>
                   </div>
 
                   <div class='out-card'>
@@ -456,11 +445,11 @@
 
               if(currentUser.isAdmin) {
                   $('btn-admin').classList.remove('hidden');
-                  $('pub-btn').classList.remove('hidden');
+                  if($('pub-btn')) $('pub-btn').classList.remove('hidden');
                   if($('user-draft-btn')) $('user-draft-btn').classList.add('hidden');
               } else {
                   $('btn-admin').classList.add('hidden');
-                  $('pub-btn').classList.add('hidden');
+                  if($('pub-btn')) $('pub-btn').classList.add('hidden');
                   if($('user-draft-btn')) $('user-draft-btn').classList.remove('hidden');
               }
 
@@ -473,7 +462,7 @@
         function doLogout(){
           currentUser=null; $('dashboard').classList.add('hidden'); $('login-screen').classList.remove('hidden');
           $('btn-admin').classList.add('hidden');
-          $('pub-btn').classList.add('hidden');
+          if($('pub-btn')) $('pub-btn').classList.add('hidden');
           if($('user-draft-btn')) $('user-draft-btn').classList.add('hidden');
           if(autoSaveTimer) clearInterval(autoSaveTimer);
         }
@@ -609,7 +598,7 @@
             +'<div class="img-url-bar"><input type="url" id="urlInput'+i+'" placeholder="رابط صورة خارجية..." style="flex:1;"/><button class="btn btn-primary" onclick="addUrl('+i+')">إضافة</button></div>'
             +'<input type="file" id="file'+i+'" accept="image/*" multiple style="display:none;" onchange="filesChosen(event,'+i+')" /><input type="file" id="camera'+i+'" accept="image/*" capture="environment" style="display:none;" onchange="filesChosen(event,'+i+')" /></div></div>'
             +'<div class="field"><label>خيارات السعر <span class="badge-opt">للمقاسات</span></label><div id="vc'+i+'-sizes"></div><button class="btn btn-ghost" style="margin-top:10px;" onclick="addSz('+i+')">＋ إضافة خيار سعر</button></div>'
-            +'<div class="grid2"><div class="field"><label>السعر القديم</label><input type="number" id="vc'+i+'-oldp"/></div><div class="field"><label>سطر إضافي</label><input type="text" id="vc'+i+'-extra"/></div></div>';
+            +'<div class="grid2"><div class="field"><label>السعر القديم</label><input type="number" id="vc'+i+'-oldp"/></div><div class="field"><label>سطر إضافي</label><input type="text" id="vc'+i+'-extra" value="السعر شامل الضريبة"/></div></div>';
           $('vc').appendChild(d); addSz(i);
         }
 
@@ -761,7 +750,6 @@
           var data = buildPostData(); if(!data) return;
           $('out-title').value = $('ptitle').value.trim();
           $('out').value = data.html;
-          $('out-wa').value = data.waText;
           $('out-wrap').classList.remove('hidden');
           showToast('✅ تم التوليد بنجاح');
         }
@@ -775,7 +763,7 @@
           var title=$('ptitle').value.trim(), cat=$('pcat').value.trim();
           var data=buildPostData(); if(!data) return;
 
-          var statusDiv=$('pub-status'); $('pub-btn').disabled=true; statusDiv.innerHTML='<div class="status-box status-loading">جاري الإرسال والنشر السحابي... ⏳</div>';
+          var statusDiv=$('pub-status'); var _pb=$('pub-btn'); if(_pb)_pb.disabled=true; statusDiv.innerHTML='<div class="status-box status-loading">جاري الإرسال والنشر السحابي... ⏳</div>';
           try {
             var res = await fetch(APPS_SCRIPT_URL,{ method:'POST', body:JSON.stringify({action:'publishPost', username:currentUser.name, password:currentUser.pass, title:title, content:data.html, labels:[cat]}) });
             var apiData = await res.json();
@@ -793,7 +781,7 @@
               }, 3000);
             } else statusDiv.innerHTML='<div class="status-box status-error">خطأ في النشر: '+ esc(apiData.message||'') +'</div>';
           } catch(e){ statusDiv.innerHTML='<div class="status-box status-error">خطأ بالاتصال بالخادم</div>'; }
-          finally { $('pub-btn').disabled=false; }
+          finally { if(_pb)_pb.disabled=false; }
         }
 
         var toastTimeout;
