@@ -40,8 +40,9 @@
 
 /* ────────────── CONFIG — edit these ────────────── */
 var CONFIG = {
-  // Your blog address (no trailing slash). Used to auto-detect the Blog ID.
-  BLOG_URL: 'https://broo1stoor.blogspot.com',
+  // Your STORE blog address (where customers shop) — products publish HERE.
+  // Must be the store the storefront reads, NOT the workspace tool.
+  BLOG_URL: 'https://www.store1bro.com',
 
   // Google Sheet holding the 'Users' tab — the SAME sheet the login uses.
   // Auth now reads this sheet (not the USERS array below), so login and

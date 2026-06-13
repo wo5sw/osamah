@@ -1176,7 +1176,7 @@ var CONFIG = {
   // Store Workspace (merchant tool) URL — opens in an isolated full-screen
   // overlay when a visitor taps "دخول التجار". Put your Store Workspace blog
   // URL here (e.g. https://your-workspace.blogspot.com). Empty = login disabled.
-  merchantAppUrl: '',
+  merchantAppUrl: 'https://broo1stoor.blogspot.com',
 };
 // True only when a real Google Maps key has been provided.
 function hasMapsKey() { var k = CONFIG.mapsApiKey; return !!k && k.indexOf('YOUR_') !== 0 && k.length > 20; }
