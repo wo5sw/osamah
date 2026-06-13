@@ -277,6 +277,7 @@
                 <button class='btn-add-v' onclick='addV()'>&#65291; إضافة قسم / خيار جديد للمنتج</button>
 
                 <div class='sec-div'><hr/><span>الإعدادات والنشر</span><hr/></div>
+                <button class='btn btn-ghost' onclick='importFromPostCode()' style='width:100%;margin-bottom:16px;'>📥 استيراد من كود المنشور (للتعديل)</button>
 
                 <button class='btn-publish hidden' id='user-draft-btn' onclick='syncDraftToCloud(false)' style='background:linear-gradient(135deg,#007aff,#005bb5); box-shadow:0 10px 30px rgba(0,122,255,0.25);'>&#9729;&#65039; حفظ المنتج كمسودة (بانتظار مراجعة الإدارة)</button>
 
@@ -644,6 +645,57 @@
         function pasteVariant(i){ if(_copiedVariant){applyVariantData(i,_copiedVariant);showToast('✅ تم اللصق بنجاح');} else showToast('⚠️ لا يوجد خيار منسوخ'); }
         function copySettings(){ syncCurrentToMemory(); navigator.clipboard.writeText(JSON.stringify(readAllSettings(),null,2)).then(function(){showToast('✅ تم نسخ الإعدادات');}); }
         function pasteSettings(){ navigator.clipboard.readText().then(function(t){try{var p=JSON.parse(t);if(p&&p.variants){applyData(p);showToast('✅ تم الاستيراد');}}catch(e){ showToast('⚠️ بيانات غير صالحة'); }}); }
+
+        /* استيراد منتج من كود منشور Blogger (عكس buildPostData) لإعادة بنائه وتعديله. */
+        function parsePostCode(html){
+          if(!html || !String(html).trim()) return null;
+          var data = { v:'1', title:($('ptitle').value||'').trim(), cat:($('pcat').value||'').trim(), rating:'', ratcount:'', delivery:'', merchant:'', variants:[] };
+          var rawSecs = String(html).replace(/&nbsp;|​/gi,' ').split(/(?:\s*(?:<[^>]+>\s*)*[.·•‧⋅]{5,})/);
+          rawSecs.forEach(function(sec){
+            if(!sec || !sec.trim()) return;
+            var box = document.createElement('div'); box.innerHTML = sec;
+            var imgs = [];
+            box.querySelectorAll('img').forEach(function(im){ var s = im.getAttribute('src')||''; if(/^https?:\/\//.test(s)) imgs.push({ src:s, status:'ready' }); });
+            var clean = sec.replace(/<br\s*\/?>/gi,'\n').replace(/<\/(?:div|p|h[1-6])>/gi,'\n').replace(/<[^>]+>/g,'');
+            var ta = document.createElement('textarea'); ta.innerHTML = clean; clean = ta.value;
+            var lines = clean.split('\n').map(function(l){ return l.trim(); }).filter(function(l){ return l && !/^[.·•‧⋅]{3,}$/.test(l); });
+            var V = { optName:'', optVal:'', sku:'', desc:'', oldp:'', extra:'', sizes:[], specs:[], imgs:imgs };
+            var prices=[], sizeLbls=[], mode=null, descParts=[], titleSet=false, m;
+            lines.forEach(function(line){
+              if((m=line.match(/^(?:التقييم|Rating)\s*[:\-]\s*(.+)$/))){ data.rating=(m[1].match(/[0-9.]+/)||[''])[0]; mode=null; return; }
+              if((m=line.match(/^(?:عدد التقييمات|عدد المراجعات|Reviews)\s*[:\-]\s*(.+)$/))){ data.ratcount=(m[1].match(/[0-9]+/)||[''])[0]; mode=null; return; }
+              if(/^(?:مدة التوصيل|رقم التاجر)\s*[:\-]/.test(line)){ mode=null; return; }
+              if((m=line.match(/^(?:كود المنتج \(SKU\)|SKU)\s*[:\-]\s*(.+)$/))){ V.sku=m[1].trim(); mode=null; return; }
+              if((m=line.match(/^(?:السعر القديم|Old Price)\s*[:\-]\s*(.+)$/))){ V.oldp=(m[1].match(/[0-9.]+/)||[''])[0]; mode=null; return; }
+              if(/^(?:الوصف|Description)\s*:?\s*$/.test(line)){ mode='desc'; return; }
+              if(/^(?:الحجم|الأحجام|المقاس|Size)\s*:?\s*$/.test(line)){ mode='sizes'; return; }
+              if((m=line.match(/^(?:السعر|Price)\s*[:\-]\s*([0-9][0-9.,]*)\s*$/))){ prices.push(m[1].replace(/[^0-9.]/g,'')); mode=null; return; }
+              if(/^(?:السعر|Price)\s*:?\s*$/.test(line)){ mode='prices'; return; }
+              if(mode==='prices'){ if(/^[0-9][0-9.,]*$/.test(line)){ prices.push(line.replace(/[^0-9.]/g,'')); return; } mode=null; }
+              if(mode==='sizes'){ if(line.length<=60 && line.indexOf(':')<0){ sizeLbls.push(line); return; } mode=null; }
+              if(mode==='desc'){ descParts.push(line); return; }
+              if(!titleSet){ titleSet=true; var cm=line.match(/^(.+?)\s*:\s*(.+)$/); if(cm){ V.optName=cm[1].trim(); V.optVal=cm[2].trim(); } else { V.optVal=line; } return; }
+              var sm=line.match(/^(.+?)\s*:\s*(.+)$/);
+              if(sm){ V.specs.push({ name:sm[1].trim(), val:sm[2].trim() }); }
+              else if(!V.extra){ V.extra=line; }
+              else descParts.push(line);
+            });
+            V.desc = descParts.join('\n');
+            if(prices.length){
+              if(sizeLbls.length>0 && sizeLbls.length===prices.length){ for(var k=0;k<prices.length;k++) V.sizes.push({ label:sizeLbls[k], price:prices[k] }); }
+              else prices.forEach(function(p){ V.sizes.push({ label:'', price:p }); });
+            }
+            if(V.optVal||V.sku||V.desc||V.sizes.length||V.specs.length||V.imgs.length||V.oldp||V.extra) data.variants.push(V);
+          });
+          return data.variants.length ? data : null;
+        }
+        function importFromPostCode(){
+          navigator.clipboard.readText().then(function(t){
+            var data = parsePostCode(t);
+            if(data){ applyData(data); syncCurrentToMemory(); showToast('✅ تم استيراد المنتج — عدّله ثم أعد نشره'); }
+            else showToast('⚠️ لم أتعرّف على كود منشور صالح');
+          }).catch(function(){ showToast('⚠️ تعذّر قراءة الحافظة — انسخ كود المنشور أولاً'); });
+        }
 
         function dropImg(e,i){ e.preventDefault(); if(e.dataTransfer.files&&e.dataTransfer.files.length) readFiles(i,e.dataTransfer.files); }
         function filesChosen(e,i){readFiles(i,e.target.files);e.target.value='';}
