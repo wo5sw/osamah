@@ -266,7 +266,8 @@
                 <div class='card'>
                   <div class='card-hd'><div class='card-icon'>📦</div><div><h2>معلومات المنتج</h2><p>البيانات الأساسية للمنتج الحالي</p></div></div>
                   <div class='field'><label>عنوان المنتج <span class='badge-req'>مطلوب</span></label><input id='ptitle' onchange='syncCurrentToMemory()' oninput='this.classList.remove(&quot;error-border&quot;)' placeholder='مثال: جوال آيفون 17 برو — 256 جيجا' type='text'/></div>
-                  <div class='field'><label>التصنيف / القسم <span class='badge-req'>مطلوب</span></label><select id='pcat' onchange='onCatChange(this)'></select></div>
+                  <input id='pcat' type='hidden'/>
+                  <!-- القسم يُؤخذ تلقائياً من قسم المستخدم المسجَّل (حقل مخفي) -->
                   <div class='grid2'>
                     <div class='field'><label>التقييم <span class='badge-opt'>اختياري</span></label><input id='prating' max='5' min='0' step='0.1' type='number' value='5'/></div>
                     <div class='field'><label>عدد التقييمات <span class='badge-opt'>اختياري</span></label><input id='pratcount' type='number' value='100'/></div>
@@ -744,7 +745,6 @@
         function validateForm() {
             var valid = true;
             var pt = $('ptitle'); if(!pt.value.trim()){ pt.classList.add('error-border'); valid = false; }
-            var pc = $('pcat'); if(!pc.value.trim()){ pc.classList.add('error-border'); valid = false; }
             if(!valid) showToast('⚠️ يرجى تعبئة الحقول المطلوبة');
             return valid;
         }
