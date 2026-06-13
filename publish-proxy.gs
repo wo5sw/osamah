@@ -232,10 +232,12 @@ function sanitizeContent(html) {
    BLOGGER
    ============================================================ */
 
-/** Resolve the numeric Blog ID from BLOG_URL (cached 6h). */
+/** Resolve the numeric Blog ID from BLOG_URL (cached 6h, keyed by URL so
+    changing BLOG_URL refreshes automatically instead of using a stale id). */
 function getBlogId() {
   var cache = CacheService.getScriptCache();
-  var cached = cache.get('blog_id');
+  var key = 'blog_id::' + CONFIG.BLOG_URL;
+  var cached = cache.get(key);
   if (cached) return cached;
 
   var url = 'https://www.googleapis.com/blogger/v3/blogs/byurl?url=' + encodeURIComponent(CONFIG.BLOG_URL);
@@ -245,7 +247,7 @@ function getBlogId() {
   });
   var obj = JSON.parse(resp.getContentText());
   if (!obj.id) throw new Error('تعذّر العثور على المدونة — تأكد من BLOG_URL وأن الحساب يملك المدونة.');
-  cache.put('blog_id', obj.id, 21600); // cache 6h
+  cache.put(key, obj.id, 21600); // cache 6h
   return obj.id;
 }
 
