@@ -266,7 +266,7 @@
                 <div class='card'>
                   <div class='card-hd'><div class='card-icon'>📦</div><div><h2>معلومات المنتج</h2><p>البيانات الأساسية للمنتج الحالي</p></div></div>
                   <div class='field'><label>عنوان المنتج <span class='badge-req'>مطلوب</span></label><input id='ptitle' onchange='syncCurrentToMemory()' oninput='this.classList.remove(&quot;error-border&quot;)' placeholder='مثال: جوال آيفون 17 برو — 256 جيجا' type='text'/></div>
-                  <div class='field'><label>التصنيف / القسم <span class='badge-req'>مطلوب</span></label><select id='pcat' onchange='this.classList.remove(&quot;error-border&quot;)'></select></div>
+                  <div class='field'><label>التصنيف / القسم <span class='badge-req'>مطلوب</span></label><select id='pcat' onchange='onCatChange(this)'></select></div>
                   <div class='grid2'>
                     <div class='field'><label>التقييم <span class='badge-opt'>اختياري</span></label><input id='prating' max='5' min='0' step='0.1' type='number'/></div>
                     <div class='field'><label>عدد التقييمات <span class='badge-opt'>اختياري</span></label><input id='pratcount' type='number'/></div>
@@ -413,9 +413,19 @@
           }
           var html = (currentUser && currentUser.isAdmin) ? '<option value="">— اختر القسم —</option>' : '';
           opts.forEach(function(s){ if(!s) return; html += '<option value="'+esc(s)+'"'+(s===cur?' selected':'')+'>'+esc(s)+'</option>'; });
+          if (currentUser && currentUser.isAdmin) html += '<option value="__new__">➕ قسم جديد…</option>';
           sel.innerHTML = html;
           if (currentUser && !currentUser.isAdmin && opts.length) sel.value = opts[0];
           else if (cur) sel.value = cur;
+        }
+        /* اختيار القسم — مع دعم «➕ قسم جديد» للمدير (يُنشأ كتصنيف Blogger عند النشر). */
+        function onCatChange(sel){
+          sel.classList.remove('error-border');
+          if (sel.value === '__new__') {
+            var name = (prompt('اسم القسم الجديد (سيُنشأ كتصنيف في Blogger عند النشر):')||'').trim();
+            if (name) { if (bloggerLabels.indexOf(name) < 0) bloggerLabels.push(name); populateCategoryOptions(name); }
+            else { populateCategoryOptions(''); }
+          }
         }
         function rememberSection(){
           var cat=($('pcat').value||'').trim(); if(!cat) return;

@@ -43,8 +43,12 @@ var CONFIG = {
   // Your blog address (no trailing slash). Used to auto-detect the Blog ID.
   BLOG_URL: 'https://broo1stoor.blogspot.com',
 
-  // Set ONCE to any random text. It is mixed into every password hash.
-  // Changing it later invalidates all existing hashes in USERS.
+  // Google Sheet holding the 'Users' tab — the SAME sheet the login uses.
+  // Auth now reads this sheet (not the USERS array below), so login and
+  // publish share ONE source of truth.
+  SHEET_ID: '1vTJYZzcQcqvZqkTmcudVzkeTHzlq7GPRQAsFiQqAuaE',
+
+  // (Legacy) kept only so the manual makeUser/makeAdmin helpers still run.
   SALT: 'store-bro-salt-CHANGE-ME-7f3ad9',
 
   // Require a valid username/password before publishing. Keep true.
@@ -152,16 +156,20 @@ function safeEquals(a, b) {
   return r === 0;
 }
 
-/** Verify a username/password against the private USERS list. */
+/** Verify username/password against the 'Users' sheet (same source as login).
+    Columns: A=username  B=password  C=role('admin')  D=section */
 function verifyCredentials(u, p) {
-  if (!u || !p) return { ok: false };
-  var h = hashPw(p);
-  for (var i = 0; i < USERS.length; i++) {
-    var entry = USERS[i];
-    if (entry && entry.user === u && safeEquals(entry.hash || '', h)) {
-      return { ok: true, isAdmin: !!entry.admin, section: (entry.section || u) };
+  if (!u || p == null || p === '') return { ok: false };
+  try {
+    var sh = SpreadsheetApp.openById(CONFIG.SHEET_ID).getSheetByName('Users');
+    if (!sh) return { ok: false };
+    var data = sh.getDataRange().getValues();
+    for (var i = 1; i < data.length; i++) {
+      if (String(data[i][0]) === String(u) && String(data[i][1]) === String(p)) {
+        return { ok: true, isAdmin: (data[i][2] === 'admin'), section: data[i][3] || '' };
+      }
     }
-  }
+  } catch (e) {}
   return { ok: false };
 }
 
