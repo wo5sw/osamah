@@ -523,7 +523,7 @@
           var draft = multiDraft.find(function(d){ return d.id === id; });
           document.querySelectorAll('.error-border').forEach(e => e.classList.remove('error-border'));
           if (draft && draft.data && draft.data.variants && draft.data.variants.length > 0) { applyData(draft.data); }
-          else { $('ptitle').value = ''; $('pcat').value = currentUser.isAdmin?'':(currentUser.section||''); $('prating').value = ''; $('pratcount').value = ''; if($('pdelivery'))$('pdelivery').value=''; if($('pmerchant'))$('pmerchant').value=''; applySectionCfg(); $('vc').innerHTML = ''; vcCount = 0; varImgs = {}; addV(); }
+          else { $('ptitle').value = ''; $('pcat').value = currentUser.isAdmin?'':(currentUser.section||''); $('prating').value = '5'; $('pratcount').value = '100'; if($('pdelivery'))$('pdelivery').value=''; if($('pmerchant'))$('pmerchant').value=''; applySectionCfg(); $('vc').innerHTML = ''; vcCount = 0; varImgs = {}; addV(); }
         }
 
         function startAutoSave() { if(autoSaveTimer) clearInterval(autoSaveTimer); autoSaveTimer = setInterval(function() { if(!$('dashboard').classList.contains('hidden') && !$('workspace-panel').classList.contains('hidden')){ syncCurrentToMemory(); saveToLocal(); } }, 2500); }
@@ -630,7 +630,7 @@
         }
         function applyData(data){
           $('ptitle').value=data.title||''; if(!currentUser||currentUser.isAdmin) populateCategoryOptions(data.cat||'');
-          $('prating').value=data.rating||''; $('pratcount').value=data.ratcount||''; if($('pdelivery'))$('pdelivery').value=data.delivery||''; if($('pmerchant'))$('pmerchant').value=data.merchant||''; $('vc').innerHTML='';vcCount=0;varImgs={};
+          $('prating').value=data.rating||'5'; $('pratcount').value=data.ratcount||'100'; if($('pdelivery'))$('pdelivery').value=data.delivery||''; if($('pmerchant'))$('pmerchant').value=data.merchant||''; $('vc').innerHTML='';vcCount=0;varImgs={};
           if(data.variants && data.variants.length > 0) { data.variants.forEach(function(v){ addV(); applyVariantData(vcCount,v); }); } else { addV(); }
           applySectionCfg(false);
         }
