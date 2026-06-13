@@ -981,10 +981,32 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
         <span class='contact-icon' style='color:var(--whatsapp)'>💬</span>
         <span class='contact-text'>واتساب</span>
       </div>
+      <div class='contact-item' onclick='closeModal(&quot;contact-modal&quot;); openModal(&quot;merchant-join-modal&quot;)'>
+        <span class='contact-icon' style='color:var(--amazon-blue)'>🤝</span>
+        <span class='contact-text'>انضم إلينا كتاجر</span>
+      </div>
     </div>
   </div>
 </div>
 
+
+<!-- MERCHANT JOIN MODAL -->
+<div class='modal bottom-sheet' id='merchant-join-modal' onclick='backdropClose(event,&quot;merchant-join-modal&quot;)'>
+  <div class='modal-panel'>
+    <div class='sheet-handle'/>
+    <div class='modal-head' style='background:#fff;color:var(--text);'>
+      <h2>🤝 طلب انضمام تاجر</h2>
+      <button class='modal-close' onclick='closeModal(&quot;merchant-join-modal&quot;)' style='background:#f3f3f3;color:#333;border-color:#ddd;'>&#10005;</button>
+    </div>
+    <div class='contact-list' style='padding-top: 0;'>
+      <p style='font-size:13px; color:var(--text-2); margin-bottom:16px;'>يرجى تعبئة البيانات التالية وسنقوم بالتواصل معك لتفعيل حسابك.</p>
+      <input class='pro-input' id='mj-name' placeholder='اسم التاجر أو المتجر *' type='text'/>
+      <input class='pro-input' id='mj-phone' placeholder='رقم الجوال *' type='tel'/>
+      <input class='pro-input' id='mj-cat' placeholder='القسم (مثال: ملابس داخلية، عطور) *' type='text'/>
+      <button class='btn-confirm' onclick='submitMerchantRequest()' style='background: var(--amazon-blue); border-color: var(--amazon-blue);'>إرسال الطلب 💬</button>
+    </div>
+  </div>
+</div>
 
 <!-- HISTORY MODAL -->
 <div class='modal' id='history-modal' onclick='backdropClose(event,&quot;history-modal&quot;)'>
@@ -3094,6 +3116,26 @@ function submitOrder() {
   }, 800);
 }
 
+function submitMerchantRequest() {
+  var name = ((document.getElementById('mj-name') || {}).value || '').trim();
+  var phone = ((document.getElementById('mj-phone') || {}).value || '').trim();
+  var cat = ((document.getElementById('mj-cat') || {}).value || '').trim();
+
+  if (!name || !phone || !cat) {
+    toast('يرجى تعبئة جميع الحقول المطلوبة', 'warn');
+    return;
+  }
+
+  var msg = '🤝 *طلب تسجيل تاجر جديد*\n\n'
+    + '👤 *الاسم:* ' + name + '\n'
+    + '📱 *الجوال:* ' + phone + '\n'
+    + '🏷️ *القسم:* ' + cat;
+
+  closeModal('merchant-join-modal');
+
+  window.location.href = 'https://wa.me/' + CONFIG.whatsapp + '?text=' + encodeURIComponent(msg);
+}
+
 function doCall()      { closeModal('contact-modal'); window.location.href = 'tel:' + CONFIG.phone; }
 function doWhatsapp()  { closeModal('contact-modal'); window.location.href = 'https://wa.me/' + CONFIG.whatsapp + '?text=' + encodeURIComponent('مرحباً، لدي استفسار بخصوص المتجر.'); }
 
@@ -3199,7 +3241,7 @@ function backdropClose(e, id) { if (e.target === e.currentTarget) closeModal(id)
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
     var cs = document.getElementById('cart-sheet'); if (cs && cs.classList.contains('show')) closeCartSheet();
-    ['product-modal','cart-modal','history-modal','contact-modal','first-visit-modal','add-addr-modal','maps-picker-modal','addr-select-modal']
+    ['product-modal','cart-modal','history-modal','contact-modal','merchant-join-modal','first-visit-modal','add-addr-modal','maps-picker-modal','addr-select-modal']
       .forEach(function(id) { var m = document.getElementById(id); if (m && m.classList.contains('show')) closeModal(id); });
     var zo = document.getElementById('zoom-overlay'); if (zo && zo.classList.contains('active')) closeZoom();
   }
