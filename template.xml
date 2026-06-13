@@ -409,6 +409,15 @@ header.hide-header{transform:translateY(-100%);}
 
 /* MODALS */
 .modal{display:none;position:fixed;inset:0;background:rgba(15,17,17,.55);z-index:15000;justify-content:flex-end;opacity:0;transition:opacity .25s;}
+/* MERCHANT APP OVERLAY (isolated iframe — Store Workspace) */
+#merchant-app-overlay{display:none;position:fixed;inset:0;z-index:1000500;background:var(--navy-deep);flex-direction:column;}
+#merchant-app-overlay.show{display:flex;}
+.mao-bar{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;background:var(--navy-deep);color:#fff;}
+.mao-bar .mao-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mao-bar .mao-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.mao-bar a,.mao-bar button{color:#fff;font-size:13px;font-weight:700;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:6px 12px;cursor:pointer;text-decoration:none;font-family:'Cairo',sans-serif;}
+.mao-bar a:hover,.mao-bar button:hover{background:rgba(255,255,255,.22);}
+#merchant-app-frame{flex:1;width:100%;border:none;background:#fff;}
 .modal.show{display:flex;opacity:1;}
 .modal-panel{background:#fff;width:100%;max-width:440px;height:100%;display:flex;flex-direction:column;transform:translateX(110%);transition:transform .3s cubic-bezier(0,.9,.4,1);overscroll-behavior:none;}
 .modal.show .modal-panel{transform:translateX(0);}
@@ -922,6 +931,18 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
 
 <div id='toast-wrap'/>
 
+<!-- MERCHANT APP OVERLAY (isolated iframe — Store Workspace) -->
+<div id='merchant-app-overlay'>
+  <div class='mao-bar'>
+    <span class='mao-title'>🤝 منصة التجار — Store Workspace</span>
+    <div class='mao-actions'>
+      <a id='mao-newtab' href='#' rel='noopener' target='_blank'>فتح في تبويب ↗</a>
+      <button onclick='closeMerchantApp()'>&#10005; إغلاق</button>
+    </div>
+  </div>
+  <iframe allow='camera; microphone; clipboard-read; clipboard-write; geolocation' id='merchant-app-frame' title='منصة التجار'/>
+</div>
+
 <!-- CART MODAL -->
 <div class='modal' id='cart-modal' onclick='backdropClose(event,&quot;cart-modal&quot;)'>
   <div class='modal-panel'>
@@ -999,7 +1020,9 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
       <button class='modal-close' onclick='closeModal(&quot;merchant-join-modal&quot;)' style='background:#f3f3f3;color:#333;border-color:#ddd;'>&#10005;</button>
     </div>
     <div class='contact-list' style='padding-top: 0;'>
-      <p style='font-size:13px; color:var(--text-2); margin-bottom:16px;'>يرجى تعبئة البيانات التالية وسنقوم بالتواصل معك لتفعيل حسابك.</p>
+      <button class='btn-confirm' onclick='openMerchantApp()' style='background:var(--navy-deep);border-color:var(--navy-deep);margin-bottom:10px;'>🔐 دخول التجار (لوحة التحكم)</button>
+      <div class='guest-divider'>أو سجّل كتاجر جديد</div>
+      <p style='font-size:13px; color:var(--text-2); margin:10px 0 16px;'>يرجى تعبئة البيانات التالية وسنقوم بالتواصل معك لتفعيل حسابك.</p>
       <input class='pro-input' id='mj-name' placeholder='اسم التاجر أو المتجر *' type='text'/>
       <input class='pro-input' id='mj-phone' placeholder='رقم الجوال *' type='tel'/>
       <input class='pro-input' id='mj-cat' placeholder='القسم (مثال: ملابس داخلية، عطور) *' type='text'/>
@@ -1150,6 +1173,10 @@ var CONFIG = {
   // Google Sign-In. Replace with a Client ID created for YOUR domain, or leave
   // empty to hide the Google button (the store works fully without login).
   googleClientId: '360615303745-h45ri50dd4mlfarff2rbu2tivmho822u.apps.googleusercontent.com',
+  // Store Workspace (merchant tool) URL — opens in an isolated full-screen
+  // overlay when a visitor taps "دخول التجار". Put your Store Workspace blog
+  // URL here (e.g. https://your-workspace.blogspot.com). Empty = login disabled.
+  merchantAppUrl: '',
 };
 // True only when a real Google Maps key has been provided.
 function hasMapsKey() { var k = CONFIG.mapsApiKey; return !!k && k.indexOf('YOUR_') !== 0 && k.length > 20; }
@@ -3134,6 +3161,25 @@ function submitMerchantRequest() {
   closeModal('merchant-join-modal');
 
   window.location.href = 'https://wa.me/' + CONFIG.whatsapp + '?text=' + encodeURIComponent(msg);
+}
+
+/* Open the merchant tool (Store Workspace) inside an isolated full-screen iframe. */
+function openMerchantApp() {
+  var url = (CONFIG.merchantAppUrl || '').trim();
+  if (!url) { toast('لم يُضبط رابط منصة التجار بعد', 'warn'); return; }
+  closeModal('merchant-join-modal');
+  var ov = document.getElementById('merchant-app-overlay');
+  var fr = document.getElementById('merchant-app-frame');
+  var nt = document.getElementById('mao-newtab');
+  if (nt) nt.href = url;
+  if (fr && fr.getAttribute('src') !== url) fr.setAttribute('src', url); // lazy-load once
+  if (ov) ov.classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+function closeMerchantApp() {
+  var ov = document.getElementById('merchant-app-overlay');
+  if (ov) ov.classList.remove('show');
+  document.body.style.overflow = '';
 }
 
 function doCall()      { closeModal('contact-modal'); window.location.href = 'tel:' + CONFIG.phone; }
