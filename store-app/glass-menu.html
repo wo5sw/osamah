@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1037">
+<title>منيو · Glass Café</title>
+<style>
+/* ============================================================
+   متغيّرات التصميم — عدّلها من هنا للتحكّم بالألوان والزجاج
+   ============================================================ */
+:root{
+  --glass-bg: rgba(255,255,255,0.08);          /* خلفية الزجاج 8% */
+  --glass-bg-strong: rgba(255,255,255,0.14);
+  --glass-border: rgba(255,255,255,0.15);       /* الحافة العاكسة */
+  --glass-blur: 24px;                            /* قوة التمويه */
+  --txt: #f5f6ff;
+  --txt-dim: rgba(245,246,255,0.62);
+  --accent: #8b7bff;                            /* بنفسجي للأزرار */
+  --accent-2: #4cc9f0;
+  --gold: #ffd479;
+  --radius: 26px;
+  --shadow: 0 18px 50px -12px rgba(0,0,0,0.55);
+}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+
+html,body{height:100%;}
+body{
+  /* خط أبل الافتراضي: يظهر "San Francisco" تلقائيًا على آيفون/ماك */
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",system-ui,"Helvetica Neue",sans-serif;
+  color:var(--txt);
+  min-height:100vh;
+  direction:rtl;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  padding:0 0 130px;
+  position:relative;
+  overflow-x:hidden;
+  /* الخلفية المتدرّجة المتحركة (كحلي ← بنفسجي غامق) — دورة كل 15 ثانية */
+  background:linear-gradient(135deg,#0b0e2e 0%,#16124a 35%,#2a0f5b 65%,#0e1140 100%);
+  background-size:300% 300%;
+  animation:bgShift 15s ease infinite;
+}
+@keyframes bgShift{
+  0%{background-position:0% 50%;}
+  50%{background-position:100% 50%;}
+  100%{background-position:0% 50%;}
+}
+
+/* كرات ضوئية ضبابية لإضافة عمق خلف الزجاج */
+.orb{position:fixed;border-radius:50%;filter:blur(90px);opacity:.5;z-index:-1;pointer-events:none;animation:float 20s ease-in-out infinite alternate;}
+.orb.a{width:46vw;height:46vw;background:#5b3df0;top:-12%;right:-8%;}
+.orb.b{width:40vw;height:40vw;background:#1f8fff;bottom:-10%;left:-10%;animation-delay:-6s;}
+.orb.c{width:34vw;height:34vw;background:#ff4d9d;top:35%;left:30%;opacity:.32;animation-delay:-11s;}
+@keyframes float{from{transform:translate(0,0) scale(1);}to{transform:translate(40px,-30px) scale(1.08);}}
+
+/* ============================================================
+   الزجاج المشترك
+   ============================================================ */
+.glass{
+  background:var(--glass-bg);
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(160%);
+  backdrop-filter:blur(var(--glass-blur)) saturate(160%);
+  border:1px solid var(--glass-border);
+  border-top-color:rgba(255,255,255,0.28);
+  box-shadow:var(--shadow);
+}
+
+/* ============================================================
+   الهيدر
+   ============================================================ */
+header{
+  text-align:center;
+  padding:46px 20px 26px;
+}
+.brand-badge{
+  width:74px;height:74px;border-radius:24px;margin:0 auto 16px;
+  display:flex;align-items:center;justify-content:center;font-size:38px;
+  background:linear-gradient(135deg,rgba(255,255,255,.22),rgba(255,255,255,.05));
+  border:1px solid var(--glass-border);
+  -webkit-backdrop-filter:blur(var(--glass-blur));backdrop-filter:blur(var(--glass-blur));
+  box-shadow:0 10px 30px rgba(91,61,240,.35);
+}
+header h1{font-size:30px;font-weight:800;letter-spacing:-.5px;margin-bottom:6px;}
+header p{font-size:14.5px;color:var(--txt-dim);font-weight:500;}
+
+/* ============================================================
+   شريط التصنيفات (Pills زجاجية)
+   ============================================================ */
+.cats{
+  display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;
+  padding:6px 18px 18px;max-width:1100px;margin:0 auto;
+}
+.cats::-webkit-scrollbar{display:none;}
+.cat-pill{
+  flex:0 0 auto;padding:11px 20px;border-radius:50px;cursor:pointer;
+  font-size:14.5px;font-weight:700;color:var(--txt-dim);white-space:nowrap;
+  background:var(--glass-bg);border:1px solid var(--glass-border);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  transition:all .25s cubic-bezier(.25,.8,.25,1);user-select:none;
+}
+.cat-pill:hover{color:var(--txt);background:var(--glass-bg-strong);}
+.cat-pill.active{
+  color:#1a1340;background:linear-gradient(135deg,#fff,#e8e6ff);
+  border-color:transparent;box-shadow:0 8px 22px rgba(255,255,255,.18);
+}
+
+/* ============================================================
+   شبكة المنتجات — تتكيّف تلقائيًا (1 / 2 / 3 / 4 أعمدة)
+   ============================================================ */
+.menu-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:20px;max-width:1100px;margin:0 auto;padding:8px 18px;
+}
+
+.product-card{
+  position:relative;overflow:hidden;border-radius:var(--radius);
+  padding:20px;display:flex;flex-direction:column;
+  background:var(--glass-bg);
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(160%);
+  backdrop-filter:blur(var(--glass-blur)) saturate(160%);
+  border:1px solid var(--glass-border);border-top-color:rgba(255,255,255,0.30);
+  box-shadow:var(--shadow);
+  transition:transform .3s cubic-bezier(.25,.8,.25,1),box-shadow .3s,background .3s;
+}
+.product-card:hover{
+  transform:translateY(-5px);
+  background:var(--glass-bg-strong);
+  box-shadow:0 26px 60px -14px rgba(0,0,0,.6);
+}
+/* لمعة زجاجية تمرّ على البطاقة كل 6 ثوانٍ */
+.product-card::before{
+  content:'';position:absolute;top:0;left:-160%;width:55%;height:100%;
+  background:linear-gradient(115deg,transparent,rgba(255,255,255,.20),transparent);
+  transform:skewX(-20deg);pointer-events:none;animation:shine 6s ease-in-out infinite;
+}
+@keyframes shine{0%{left:-160%;}14%{left:160%;}100%{left:160%;}}
+
+.p-media{
+  height:150px;border-radius:18px;margin-bottom:16px;
+  display:flex;align-items:center;justify-content:center;font-size:64px;
+  background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.16),rgba(255,255,255,.03));
+  border:1px solid rgba(255,255,255,.10);overflow:hidden;
+}
+.p-media img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 14px 22px rgba(0,0,0,.45));}
+.p-tag{
+  position:absolute;top:16px;left:16px;z-index:2;font-size:11.5px;font-weight:800;
+  padding:5px 11px;border-radius:30px;background:rgba(255,212,121,.18);color:var(--gold);
+  border:1px solid rgba(255,212,121,.35);
+}
+.p-name{font-size:18px;font-weight:800;margin-bottom:6px;letter-spacing:-.3px;}
+.p-desc{font-size:13.5px;color:var(--txt-dim);line-height:1.65;margin-bottom:16px;flex:1;}
+.p-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:auto;}
+.p-price{font-size:20px;font-weight:800;}
+.p-price small{font-size:12.5px;font-weight:600;color:var(--txt-dim);margin-right:2px;}
+
+/* زر الإضافة + ستيبر الكمية (يتبدّلان بسلاسة) */
+.add-btn{
+  height:44px;min-width:44px;padding:0 18px;border:none;cursor:pointer;border-radius:50px;
+  font-family:inherit;font-size:22px;font-weight:700;color:#1a1340;
+  background:linear-gradient(135deg,#fff,#dad6ff);
+  box-shadow:0 8px 20px rgba(255,255,255,.18);
+  transition:transform .15s,box-shadow .25s;display:flex;align-items:center;justify-content:center;
+}
+.add-btn:active{transform:scale(.9);}
+.stepper{
+  display:none;align-items:center;gap:4px;height:44px;border-radius:50px;padding:0 4px;
+  background:var(--glass-bg-strong);border:1px solid var(--glass-border);
+}
+.stepper.on{display:flex;}
+.add-btn.off{display:none;}
+.stepper button{
+  width:36px;height:36px;border:none;border-radius:50%;cursor:pointer;font-family:inherit;
+  font-size:20px;font-weight:700;color:var(--txt);background:rgba(255,255,255,.10);
+  display:flex;align-items:center;justify-content:center;transition:transform .12s,background .2s;
+}
+.stepper button:hover{background:rgba(255,255,255,.2);}
+.stepper button:active{transform:scale(.85);}
+.stepper .qv{min-width:30px;text-align:center;font-size:16px;font-weight:800;}
+
+/* ============================================================
+   شريط السلة العائم + لوحة السلة
+   ============================================================ */
+.cart-bar{
+  position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(140%);
+  width:calc(100% - 36px);max-width:520px;border-radius:24px;z-index:60;
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:14px 16px;cursor:pointer;
+  background:rgba(255,255,255,0.10);
+  -webkit-backdrop-filter:blur(26px) saturate(180%);backdrop-filter:blur(26px) saturate(180%);
+  border:1px solid var(--glass-border);border-top-color:rgba(255,255,255,.3);
+  box-shadow:0 -6px 40px rgba(0,0,0,.4);
+  transition:transform .4s cubic-bezier(.2,.9,.3,1.2);
+}
+.cart-bar.show{transform:translateX(-50%) translateY(0);}
+.cart-bar .cb-left{display:flex;align-items:center;gap:12px;}
+.cart-bar .cb-ic{position:relative;width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;background:rgba(255,255,255,.12);}
+.cart-bar .cb-count{position:absolute;top:-6px;left:-6px;min-width:22px;height:22px;border-radius:11px;background:var(--gold);color:#3a2a00;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;padding:0 5px;}
+.cart-bar .cb-total{font-size:19px;font-weight:800;line-height:1.1;}
+.cart-bar .cb-total small{display:block;font-size:11.5px;font-weight:600;color:var(--txt-dim);}
+.cart-bar .cb-go{padding:12px 22px;border-radius:50px;font-size:15px;font-weight:800;color:#1a1340;background:linear-gradient(135deg,#fff,#e8e6ff);}
+
+.sheet-overlay{
+  position:fixed;inset:0;z-index:90;background:rgba(8,8,24,.55);
+  -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
+  opacity:0;pointer-events:none;transition:opacity .3s;
+}
+.sheet-overlay.show{opacity:1;pointer-events:auto;}
+.cart-sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:100;margin:0 auto;max-width:560px;
+  border-radius:30px 30px 0 0;max-height:86vh;display:flex;flex-direction:column;
+  transform:translateY(110%);transition:transform .38s cubic-bezier(.2,.9,.3,1.05);
+  background:rgba(22,18,58,0.72);
+  -webkit-backdrop-filter:blur(30px) saturate(180%);backdrop-filter:blur(30px) saturate(180%);
+  border:1px solid var(--glass-border);border-bottom:none;
+}
+.cart-sheet.show{transform:translateY(0);}
+.cs-handle{width:42px;height:5px;border-radius:3px;background:rgba(255,255,255,.3);margin:12px auto 4px;}
+.cs-head{display:flex;align-items:center;justify-content:space-between;padding:10px 22px 16px;border-bottom:1px solid rgba(255,255,255,.08);}
+.cs-head h2{font-size:20px;font-weight:800;}
+.cs-close{width:36px;height:36px;border:none;border-radius:50%;cursor:pointer;color:var(--txt);font-size:16px;background:rgba(255,255,255,.1);}
+.cs-body{overflow-y:auto;padding:14px 18px;flex:1;}
+.cs-empty{text-align:center;padding:50px 20px;color:var(--txt-dim);}
+.cs-empty .ic{font-size:54px;margin-bottom:12px;}
+
+.ci{display:flex;align-items:center;gap:13px;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.07);}
+.ci-media{width:56px;height:56px;border-radius:15px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:30px;background:rgba(255,255,255,.08);overflow:hidden;}
+.ci-media img{width:100%;height:100%;object-fit:contain;}
+.ci-info{flex:1;min-width:0;}
+.ci-info strong{font-size:15px;font-weight:700;display:block;margin-bottom:3px;}
+.ci-info span{font-size:13px;color:var(--txt-dim);}
+.ci-step{display:flex;align-items:center;gap:3px;background:rgba(255,255,255,.08);border-radius:40px;padding:3px;}
+.ci-step button{width:30px;height:30px;border:none;border-radius:50%;cursor:pointer;background:rgba(255,255,255,.12);color:var(--txt);font-size:17px;font-weight:700;}
+.ci-step .qv{min-width:26px;text-align:center;font-weight:800;font-size:14px;}
+
+.cs-foot{padding:16px 20px calc(18px + env(safe-area-inset-bottom));border-top:1px solid rgba(255,255,255,.1);}
+.cs-rows{margin-bottom:14px;}
+.cs-row{display:flex;justify-content:space-between;font-size:14px;color:var(--txt-dim);padding:4px 0;}
+.cs-row.total{font-size:19px;font-weight:800;color:var(--txt);border-top:1px solid rgba(255,255,255,.12);margin-top:6px;padding-top:11px;}
+.btn-order{
+  width:100%;padding:17px;border:none;border-radius:50px;cursor:pointer;font-family:inherit;
+  font-size:16.5px;font-weight:800;color:#062a16;display:flex;align-items:center;justify-content:center;gap:9px;
+  background:linear-gradient(135deg,#34e89e,#22c55e);box-shadow:0 12px 30px rgba(34,197,94,.35);
+  transition:transform .15s;
+}
+.btn-order:active{transform:scale(.98);}
+
+/* تنبيه (Toast) */
+#toast{
+  position:fixed;top:24px;left:50%;transform:translateX(-50%) translateY(-22px);z-index:200;
+  padding:14px 26px;border-radius:40px;font-size:14.5px;font-weight:700;
+  background:rgba(20,18,46,.85);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);
+  border:1px solid var(--glass-border);box-shadow:0 14px 36px rgba(0,0,0,.4);
+  opacity:0;pointer-events:none;transition:all .35s cubic-bezier(.2,.9,.3,1.4);
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+footer{text-align:center;color:var(--txt-dim);font-size:12.5px;padding:30px 20px 10px;}
+
+@media(max-width:480px){
+  header{padding:34px 18px 20px;}
+  header h1{font-size:25px;}
+  .menu-grid{grid-template-columns:1fr;gap:16px;}
+}
+</style>
+</head>
+<body>
+
+<div class="orb a"></div>
+<div class="orb b"></div>
+<div class="orb c"></div>
+
+<header>
+  <div class="brand-badge">☕</div>
+  <h1>Glass Café</h1>
+  <p>قائمة الطلبات · امسح، اطلب، استمتع</p>
+</header>
+
+<nav class="cats" id="cats"></nav>
+
+<main class="menu-grid" id="grid"></main>
+
+<footer>© Glass Café — جميع الأسعار شاملة الضريبة</footer>
+
+<!-- شريط السلة العائم -->
+<div class="cart-bar" id="cartBar" onclick="openSheet()">
+  <div class="cb-left">
+    <div class="cb-ic">🛒<span class="cb-count" id="cbCount">0</span></div>
+    <div class="cb-total"><span id="cbTotal">0.00 ر.س</span><small id="cbItems">0 صنف</small></div>
+  </div>
+  <div class="cb-go">عرض الطلب</div>
+</div>
+
+<!-- لوحة السلة -->
+<div class="sheet-overlay" id="overlay" onclick="closeSheet()"></div>
+<section class="cart-sheet" id="sheet" aria-label="سلة الطلبات">
+  <div class="cs-handle"></div>
+  <div class="cs-head">
+    <h2>طلبك</h2>
+    <button class="cs-close" onclick="closeSheet()" aria-label="إغلاق">✕</button>
+  </div>
+  <div class="cs-body" id="csBody"></div>
+  <div class="cs-foot" id="csFoot"></div>
+</section>
+
+<div id="toast"></div>
+
+<script>
+/* ============================================================
+   1) إعدادات — عدّل رقم واتساب المطعم هنا (بصيغة دولية بدون +)
+   ============================================================ */
+var WHATSAPP = '9665XXXXXXXX';
+var CURRENCY = 'ر.س';
+
+/* ============================================================
+   2) قائمة المنتجات — أضف/احذف بسهولة.
+      img: ضع رابط صورة PNG شفافة لتظهر بدل الإيموجي (اتركه '' للإيموجي)
+   ============================================================ */
+var MENU = [
+  { id:'h1', cat:'قهوة ساخنة', name:'لاتيه',        desc:'إسبريسو مع حليب مبخّر ورغوة ناعمة.', price:17, emoji:'☕', img:'', tag:'الأكثر طلباً' },
+  { id:'h2', cat:'قهوة ساخنة', name:'كابتشينو',     desc:'توازن مثالي بين الإسبريسو والرغوة.', price:16, emoji:'☕', img:'' },
+  { id:'h3', cat:'قهوة ساخنة', name:'سبانيش لاتيه',  desc:'لاتيه بحليب مكثّف محلّى ولمسة فانيلا.', price:19, emoji:'🥛', img:'' },
+  { id:'c1', cat:'قهوة باردة', name:'آيس أمريكانو',  desc:'إسبريسو مثلّج منعش بطعم نقي.', price:16, emoji:'🧊', img:'' },
+  { id:'c2', cat:'قهوة باردة', name:'آيس سبانيش',    desc:'حليب مكثّف بارد فوق إسبريسو مثلّج.', price:20, emoji:'🥤', img:'', tag:'جديد' },
+  { id:'c3', cat:'قهوة باردة', name:'موكا مثلّجة',   desc:'قهوة بنكهة الشوكولاتة والثلج.', price:21, emoji:'🍫', img:'' },
+  { id:'d1', cat:'حلويات',     name:'تشيز كيك',      desc:'كريمي غني مع قاعدة بسكويت مقرمشة.', price:23, emoji:'🍰', img:'' },
+  { id:'d2', cat:'حلويات',     name:'كروسان لوز',    desc:'طبقات زبدية محشوّة بكريمة اللوز.', price:14, emoji:'🥐', img:'' },
+  { id:'d3', cat:'حلويات',     name:'كوكيز',         desc:'قطع شوكولاتة دافئة وطرية.', price:11, emoji:'🍪', img:'' },
+  { id:'s1', cat:'مشروبات',    name:'موهيتو',        desc:'نعناع وليمون منعش بلا كحول.', price:18, emoji:'🍹', img:'' },
+  { id:'s2', cat:'مشروبات',    name:'عصير برتقال',   desc:'طازج 100% بدون سكر مضاف.', price:15, emoji:'🍊', img:'' },
+  { id:'s3', cat:'مشروبات',    name:'ماء معدني',     desc:'زجاجة 330 مل.', price:4, emoji:'💧', img:'' }
+];
+
+/* ============================================================
+   3) الحالة (state) — تُحفظ تلقائيًا في المتصفّح
+   ============================================================ */
+var cart = {};   // { id: qty }
+var activeCat = 'الكل';
+try { cart = JSON.parse(localStorage.getItem('glass_cart')||'{}') || {}; } catch(e){ cart = {}; }
+
+function save(){ try{ localStorage.setItem('glass_cart', JSON.stringify(cart)); }catch(e){} }
+function fmt(n){ return (Math.round(n*100)/100).toFixed(2); }
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function findItem(id){ for(var i=0;i<MENU.length;i++){ if(MENU[i].id===id) return MENU[i]; } return null; }
+
+/* ============================================================
+   4) بناء التصنيفات
+   ============================================================ */
+function buildCats(){
+  var set = ['الكل'];
+  MENU.forEach(function(m){ if(set.indexOf(m.cat)<0) set.push(m.cat); });
+  var box = document.getElementById('cats');
+  box.innerHTML = set.map(function(c){
+    return '<div class="cat-pill'+(c===activeCat?' active':'')+'" data-cat="'+esc(c)+'">'+esc(c)+'</div>';
+  }).join('');
+  box.querySelectorAll('.cat-pill').forEach(function(el){
+    el.onclick = function(){ activeCat = el.getAttribute('data-cat'); buildCats(); renderGrid(); };
+  });
+}
+
+/* ============================================================
+   5) بناء شبكة المنتجات
+   ============================================================ */
+function mediaHTML(m){
+  return m.img
+    ? '<img src="'+esc(m.img)+'" alt="'+esc(m.name)+'" loading="lazy" onerror="this.parentNode.textContent=\''+esc(m.emoji||'🍽️')+'\'">'
+    : (m.emoji||'🍽️');
+}
+function renderGrid(){
+  var list = (activeCat==='الكل') ? MENU : MENU.filter(function(m){ return m.cat===activeCat; });
+  var grid = document.getElementById('grid');
+  grid.innerHTML = list.map(function(m){
+    var qty = cart[m.id]||0;
+    return '<article class="product-card">'
+      + (m.tag ? '<span class="p-tag">'+esc(m.tag)+'</span>' : '')
+      + '<div class="p-media">'+mediaHTML(m)+'</div>'
+      + '<h3 class="p-name">'+esc(m.name)+'</h3>'
+      + '<p class="p-desc">'+esc(m.desc)+'</p>'
+      + '<div class="p-foot">'
+      +   '<div class="p-price">'+fmt(m.price)+'<small> '+CURRENCY+'</small></div>'
+      +   '<button class="add-btn'+(qty?' off':'')+'" data-add="'+esc(m.id)+'" aria-label="أضف">+</button>'
+      +   '<div class="stepper'+(qty?' on':'')+'" data-step="'+esc(m.id)+'">'
+      +     '<button data-dec="'+esc(m.id)+'" aria-label="إنقاص">−</button>'
+      +     '<span class="qv" data-qv="'+esc(m.id)+'">'+qty+'</span>'
+      +     '<button data-inc="'+esc(m.id)+'" aria-label="زيادة">+</button>'
+      +   '</div>'
+      + '</div>'
+      + '</article>';
+  }).join('');
+  // ربط الأزرار (تفويض بسيط عبر data-attributes — آمن وبلا onclick مضمّن)
+  grid.querySelectorAll('[data-add]').forEach(function(b){ b.onclick=function(){ addToCart(b.getAttribute('data-add')); }; });
+  grid.querySelectorAll('[data-inc]').forEach(function(b){ b.onclick=function(){ changeQty(b.getAttribute('data-inc'),1); }; });
+  grid.querySelectorAll('[data-dec]').forEach(function(b){ b.onclick=function(){ changeQty(b.getAttribute('data-dec'),-1); }; });
+}
+
+/* تحديث بطاقة واحدة فقط (زر ↔ ستيبر) بدل إعادة رسم الشبكة كاملة */
+function refreshCard(id){
+  var qty = cart[id]||0;
+  var add = document.querySelector('[data-add="'+id+'"]');
+  var step= document.querySelector('[data-step="'+id+'"]');
+  var qv  = document.querySelector('[data-qv="'+id+'"]');
+  if(qv) qv.textContent = qty;
+  if(add) add.classList.toggle('off', qty>0);
+  if(step) step.classList.toggle('on', qty>0);
+}
+
+/* ============================================================
+   6) منطق السلة
+   ============================================================ */
+function addToCart(id){
+  cart[id] = (cart[id]||0) + 1;
+  save(); refreshCard(id); updateBar(); renderSheet();
+  var m = findItem(id); toast('أُضيف: '+(m?m.name:'')+' ✅');
+}
+function changeQty(id, delta){
+  cart[id] = (cart[id]||0) + delta;
+  if(cart[id] <= 0) delete cart[id];
+  save(); refreshCard(id); updateBar(); renderSheet();
+}
+function cartTotals(){
+  var count=0, total=0;
+  Object.keys(cart).forEach(function(id){
+    var m = findItem(id); if(!m) return;
+    count += cart[id]; total += m.price * cart[id];
+  });
+  return { count:count, total:total };
+}
+function updateBar(){
+  var t = cartTotals();
+  document.getElementById('cbCount').textContent = t.count;
+  document.getElementById('cbTotal').textContent = fmt(t.total)+' '+CURRENCY;
+  document.getElementById('cbItems').textContent = t.count+' '+(t.count===1?'صنف':'أصناف');
+  document.getElementById('cartBar').classList.toggle('show', t.count>0);
+}
+
+/* ============================================================
+   7) لوحة السلة
+   ============================================================ */
+function renderSheet(){
+  var body = document.getElementById('csBody');
+  var foot = document.getElementById('csFoot');
+  var ids = Object.keys(cart);
+  if(!ids.length){
+    body.innerHTML = '<div class="cs-empty"><div class="ic">🛒</div><p>سلتك فارغة — أضف بعض الأصناف اللذيذة</p></div>';
+    foot.innerHTML = '';
+    return;
+  }
+  body.innerHTML = ids.map(function(id){
+    var m = findItem(id); if(!m) return '';
+    return '<div class="ci">'
+      + '<div class="ci-media">'+mediaHTML(m)+'</div>'
+      + '<div class="ci-info"><strong>'+esc(m.name)+'</strong><span>'+fmt(m.price)+' '+CURRENCY+'</span></div>'
+      + '<div class="ci-step">'
+      +   '<button data-dec="'+esc(id)+'" aria-label="إنقاص">−</button>'
+      +   '<span class="qv">'+cart[id]+'</span>'
+      +   '<button data-inc="'+esc(id)+'" aria-label="زيادة">+</button>'
+      + '</div></div>';
+  }).join('');
+  body.querySelectorAll('[data-inc]').forEach(function(b){ b.onclick=function(){ changeQty(b.getAttribute('data-inc'),1); }; });
+  body.querySelectorAll('[data-dec]').forEach(function(b){ b.onclick=function(){ changeQty(b.getAttribute('data-dec'),-1); }; });
+
+  var t = cartTotals();
+  foot.innerHTML = '<div class="cs-rows">'
+    + '<div class="cs-row"><span>عدد الأصناف</span><span>'+t.count+'</span></div>'
+    + '<div class="cs-row total"><span>الإجمالي</span><span>'+fmt(t.total)+' '+CURRENCY+'</span></div>'
+    + '</div>'
+    + '<button class="btn-order" onclick="sendOrder()">💬 إرسال الطلب عبر واتساب</button>';
+}
+
+function openSheet(){ renderSheet(); document.getElementById('overlay').classList.add('show'); document.getElementById('sheet').classList.add('show'); document.body.style.overflow='hidden'; }
+function closeSheet(){ document.getElementById('overlay').classList.remove('show'); document.getElementById('sheet').classList.remove('show'); document.body.style.overflow=''; }
+
+/* ============================================================
+   8) إرسال الطلب عبر واتساب
+   ============================================================ */
+function sendOrder(){
+  var ids = Object.keys(cart);
+  if(!ids.length){ toast('السلة فارغة'); return; }
+  var lines = ids.map(function(id,i){
+    var m = findItem(id);
+    return (i+1)+'. '+m.name+' ×'+cart[id]+' = '+fmt(m.price*cart[id])+' '+CURRENCY;
+  }).join('\n');
+  var t = cartTotals();
+  var msg = '🧾 *طلب جديد — Glass Café*\n\n'+lines+'\n\n💰 *الإجمالي: '+fmt(t.total)+' '+CURRENCY+'*';
+  if(WHATSAPP.indexOf('X')>=0){
+    toast('⚠️ ضع رقم واتساب المطعم في الكود أولاً');
+    return;
+  }
+  window.location.href = 'https://wa.me/'+WHATSAPP+'?text='+encodeURIComponent(msg);
+}
+
+/* ============================================================
+   9) Toast
+   ============================================================ */
+var toastTimer;
+function toast(msg){
+  var el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 2200);
+}
+
+/* ============================================================
+   10) إقلاع
+   ============================================================ */
+buildCats();
+renderGrid();
+updateBar();
+</script>
+</body>
+</html>
