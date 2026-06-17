@@ -959,7 +959,7 @@
         box.style.borderColor = '#f39c12'; box.style.background = 'rgba(243,156,18,0.1)';
         sEl.textContent = '☕ أنت في فترة راحة. يتبقى: ' + mins + ' دقيقة';
       } else if(dist<=AUTO_JOIN_METERS && servedCooldown){
-        var remaining = Math.max(0, 180 - Math.floor((Date.now()-servedAt)/1000));
+        var remaining = Math.max(0, 300 - Math.floor((Date.now()-servedAt)/1000));
         var mins = Math.floor(remaining/60), secs = remaining%60;
         box.classList.add('in-range');
         sEl.textContent = '⏳ انتظر ' + mins + ':' + (secs<10?'0':'') + secs + ' دقيقة ثم ستحصل على رقم';
@@ -1012,7 +1012,7 @@
 
           if(dist<=AUTO_JOIN_METERS && !inQueue && systemActive && breakTimeRemaining === 0){
             if(servedCooldown){
-              if(servedAt>0 && (Date.now()-servedAt)>=180000){ servedCooldown=false; servedAt=0; autoJoinQueue(); }
+              if(servedAt>0 && (Date.now()-servedAt)>=300000){ servedCooldown=false; servedAt=0; autoJoinQueue(); }
             } else { autoJoinQueue(); }
           }
 
@@ -1043,7 +1043,7 @@
         renderTracker(lastDist, inQueue);
       }
 
-      if(breakTime === 0 && servedCooldown && servedAt && lastDist<=AUTO_JOIN_METERS && (Date.now()-servedAt)>=180000){
+      if(breakTime === 0 && servedCooldown && servedAt && lastDist<=AUTO_JOIN_METERS && (Date.now()-servedAt)>=300000){
         servedCooldown=false; servedAt=0; autoJoinQueue();
       }
     }, 1000);
@@ -1074,7 +1074,7 @@
 
         if(dist<=AUTO_JOIN_METERS && !inQueue && systemActive && breakTimeRemaining === 0){
           if(servedCooldown){
-            if(servedAt>0 && (Date.now()-servedAt)>=180000){ servedCooldown=false; servedAt=0; autoJoinQueue(); }
+            if(servedAt>0 && (Date.now()-servedAt)>=300000){ servedCooldown=false; servedAt=0; autoJoinQueue(); }
           } else { autoJoinQueue(); }
         }
 
