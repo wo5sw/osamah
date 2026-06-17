@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Queue System</title>
+    <style>
+      html,body{height:100%;margin:0;background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+        color:#fff;font-family:'Segoe UI',sans-serif;display:flex;align-items:center;justify-content:center;text-align:center}
+      .spinner{width:46px;height:46px;border:4px solid rgba(255,255,255,.2);border-top-color:#17a2b8;
+        border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 18px}
+      @keyframes spin{to{transform:rotate(360deg)}}
+      p{opacity:.85;font-size:15px}
+    </style>
+  </head>
+  <body>
+    <!--
+      This local page is only a build placeholder. At runtime the WebView loads
+      the live site set in capacitor.config.json -> server.url (your Blogger URL),
+      because the queue app fetches rep codes from Blogger's /feeds endpoint and
+      must run on the Blogger origin.
+    -->
+    <div>
+      <div class="spinner"></div>
+      <p>جارٍ فتح نظام الطابور…</p>
+    </div>
+  </body>
+</html>

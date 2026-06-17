@@ -1,0 +1,13 @@
+{
+  "appId": "com.queue.mandoob",
+  "appName": "Queue System",
+  "webDir": "www",
+  "server": {
+    "url": "https://YOUR-BLOG.blogspot.com",
+    "androidScheme": "https",
+    "cleartext": false
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}

@@ -863,6 +863,7 @@
       renderRepSystemBanner();
       requestWakeLock();
       startLocationTracking();
+      startNativeBackgroundTracking();
 
       if(mqttClient && mqttClient.connected) {
          mqttClient.publish(TOPIC_PRESENCE, JSON.stringify({ id: currentDriver.id }), {qos: 0});
@@ -1030,6 +1031,48 @@
     function stopLocationTracking(){
       if(geoWatchId!==null){ try{navigator.geolocation.clearWatch(geoWatchId);}catch(e){} geoWatchId=null; }
       releaseWakeLock();
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       NATIVE (Capacitor) BACKGROUND-LOCATION BRIDGE
+       Runs ONLY inside the native Android app (see android-app/). In a normal
+       browser window.Capacitor is undefined, so this is a no-op and the web
+       app behaves exactly as before. It starts a foreground-service-backed
+       watcher that keeps delivering coordinates — and keeps the app process
+       (MQTT + queue logic) alive — even when the app is backgrounded or the
+       screen is off, so the rep gets a queue number without keeping the app open.
+       ═══════════════════════════════════════════════════════ */
+    var nativeBgStarted = false;
+    function startNativeBackgroundTracking(){
+      try{
+        if(nativeBgStarted) return;
+        if(!(window.Capacitor && typeof Capacitor.isNativePlatform === 'function' && Capacitor.isNativePlatform())) return;
+        var BG = Capacitor.Plugins && Capacitor.Plugins.BackgroundGeolocation;
+        if(!BG) return;
+        nativeBgStarted = true;
+        BG.addWatcher({
+          backgroundMessage: 'تتبّع موقعك فعّال لإعطائك رقم الطابور تلقائياً',
+          backgroundTitle: 'نظام الطابور يعمل',
+          requestPermissions: true,
+          stale: false,
+          distanceFilter: 10
+        }, function(location, error){
+          if(error || !location) return;
+          if(!currentDriver || !currentDriver.id) return;
+          var dist = haversineDistance(location.latitude, location.longitude, TARGET_LAT, TARGET_LNG);
+          lastDist = dist;
+          if(dist > AUTO_LEAVE_METERS){ servedCooldown=false; servedAt=0; }
+          var inQueue = queue.some(function(d){return String(d.id)===String(currentDriver.id);});
+          var breakTimeRemaining = getRemainingBreakTime();
+          if(dist<=AUTO_JOIN_METERS && !inQueue && systemActive && breakTimeRemaining===0){
+            if(servedCooldown){
+              if(servedAt>0 && (Date.now()-servedAt)>=300000){ servedCooldown=false; servedAt=0; autoJoinQueue(); }
+            } else { autoJoinQueue(); }
+          }
+          inQueue = queue.some(function(d){return String(d.id)===String(currentDriver.id);});
+          renderTracker(dist, inQueue);
+        }).then(function(id){ window.__bgWatcherId = id; }).catch(function(){ nativeBgStarted = false; });
+      }catch(e){}
     }
 
     // Refresh countdown display every second
