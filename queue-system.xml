@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <html b:version='2' class='v2' expr:dir='data:blog.languageDirection' xmlns='http://www.w3.org/1999/xhtml' xmlns:b='http://www.google.com/2005/gml/b' xmlns:data='http://www.google.com/2005/gml/data' xmlns:expr='http://www.google.com/2005/gml/expr'>
   <head>
-    <meta content='width=device-width, initial-scale=1' name='viewport'/>
+    <meta content='width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover' name='viewport'/>
     <title><data:blog.pageTitle/></title>
     <meta content='#F2F2F7' name='theme-color'/>
     <meta content='yes' name='mobile-web-app-capable'/>
@@ -43,6 +43,9 @@
         text-align: center;
         direction: ltr;
         -webkit-font-smoothing: antialiased;
+        -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
+        touch-action: manipulation;
+        overscroll-behavior: none;
       }
 
       .container { padding: 24px; max-width: 860px; margin: auto; padding-bottom: 70px; }
@@ -310,7 +313,8 @@
 
         <div id='rep-stats-container' style='margin-top:16px; margin-bottom:16px; background:rgba(0,0,0,0.02); padding:18px 14px; border-radius:24px; border:1px solid rgba(0,0,0,0.05);'>
           <p style='font-size:13px; color:var(--muted); font-weight:600; letter-spacing:0.5px; margin-bottom:4px;'>📦 ORDERS COMPLETED TODAY</p>
-          <div id='daily-count' style='font-size:42px; font-weight:700; color:var(--teal); text-shadow:0 2px 10px rgba(0,122,255,0.2);'>0</div>
+          <div id='daily-count' style='font-size:42px; font-weight:700; color:var(--teal); text-shadow:0 2px 10px rgba(0,122,255,0.2); display:none;'>0</div>
+          <button class='btn btn-sm' id='toggleCountBtn' onclick='toggleDailyCount()' style='background:var(--glass2); border:1px solid var(--border); color:var(--teal); margin-top:8px;'>👁️ إظهار عدد طلباتي اليوم</button>
         </div>
 
         <div style='margin-top:20px; padding-top:16px; border-top: 1px solid rgba(0,0,0,0.1);'>
@@ -1253,6 +1257,15 @@
       }
     }
 
+    // Orders-completed-today count stays hidden until the rep taps the button
+    function toggleDailyCount(){
+      var c = document.getElementById('daily-count');
+      var b = document.getElementById('toggleCountBtn');
+      if(!c) return;
+      if(c.style.display === 'none'){ c.style.display=''; if(b) b.textContent='🙈 إخفاء العدد'; }
+      else { c.style.display='none'; if(b) b.textContent='👁️ إظهار عدد طلباتي اليوم'; }
+    }
+
     function syncStateToCloud(){
       if(mqttClient && mqttClient.connected){
         var payload = { queue: queue, historyLog: historyLog, systemActive: systemActive };
@@ -1443,6 +1456,21 @@
       var el = document.getElementById('stat-online');
       if(el) el.textContent = count;
     }
+
+    /* ═══════════════════════════════════════════════════════
+       DISABLE ZOOM — keep it a fixed, app-like page
+       (double-tap zoom handled by CSS touch-action; pinch handled here)
+       ═══════════════════════════════════════════════════════ */
+    (function(){
+      ['gesturestart','gesturechange','gestureend'].forEach(function(ev){
+        document.addEventListener(ev, function(e){ e.preventDefault(); }, {passive:false});
+      });
+      document.addEventListener('touchmove', function(e){
+        if(e.touches && e.touches.length > 1){ e.preventDefault(); }
+      }, {passive:false});
+      document.addEventListener('dblclick', function(e){ e.preventDefault(); }, {passive:false});
+      document.addEventListener('wheel', function(e){ if(e.ctrlKey){ e.preventDefault(); } }, {passive:false});
+    })();
 
     //]]>
     </script>
