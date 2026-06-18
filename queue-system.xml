@@ -277,7 +277,10 @@
       </div>
 
       <div class='box screen' id='driverCameraScreen'>
-        <h2 id='welcomeDriverText' style='margin-bottom:16px;'>Welcome 👋</h2>
+        <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;'>
+          <h2 id='welcomeDriverText' style='margin: 0;'>Welcome 👋</h2>
+          <button class='btn btn-back btn-sm' onclick='logoutDriver()'>🚪 تسجيل خروج</button>
+        </div>
 
         <div class='push-permission-box' id='pushPermBox'>
           <div class='push-status' id='pushStatusBadge'>
@@ -901,7 +904,17 @@
       }
     }
 
-    /* logoutDriver removed — reps stay logged in so their queue number persists across app exit/reopen */
+    function logoutDriver(){
+      stopLocationTracking(); stopContinuousRing();
+      servedCooldown=false; servedAt=0; prevMyPos=-1;
+      ss('logged_in_driver', null);
+      // NOTE: 'saved_rep_secret' is intentionally KEPT so the rep's code stays
+      // pre-filled on the login screen next time and is never lost on logout.
+      currentDriver = { id:null, name:null }; myOSPlayerId = null;
+      var box = document.getElementById('queuePositionBox');
+      if(box){ box.textContent='📍 Locating you…'; box.style.background=''; box.style.borderColor=''; }
+      openRegScreen();
+    }
 
     window.addEventListener('DOMContentLoaded', function(){
       var s = sg('logged_in_driver',null);
