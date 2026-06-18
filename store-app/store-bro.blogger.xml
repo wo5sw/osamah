@@ -688,6 +688,10 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
 .dfi-badge{background:#cc0c39;color:#fff;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:700;margin-right:6px;display:inline-block;}
 .btn-drawer-add{background:#ffd814!important;border:none!important;color:#0f1111!important;font-weight:800!important;font-size:16px!important;border-radius:50px!important;padding:14px!important;width:100%;height:auto!important;flex:1;box-shadow:0 2px 5px rgba(0,0,0,.05);}
 .btn-drawer-buy{display:none!important;}
+.drawer-footer{flex-wrap:wrap;row-gap:10px;}
+.btn-drawer-buynow{flex-basis:100%;height:46px;border:none;border-radius:var(--r-pill);background:#25d366;color:#fff;font-weight:800;font-size:15px;font-family:'Cairo',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 6px 18px rgba(37,211,102,.3);transition:background .15s,transform .12s;}
+.btn-drawer-buynow:hover{background:#1da851;}
+.btn-drawer-buynow:active{transform:scale(.98);}
 #drawer-body{flex:1;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;}
 .modal-panel{display:flex;flex-direction:column;}
   ]]></b:skin>
@@ -909,6 +913,7 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
         </div>
         <button class='btn-drawer-add' id='drawer-add-btn'>إضافة إلى عربة التسوق</button>
       </div>
+      <button class='btn-drawer-buynow' id='drawer-buynow-btn'>🛒 اشترِ الآن — واتساب</button>
     </div>
   </div>
 </div>
@@ -2207,6 +2212,7 @@ function openDrawer(id) {
 
   document.getElementById('drawer-add-btn').textContent = 'إضافة إلى عربة التسوق';
   document.getElementById('drawer-add-btn').onclick = function() { addToCart(p.id, false); };
+  var _bn = document.getElementById('drawer-buynow-btn'); if (_bn) _bn.onclick = function() { buyNowDirect(p.id); };
   updateDrawerFootInfo(firstV);
   var _initCid = (hasVariants && p.variants.length > 1) ? p.id + '-' + firstV.color : p.id;
   updateDrawerAddBtn(_initCid);
@@ -2401,6 +2407,37 @@ function addToCart(pid, buyNow) {
   updateDrawerAddBtn(cid);
   toast('تمت الإضافة للسلة ✅', 'success');
   if (buyNow) { closeModal('product-modal'); setTimeout(function() { openModal('cart-modal'); }, 360); }
+}
+
+/* اشترِ الآن مباشرة: يفتح واتساب تاجر هذا المنتج (حسب قسمه) برسالة صنف واحد. */
+function buyNowDirect(pid) {
+  var p = productIndex[pid]; if (!p) return;
+  var finalPrice = p.price, varLabel = '', activeVariant = null;
+  if (p.variants && p.variants.length > 1) {
+    if (!currentDrawerSelected.color) { toast('يرجى اختيار الخيار أولاً 🎨','warn'); return; }
+    activeVariant = p.variants.find(function(vt) { return vt.color === currentDrawerSelected.color; });
+    if (activeVariant) { finalPrice = activeVariant.price; varLabel = [activeVariant.color, activeVariant.shape, activeVariant.size].filter(Boolean).join(' - '); }
+  } else if (p.variants && p.variants.length === 1) {
+    activeVariant = p.variants[0]; finalPrice = activeVariant.price;
+  }
+  var activeSizes = activeVariant ? activeVariant.sizes : null;
+  if (activeSizes && activeSizes.length > 0) {
+    if (!currentDrawerSelected.size) { toast('يرجى اختيار المقاس أولاً 📏','warn'); return; }
+    finalPrice = currentDrawerSelected.sizePrice;
+    varLabel = (varLabel ? varLabel + ' - ' : '') + currentDrawerSelected.size;
+  }
+  // التوجيه: رقم تاجر القسم إن وُجد (من قاعدة البيانات)، وإلا الرقم الرئيسي للمتجر
+  var target = (p.merchant && /^[0-9]{6,}$/.test(p.merchant)) ? p.merchant : CONFIG.whatsapp;
+  var sa = checkoutPrefillAddr || (savedAddresses.length ? savedAddresses[selectedAddressIndex] : null);
+  var addrStr = sa ? (sa.formatted || [sa.street, sa.district, sa.city].filter(Boolean).join('، ')) : '';
+  var msg = '🛒 *طلب جديد من ' + CONFIG.storeName + '*\n\n'
+    + '🛍️ *المنتج:* ' + p.title + (varLabel ? ' — ' + varLabel : '') + '\n'
+    + '💰 *السعر:* ' + formatPrice(finalPrice) + ' ' + CONFIG.currency + '\n'
+    + (p.category ? '🏷️ *القسم:* ' + p.category + '\n' : '')
+    + (currentUser && currentUser.email ? '✉️ *الإيميل:* ' + currentUser.email + '\n' : '')
+    + (addrStr ? '📍 *العنوان:* ' + addrStr + '\n' : '')
+    + (sa && sa.phone ? '📱 *الجوال:* ' + sa.phone + '\n' : '');
+  window.location.href = 'https://wa.me/' + target + '?text=' + encodeURIComponent(msg);
 }
 
 var _drawerCurrentCid = null;
