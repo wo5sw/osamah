@@ -532,6 +532,10 @@ header.hide-header{transform:translateY(-100%);}
 .pro-input{width:100%;padding:10px 12px;border:1px solid var(--border-strong);border-radius:var(--r-sm);font-size:14px;background:#fff;color:var(--text);font-family:'Cairo',sans-serif;transition:var(--t);box-sizing:border-box;display:block;margin-bottom:8px;}
 .pro-input:focus{border-color:var(--btn-orange);box-shadow:0 0 0 3px rgba(255,164,28,.22);outline:none;}
 textarea.pro-input{resize:vertical;min-height:60px;margin-bottom:0;}
+/* iOS: تثبيت حجم خط حقول الإدخال على 16px في الجوال يمنع تكبير الصفحة تلقائيًا عند الكتابة (دون تعطيل تكبير المستخدم) */
+@media (max-width:768px){
+  input:not([type=checkbox]):not([type=radio]):not([type=range]),textarea{font-size:16px !important;}
+}
 .btn-confirm{background:var(--btn-orange);border:1px solid var(--btn-orange-border);color:var(--text);border-radius:var(--r-pill);font-weight:500;font-size:14px;width:100%;padding:11px;cursor:pointer;font-family:'Cairo',sans-serif;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:8px;transition:background var(--t);}
 .btn-confirm:hover:not(:disabled){background:var(--btn-orange-hover);}
 #google-auth-container{margin-top:14px;display:flex;justify-content:center;min-height:40px;}
