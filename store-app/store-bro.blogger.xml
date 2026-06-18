@@ -1085,6 +1085,9 @@ var CONFIG = {
   mapsApiKey: 'AIzaSyCWIpeIbxU8EQpjZuc-_-f01RhhKKg13VA',
   googleClientId: '360615303745-h45ri50dd4mlfarff2rbu2tivmho822u.apps.googleusercontent.com',
   merchantAppUrl: 'https://broo1stoor.blogspot.com',
+  // رابط نشر Apps Script (/exec) — يقرأ منه المتجر رقم كل قسم لحظيًا من قاعدة البيانات.
+  // اتركه فارغًا لاستخدام الرقم المثبّت داخل المنتج وقت النشر.
+  dbScriptUrl: '',
 };
 function hasMapsKey() { var k = CONFIG.mapsApiKey; return !!k && k.indexOf('YOUR_') !== 0 && k.length > 20; }
 function hasGoogleAuth() { var c = CONFIG.googleClientId; return !!c && c.indexOf('YOUR_') !== 0 && c.indexOf('.apps.googleusercontent.com') > 0; }
@@ -1639,6 +1642,35 @@ function jsAttr(s) {
 }
 
 /* ============================================================
+   LIVE SECTION → MERCHANT MAP (read numbers from the database)
+   ============================================================ */
+var sectionMerchantMap = {};
+function loadSectionMerchants() {
+  var url = CONFIG.dbScriptUrl;
+  if (!url || url.indexOf('http') !== 0) return;  // غير مضبوط → نُبقي الرقم المثبّت بالمنتج
+  fetch(url, { method: 'POST', body: JSON.stringify({ action: 'getPublicSections' }) })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (!res || !res.success || !res.sections) return;
+      sectionMerchantMap = res.sections;
+      // اكتب الرقم الحالي من القاعدة فوق رقم كل منتج حسب قسمه
+      products.forEach(function(p) {
+        var m = sectionMerchantMap[p.category];
+        if (m && /^[0-9]{6,}$/.test(m)) p.merchant = m;
+      });
+      // حدّث أصناف السلة المضافة مسبقًا أيضًا
+      if (typeof cart !== 'undefined' && cart.length) {
+        cart.forEach(function(it) {
+          var pp = productIndex[it.id];
+          if (pp && pp.merchant) it.merchant = pp.merchant;
+        });
+        try { saveCart(); updateCartUI(); } catch (e) {}
+      }
+    })
+    .catch(function() {});
+}
+
+/* ============================================================
    FETCH PRODUCTS FROM BLOGGER FEED
    ============================================================ */
 function fetchProducts() {
@@ -1905,6 +1937,7 @@ function showFetchError() {
 function initStore() {
   var pre = document.getElementById('preloader');
   if (pre) { pre.style.opacity = '0'; setTimeout(function() { pre.style.display = 'none'; }, 350); }
+  loadSectionMerchants();
   populateCategoryDropdown();
   var urlCatParam = (new URLSearchParams(location.search)).get('cat') || '';
   if (urlCatParam && allCategories.has(urlCatParam)) {
@@ -2426,8 +2459,11 @@ function buyNowDirect(pid) {
     finalPrice = currentDrawerSelected.sizePrice;
     varLabel = (varLabel ? varLabel + ' - ' : '') + currentDrawerSelected.size;
   }
-  // التوجيه: رقم تاجر القسم إن وُجد (من قاعدة البيانات)، وإلا الرقم الرئيسي للمتجر
-  var target = (p.merchant && /^[0-9]{6,}$/.test(p.merchant)) ? p.merchant : CONFIG.whatsapp;
+  // التوجيه: رقم القسم الحيّ من قاعدة البيانات، ثم الرقم المثبّت بالمنتج، ثم الرقم الرئيسي
+  var liveM = sectionMerchantMap[p.category];
+  var target = (liveM && /^[0-9]{6,}$/.test(liveM)) ? liveM
+             : (p.merchant && /^[0-9]{6,}$/.test(p.merchant)) ? p.merchant
+             : CONFIG.whatsapp;
   var sa = checkoutPrefillAddr || (savedAddresses.length ? savedAddresses[selectedAddressIndex] : null);
   var addrStr = sa ? (sa.formatted || [sa.street, sa.district, sa.city].filter(Boolean).join('، ')) : '';
   var msg = '🛒 *طلب جديد من ' + CONFIG.storeName + '*\n\n'

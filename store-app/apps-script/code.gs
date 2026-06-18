@@ -28,6 +28,7 @@ function doPost(e) {
     var action = body.action || '';
 
     if (action === 'login') { out = apiLogin(body); }
+    else if (action === 'getPublicSections') { out = apiPublicSections(); }
     else {
       var auth = authenticate(body.username, body.password);
       if (!auth.ok) { out = { success: false, message: 'بيانات الدخول غير صحيحة' }; }
@@ -108,6 +109,20 @@ function apiGetSections(auth) {
       merchant: String(rows[i][4] || '').replace(/[^0-9]/g, ''),
       delivery: String(rows[i][5] || '').trim()
     };
+  }
+  return { success: true, sections: map };
+}
+
+/* PUBLIC (no auth): flat section -> merchant map for the public storefront.
+   These WhatsApp numbers are customer-facing, so exposing them is safe.
+   Lets the store route 'Buy now' to the LIVE number without re-publishing. */
+function apiPublicSections() {
+  var rows = ss().getSheetByName(USERS).getDataRange().getValues();
+  var map = {};
+  for (var i = 1; i < rows.length; i++) {
+    var section = String(rows[i][3] || '').trim();
+    var merchant = String(rows[i][4] || '').replace(/[^0-9]/g, '');
+    if (section && merchant) map[section] = merchant;
   }
   return { success: true, sections: map };
 }
