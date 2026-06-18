@@ -1087,7 +1087,7 @@ var CONFIG = {
   merchantAppUrl: 'https://broo1stoor.blogspot.com',
   // رابط نشر Apps Script (/exec) — يقرأ منه المتجر رقم كل قسم لحظيًا من قاعدة البيانات.
   // اتركه فارغًا لاستخدام الرقم المثبّت داخل المنتج وقت النشر.
-  dbScriptUrl: '',
+  dbScriptUrl: 'https://script.google.com/macros/s/AKfycbwoIHytOnDJUJ_AJA2qeTq4eHt6u4EuPgp5cywfDggJOyu-DugyZlyYc4cEThgTw9Ck6g/exec',
 };
 function hasMapsKey() { var k = CONFIG.mapsApiKey; return !!k && k.indexOf('YOUR_') !== 0 && k.length > 20; }
 function hasGoogleAuth() { var c = CONFIG.googleClientId; return !!c && c.indexOf('YOUR_') !== 0 && c.indexOf('.apps.googleusercontent.com') > 0; }
