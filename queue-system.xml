@@ -428,7 +428,7 @@
     var loginTimeout = null;
 
     // Load initial state from local storage
-    var queue        = sg('sys_queue',   []);
+    var queue        = normalizeQueue(sg('sys_queue', []));
     var historyLog   = sg('sys_history', []);
     systemActive     = sg('sys_active',  true);
 
@@ -690,7 +690,7 @@
 
           // ☁️ CLOUD STATE SYNC
           if(topic === TOPIC_STATE) {
-             if(data.queue)      { queue = data.queue;             ss('sys_queue', queue); }
+             if(data.queue)      { queue = normalizeQueue(data.queue); ss('sys_queue', queue); }
              if(data.historyLog) { historyLog = data.historyLog; ss('sys_history', historyLog); }
              if(typeof data.systemActive === 'boolean') {
                systemActive = data.systemActive; ss('sys_active', systemActive);
@@ -1020,12 +1020,40 @@
       }
     }
 
+    // ── QUEUE NORMALIZER (fairness + no duplicate/repeated numbers) ──
+    // Every phone publishes its whole queue over MQTT, so to make all phones
+    // agree on the exact same numbers we clean the array deterministically:
+    //  • each rep id appears ONCE (keeps the earliest join time → no duplicates)
+    //  • ordered strictly by join time, id as a stable tie-breaker
+    // The number a rep sees is their index here, so identical contents always
+    // produce identical, non-repeating numbers on every device.
+    function normalizeQueue(arr){
+      if(!Array.isArray(arr)) return [];
+      var seen = {}, out = [];
+      for(var i=0;i<arr.length;i++){
+        var d = arr[i];
+        if(!d || d.id==null) continue;
+        var id = String(d.id);
+        if(typeof d.timestamp !== 'number') d.timestamp = 0;
+        if(seen[id]){
+          if(d.timestamp < seen[id].timestamp) seen[id].timestamp = d.timestamp;
+          continue;
+        }
+        d.id = id; seen[id] = d; out.push(d);
+      }
+      out.sort(function(a,b){
+        var t = (a.timestamp||0)-(b.timestamp||0);
+        return t !== 0 ? t : String(a.id).localeCompare(String(b.id));
+      });
+      return out;
+    }
+
     function autoJoinQueue(){
       if(!(mqttClient&&mqttClient.connected)) return;
       if(queue.some(function(d){return String(d.id)===String(currentDriver.id);})) return;
       var t=Date.now();
       queue.push({id:String(currentDriver.id),name:currentDriver.name,time:new Date(t).toLocaleTimeString('en-US'),timestamp:t,osPlayerId:myOSPlayerId||null,status:'waiting'});
-      queue.sort(function(a,b){return (a.timestamp||0)-(b.timestamp||0);});
+      queue = normalizeQueue(queue);
       ss('sys_queue',queue);
       var myPos=queue.findIndex(function(x){return String(x.id)===String(currentDriver.id);});
       prevMyPos=myPos;
@@ -1267,6 +1295,7 @@
     }
 
     function syncStateToCloud(){
+      queue = normalizeQueue(queue);
       if(mqttClient && mqttClient.connected){
         var payload = { queue: queue, historyLog: historyLog, systemActive: systemActive };
         mqttClient.publish(TOPIC_STATE, JSON.stringify(payload), {retain: true, qos: 1});
