@@ -54,9 +54,12 @@ function doPost(e) {
   return ContentService.createTextOutput(JSON.stringify(out)).setMimeType(ContentService.MimeType.JSON);
 }
 
-function doGet() {
-  return ContentService.createTextOutput(JSON.stringify({ success: true, service: 'store-bro' }))
-    .setMimeType(ContentService.MimeType.JSON);
+function doGet(e) {
+  // للاختبار من المتصفح افتح:  …/exec?action=getPublicSections
+  // فيعرض خريطة: قسم → رقم (يكشف فورًا إن كان SHEET_ID صحيحًا واسم القسم مطابقًا).
+  var action = (e && e.parameter && e.parameter.action) || '';
+  var out = (action === 'getPublicSections') ? apiPublicSections() : { success: true, service: 'store-bro' };
+  return ContentService.createTextOutput(JSON.stringify(out)).setMimeType(ContentService.MimeType.JSON);
 }
 
 function ss() { return SpreadsheetApp.openById(SHEET_ID); }
