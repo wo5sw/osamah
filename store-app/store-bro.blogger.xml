@@ -230,7 +230,7 @@ header.hide-header{transform:translateY(-100%);}
 #clear-search-btn:hover{color:var(--link-hover);text-decoration:underline;}
 
 /* SORT BAR */
-.sort-bar{background:#fff;display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);font-size:13px;flex-wrap:wrap;gap:8px;}
+.sort-bar{background:#fff;display:flex;justify-content:flex-end;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);font-size:13px;flex-wrap:wrap;gap:8px;}
 #product-count-label{font-weight:700;color:var(--text);}
 .sort-select{background:#fff;border:1px solid var(--border-strong);border-radius:var(--r-sm);padding:6px 26px 6px 10px;font-size:13px;cursor:pointer;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%23555' d='M0 0l5 6 5-6z'/></svg>");background-repeat:no-repeat;background-position:left 8px center;max-width:100%;text-overflow:ellipsis;}
 .sort-select:hover{border-color:var(--border-focus);}
@@ -772,10 +772,6 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
 
 <header>
   <div class='h-top'>
-    <a aria-label='Store Bro' class='h-item h-logo' href='/'>
-      <img alt='Store Bro' src='https://placehold.co/130x36/131921/FFFFFF/png?text=Store+Bro&amp;font=cairo'/>
-    </a>
-
     <div class='h-mobile-icons'>
       <button aria-label='تثبيت التطبيق' class='h-icon-btn install-pulse' id='installAppBtn' onclick='promptAppInstall()' style='display:none;'>
         <svg fill='none' height='20' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 24 24' width='20'><rect height='20' rx='2' width='14' x='5' y='2'/><line x1='12' x2='12.01' y1='18' y2='18'/></svg>
@@ -785,7 +781,7 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
       </button>
     </div>
 
-    <div class='h-item h-loc h-action-desktop' onclick='openDeliveryPicker()'>
+    <div class='h-item h-loc' onclick='openDeliveryPicker()'>
       <span class='lbl'>التوصيل إلى</span>
       <span class='val'>
         <svg fill='currentColor' height='14' viewBox='0 0 24 24' width='14'><path d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z'/></svg>
@@ -846,7 +842,6 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
 </div>
 
 <div class='sort-bar'>
-  <span id='product-count-label'>0 منتج</span>
   <select class='sort-select' id='sort-select' onchange='applySort()'>
     <option value='default'>الترتيب: ممي&#1617;ز</option>
     <option value='price-asc'>السعر: من الأقل للأعلى</option>
