@@ -25,10 +25,10 @@
   <meta content='yes' name='mobile-web-app-capable'/>
   <meta content='black-translucent' name='apple-mobile-web-app-status-bar-style'/>
   <meta content='#131921' name='theme-color'/>
-  <meta content='Store Bro' name='apple-mobile-web-app-title'/>
-  <meta content='Store Bro' name='application-name'/>
+  <meta content='ستور برو' name='apple-mobile-web-app-title'/>
+  <meta content='ستور برو' name='application-name'/>
 
-  <!-- Dynamic title: "Product Name | Store Bro" on posts, "Store Bro" on home -->
+  <!-- Dynamic title: "Product Name | ستور برو" on posts, "ستور برو" on home -->
   <b:if cond='data:blog.pageType == &quot;item&quot;'>
     <title><data:blog.pageName/> | <data:blog.title/></title>
   <b:else/>
@@ -46,13 +46,13 @@
   <link expr:href='data:blog.canonicalUrl' rel='canonical'/>
 
   <!-- SEO — Open Graph (WhatsApp · Facebook · Twitter) -->
-  <meta content='Store Bro' property='og:site_name'/>
+  <meta content='ستور برو' property='og:site_name'/>
   <meta content='ar_SA' property='og:locale'/>
   <b:if cond='data:blog.pageType == &quot;item&quot;'>
-    <meta expr:content='data:blog.pageName + &quot; | Store Bro&quot;' property='og:title'/>
+    <meta expr:content='data:blog.pageName + &quot; | ستور برو&quot;' property='og:title'/>
     <meta content='product' property='og:type'/>
   <b:else/>
-    <meta content='Store Bro — تسوّق بذكاء' property='og:title'/>
+    <meta content='ستور برو — تسوّق بذكاء' property='og:title'/>
     <meta content='website' property='og:type'/>
   </b:if>
   <meta expr:content='data:blog.canonicalUrl' property='og:url'/>
@@ -72,9 +72,9 @@
   <!-- Twitter / X Card -->
   <meta content='summary_large_image' name='twitter:card'/>
   <b:if cond='data:blog.pageType == &quot;item&quot;'>
-    <meta expr:content='data:blog.pageName + &quot; | Store Bro&quot;' name='twitter:title'/>
+    <meta expr:content='data:blog.pageName + &quot; | ستور برو&quot;' name='twitter:title'/>
   <b:else/>
-    <meta content='Store Bro — تسوّق بذكاء' name='twitter:title'/>
+    <meta content='ستور برو — تسوّق بذكاء' name='twitter:title'/>
   </b:if>
   <b:if cond='data:blog.metaDescription != &quot;&quot;'>
     <meta expr:content='data:blog.metaDescription' name='twitter:description'/>
@@ -89,7 +89,7 @@
     {
       &quot;@context&quot;: &quot;https://schema.org&quot;,
       &quot;@type&quot;: &quot;WebSite&quot;,
-      &quot;name&quot;: &quot;Store Bro&quot;,
+      &quot;name&quot;: &quot;ستور برو&quot;,
       &quot;url&quot;: &quot;https://www.store1bro.com/&quot;,
       &quot;description&quot;: &quot;متجر ستور برو &#8212; أفضل المنتجات بأسعار مميزة مع التوصيل السريع&quot;,
       &quot;inLanguage&quot;: &quot;ar&quot;,
@@ -104,7 +104,7 @@
     {
       &quot;@context&quot;: &quot;https://schema.org&quot;,
       &quot;@type&quot;: &quot;Organization&quot;,
-      &quot;name&quot;: &quot;Store Bro&quot;,
+      &quot;name&quot;: &quot;ستور برو&quot;,
       &quot;url&quot;: &quot;https://www.store1bro.com/&quot;,
       &quot;logo&quot;: &quot;https://cdn-icons-png.flaticon.com/512/869/869069.png&quot;,
       &quot;contactPoint&quot;: {
@@ -1033,7 +1033,7 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
     <div class='sheet-handle'/>
     <div class='welcome-body'>
       <div class='welcome-icon'>📍</div>
-      <h2 class='welcome-title'>مرحبا&#1611; بك في Store Bro!</h2>
+      <h2 class='welcome-title'>مرحبا&#1611; بك في ستور برو!</h2>
       <p class='welcome-sub'>لتوصيل طلباتك بدقة وسرعة&#1548; أضف عنوان التوصيل الآن. يمكنك أيضا&#1611; تخطي هذه الخطوة وإضافته لاحقا&#1611;.</p>
       <div class='welcome-btns'>
         <button class='btn-welcome-add' onclick='closeModal(&quot;first-visit-modal&quot;);openAddAddrModal(null)'>📍 أضف عنوانك الآن</button>
@@ -1173,7 +1173,7 @@ var CONFIG = {
   currency: 'ر.س',
   whatsapp: '18292147994',
   phone: '+18292147994',
-  storeName: 'Store Bro',
+  storeName: 'ستور برو',
   freeShippingMin: 200,
   shippingFee: 25,
   feedCacheKey: 'sp_feed_cache_v8',
@@ -1199,7 +1199,7 @@ function hasGoogleAuth() { var c = CONFIG.googleClientId; return !!c && c.indexO
     var origin = location.origin;
     var icon = 'https://cdn-icons-png.flaticon.com/512/869/869069.png';
     var manifest = {
-      name: 'Store Bro', short_name: 'Store Bro',
+      name: 'ستور برو', short_name: 'ستور برو',
       start_url: origin + '/?utm_source=pwa', scope: origin + '/',
       display: 'standalone', orientation: 'portrait',
       lang: 'ar', dir: 'rtl',
@@ -2027,13 +2027,13 @@ function injectProductSchemas(products) {
       name: p.title,
       description: desc,
       image: imgUrl ? [imgUrl] : undefined,
-      brand: { '@type': 'Brand', name: 'Store Bro' },
+      brand: { '@type': 'Brand', name: 'ستور برو' },
       offers: {
         '@type': 'Offer',
         priceCurrency: 'SAR',
         price: price,
         availability: 'https://schema.org/InStock',
-        seller: { '@type': 'Organization', name: 'Store Bro' }
+        seller: { '@type': 'Organization', name: 'ستور برو' }
       }
     };
     if (p.rating) {
