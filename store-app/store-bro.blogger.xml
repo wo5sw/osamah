@@ -588,28 +588,56 @@ textarea.pro-input{resize:vertical;min-height:60px;margin-bottom:0;}
 .btn-welcome-add:hover{background:var(--btn-yellow-hover);}
 .btn-welcome-skip{background:none;border:1px solid var(--border-strong);color:var(--text-2);padding:12px;border-radius:var(--r-pill);font-size:14px;font-family:'Cairo',sans-serif;cursor:pointer;transition:var(--t);width:100%;}
 .btn-welcome-skip:hover{color:var(--text);border-color:var(--border-focus);}
-.add-addr-body{flex:1;overflow-y:auto;padding:16px 18px 30px;overscroll-behavior:contain;}
-.addr-type-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
-.addr-type-btn{padding:7px 16px;border:1.5px solid var(--border-strong);border-radius:var(--r-pill);font-size:13px;font-family:'Cairo',sans-serif;cursor:pointer;background:#fff;color:var(--text);transition:var(--t);font-weight:600;}
-.addr-type-btn:hover{border-color:var(--btn-orange);color:var(--btn-orange);}
-.addr-type-btn.active{background:var(--navy-deep);color:#fff;border-color:var(--navy-deep);}
-.loc-row{display:flex;gap:8px;align-items:stretch;margin-bottom:8px;}
-.loc-row .pro-input{margin-bottom:0;flex:1;}
-.loc-row .btn-location{height:auto;min-height:44px;}
-.save-addr-btn{background:var(--btn-orange);border:1px solid var(--btn-orange-border);color:var(--text);border-radius:var(--r-pill);font-weight:700;font-size:15px;width:100%;padding:13px;cursor:pointer;font-family:'Cairo',sans-serif;transition:background var(--t);margin-top:4px;display:flex;align-items:center;justify-content:center;gap:8px;}
-.save-addr-btn:hover{background:var(--btn-orange-hover);}
-#maps-picker-modal .modal-panel{max-width:100%;}
-#map-canvas{width:100%;height:320px;background:var(--soft);position:relative;overflow:hidden;}
-.map-placeholder{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:linear-gradient(135deg,#e8f4ff 0%,#f0f8ff 100%);font-size:14px;color:var(--text-2);}
+/* ===== Screen 2 — add address details form ===== */
+.add-addr-body{flex:1;overflow-y:auto;padding:0 0 6px;overscroll-behavior:contain;background:#f6f7f9;}
+#add-addr-modal .modal-head{background:#fff;color:var(--text);border-bottom:1px solid var(--border);}
+#add-addr-modal .modal-head h2{color:var(--text);font-size:16px;}
+#add-addr-modal .modal-close{background:var(--soft);color:var(--text);border-color:var(--border);}
+.aa-maphead{display:flex;align-items:center;gap:12px;background:#fff;padding:14px 16px;cursor:pointer;}
+.aa-mapthumb{width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,#dfeefc,#eef6ff);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.aa-mapthumb svg{width:24px;height:24px;fill:var(--btn-orange);}
+.aa-maphead-t{flex:1;min-width:0;}
+.aa-maphead-t b{display:block;font-size:14px;font-weight:800;color:var(--text);}
+.aa-maphead-t span{font-size:12px;color:var(--text-2);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.aa-chev{color:var(--text-3);font-size:22px;flex-shrink:0;}
+.aa-section{background:#fff;padding:16px;margin-top:10px;}
+.aa-2col{display:flex;gap:10px;}
+.aa-2col .pro-input{flex:1;min-width:0;}
+.pro-input.muted{background:#eef0f3;}
+.aa-sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.aa-sec-head h4{font-size:14px;font-weight:800;color:var(--text);margin:0;}
+.aa-edit-btn{background:none;border:none;color:var(--amazon-blue);font-size:13px;font-weight:700;font-family:'Cairo',sans-serif;cursor:pointer;padding:0;}
+.aa-typerow{display:flex;gap:10px;}
+.aa-type{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:13px;border:1.5px solid var(--border-strong);border-radius:14px;background:#fff;color:var(--text);font-size:14px;font-weight:700;font-family:'Cairo',sans-serif;cursor:pointer;transition:var(--t);}
+.aa-type.active{border-color:var(--btn-orange);background:#fff7ee;color:var(--btn-orange);}
+.aa-check{display:flex;align-items:center;gap:10px;padding:15px 16px;background:#fff;margin-top:10px;cursor:pointer;}
+.aa-check input{width:20px;height:20px;accent-color:var(--btn-orange);flex-shrink:0;}
+.aa-check span{font-size:14px;color:var(--text);}
+.aa-foot{padding:14px 16px calc(16px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--border);flex-shrink:0;}
+.save-addr-btn{background:var(--btn-yellow);border:1px solid var(--btn-yellow-border);color:var(--text);border-radius:14px;font-weight:800;font-size:16px;width:100%;padding:15px;cursor:pointer;font-family:'Cairo',sans-serif;transition:background var(--t);}
+.save-addr-btn:hover{background:var(--btn-yellow-hover);}
+/* ===== Screen 1 — map location picker (fixed center pin) ===== */
+#maps-picker-modal .modal-panel{max-width:520px;height:100%;height:100dvh;padding:0;position:relative;overflow:hidden;background:#e8eef3;}
+#maps-picker-modal #map-canvas{width:100%;height:100%;background:var(--soft);position:relative;overflow:hidden;}
+.map-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:linear-gradient(135deg,#e8f4ff 0%,#f0f8ff 100%);font-size:14px;color:var(--text-2);}
 .map-placeholder .map-icon{font-size:48px;}
-.map-addr-bar{padding:12px 16px;background:#fff;border-bottom:1px solid var(--border);border-top:1px solid var(--border);display:flex;align-items:flex-start;gap:10px;min-height:52px;}
-.map-addr-bar .map-pin-icon{font-size:20px;flex-shrink:0;margin-top:2px;}
-.map-addr-text{flex:1;min-width:0;font-size:13px;color:var(--text);line-height:1.5;}
-.map-footer{padding:12px 16px 20px;background:#fff;}
-.btn-use-location{width:100%;padding:11px;background:var(--amazon-blue);border:none;color:#fff;border-radius:var(--r-pill);font-weight:700;font-size:14px;font-family:'Cairo',sans-serif;cursor:pointer;margin-bottom:8px;transition:opacity var(--t);}
-.btn-use-location:hover{opacity:.88;}
-.btn-confirm-map{width:100%;padding:11px;background:var(--btn-yellow);border:1px solid var(--btn-yellow-border);color:var(--text);border-radius:var(--r-pill);font-weight:700;font-size:14px;font-family:'Cairo',sans-serif;cursor:pointer;transition:background var(--t);}
-.btn-confirm-map:hover{background:var(--btn-yellow-hover);}
+.mp-close{position:absolute;top:14px;left:14px;z-index:6;width:40px;height:40px;border-radius:50%;background:#fff;color:#1c1c1e;border:none;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.2);}
+.mp-search{position:absolute;top:14px;right:14px;left:64px;z-index:5;display:flex;align-items:center;gap:9px;background:#fff;border-radius:14px;padding:0 14px;height:48px;box-shadow:0 6px 20px rgba(0,0,0,.16);}
+.mp-search svg{width:18px;height:18px;color:var(--text-3);flex-shrink:0;}
+.mp-search input{flex:1;border:none;outline:none;background:transparent;font-family:'Cairo',sans-serif;font-size:14px;color:var(--text);min-width:0;}
+.mp-center-pin{position:absolute;top:50%;left:50%;transform:translate(-50%,-100%);z-index:4;pointer-events:none;}
+.mp-center-pin svg{width:44px;height:44px;display:block;fill:var(--btn-orange);filter:drop-shadow(0 5px 6px rgba(0,0,0,.3));}
+.mp-center-pin::after{content:'';position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);width:16px;height:6px;border-radius:50%;background:rgba(0,0,0,.22);}
+.mp-locate{position:absolute;left:16px;bottom:232px;z-index:5;width:46px;height:46px;border-radius:50%;background:#fff;border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 5px 16px rgba(0,0,0,.22);cursor:pointer;}
+.mp-locate svg{width:22px;height:22px;fill:var(--amazon-blue);}
+.mp-sheet{position:absolute;left:0;right:0;bottom:0;z-index:5;background:#fff;border-radius:22px 22px 0 0;padding:20px 18px calc(18px + env(safe-area-inset-bottom));box-shadow:0 -8px 30px rgba(0,0,0,.16);}
+.mp-addr-num{font-size:20px;font-weight:800;color:var(--text);margin-bottom:4px;}
+.mp-addr-detail{font-size:13.5px;color:var(--text-2);line-height:1.55;margin-bottom:16px;min-height:20px;}
+.mp-go-details{width:100%;height:52px;border:1px solid var(--btn-yellow-border);border-radius:14px;background:var(--btn-yellow);color:var(--text);font-weight:800;font-size:16px;font-family:'Cairo',sans-serif;cursor:pointer;transition:background .15s;}
+.mp-go-details:hover{background:var(--btn-yellow-hover);}
+.mp-or{display:flex;align-items:center;gap:12px;margin:14px 2px;color:var(--text-3);font-size:13px;}
+.mp-or::before,.mp-or::after{content:'';flex:1;height:1px;background:var(--border);}
+.mp-manual{width:100%;background:none;border:none;color:var(--amazon-blue);font-weight:700;font-size:14.5px;font-family:'Cairo',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;padding:4px;}
 /* ===== Address picker — bottom sheet (Amazon-style) ===== */
 #addr-select-modal{background:rgba(15,17,17,.42);-webkit-backdrop-filter:blur(7px) saturate(120%);backdrop-filter:blur(7px) saturate(120%);}
 #addr-select-modal .modal-panel{background:#f6f7f9;max-width:520px;height:auto;max-height:86vh;max-height:86dvh;display:flex;flex-direction:column;overflow:visible;border-radius:26px 26px 0 0;padding:0 16px 18px;box-shadow:0 -10px 44px rgba(0,0,0,.22);}
@@ -740,7 +768,7 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
       </button>
     </div>
 
-    <div class='h-item h-loc h-action-desktop' onclick='openModal(&quot;add-addr-modal&quot;)'>
+    <div class='h-item h-loc h-action-desktop' onclick='openDeliveryPicker()'>
       <span class='lbl'>التوصيل إلى</span>
       <span class='val'>
         <svg fill='currentColor' height='14' viewBox='0 0 24 24' width='14'><path d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z'/></svg>
@@ -1006,35 +1034,57 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
 <div class='modal' id='add-addr-modal' onclick='backdropClose(event,&quot;add-addr-modal&quot;)'>
   <div class='modal-panel'>
     <div class='modal-head'>
-      <h2>📍 إضافة عنوان جديد</h2>
+      <h2>تفاصيل العنوان</h2>
       <button class='modal-close' onclick='closeAddAddrModal()'>&#10005;</button>
     </div>
     <div class='add-addr-body'>
-      <div class='option-label' style='margin-bottom:8px'>نوع العنوان</div>
-      <div class='addr-type-row' id='addr-type-row'>
-        <button class='addr-type-btn active' onclick='selectAddrType(this,&quot;🏠 المنزل&quot;)'>🏠 المنزل</button>
-        <button class='addr-type-btn' onclick='selectAddrType(this,&quot;🏢 العمل&quot;)'>🏢 العمل</button>
-        <button class='addr-type-btn' onclick='selectAddrType(this,&quot;📌 آخر&quot;)'>📌 آخر</button>
+      <div class='aa-maphead' onclick='openMapsModal()'>
+        <div class='aa-mapthumb'><svg viewBox='0 0 24 24'><path d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z'/></svg></div>
+        <div class='aa-maphead-t'><b>حدد الموقع</b><span id='aa-map-summary'>اختر موقعك على الخريطة</span></div>
+        <span class='aa-chev'>&#8250;</span>
       </div>
 
-      <div class='loc-row'>
-        <input class='pro-input' id='na-city' placeholder='المدينة *' type='text'/>
-        <button class='btn-location' id='btn-location' onclick='openMapsModal()' title='تحديد موقعي على الخريطة'>📍</button>
+      <div class='aa-section'>
+        <input class='pro-input' id='na-building' placeholder='اسم/رقم المبنى' type='text'/>
+        <div class='aa-2col'>
+          <input class='pro-input' id='na-floor' placeholder='الطابق/الشقة/الفيلا' type='text'/>
+          <input class='pro-input' id='na-landmark' placeholder='أقرب معلم' type='text'/>
+        </div>
+        <input class='pro-input' id='na-national' placeholder='العنوان الوطني (مثال. ROHB6xxx)' type='text'/>
+        <input class='pro-input' id='na-city' placeholder='المدينة (مثال. الرياض، جدة) *' type='text'/>
+        <input class='pro-input muted' id='na-region' placeholder='المنطقة' type='text'/>
+        <input class='pro-input muted' id='na-province' placeholder='المحافظة' type='text'/>
+
+        <div class='aa-sec-head' style='margin:18px 0 12px;'><h4>نوع العنوان</h4></div>
+        <div class='aa-typerow' id='addr-type-row'>
+          <button class='aa-type active' onclick='selectAddrType(this,&quot;🏠 المنزل&quot;)'>🏠 المنزل</button>
+          <button class='aa-type' onclick='selectAddrType(this,&quot;🏢 المكتب&quot;)'>🏢 المكتب</button>
+        </div>
       </div>
-      <input class='pro-input' id='na-district' placeholder='الحي / المنطقة' type='text'/>
-      <input class='pro-input' id='na-street' placeholder='اسم الشارع / تفاصيل إضافية' type='text'/>
-      <input class='pro-input' id='na-name' placeholder='اسم المستلم *' type='text'/>
-      <input class='pro-input' id='na-phone' inputmode='tel' placeholder='رقم جوال المستلم *' type='tel'/>
-      <button class='save-addr-btn' onclick='saveNewAddress()'>💾 حفظ العنوان</button>
+
+      <div class='aa-section'>
+        <div class='aa-sec-head'><h4>البيانات الشخصية</h4><button class='aa-edit-btn' onclick='document.getElementById(&quot;na-name&quot;).focus()'>تعديل</button></div>
+        <input class='pro-input' id='na-name' placeholder='الاسم الكامل *' type='text'/>
+        <input class='pro-input' id='na-phone' inputmode='tel' placeholder='رقم الجوال * (مثال. +9665...)' type='tel'/>
+      </div>
+
+      <label class='aa-check'>
+        <input type='checkbox' id='na-primary'/>
+        <span>الاستخدام كعنواني الرئيسي</span>
+      </label>
+    </div>
+    <div class='aa-foot'>
+      <button class='save-addr-btn' onclick='saveNewAddress()'>إضافة عنوان</button>
     </div>
   </div>
 </div>
 
 <div class='modal' id='maps-picker-modal' onclick='backdropClose(event,&quot;maps-picker-modal&quot;)'>
   <div class='modal-panel'>
-    <div class='modal-head'>
-      <h2>🗺&#65039; تحديد الموقع على الخريطة</h2>
-      <button class='modal-close' onclick='closeMapsModal()'>&#10005;</button>
+    <button class='mp-close' onclick='closeMapsModal()' aria-label='إغلاق'>&#10005;</button>
+    <div class='mp-search'>
+      <svg fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><circle cx='11' cy='11' r='7'/><path d='M21 21l-4.3-4.3' stroke-linecap='round'/></svg>
+      <input id='mp-search-input' placeholder='ابحث عن مكان أو عناوين قصيرة' type='text' readonly='readonly'/>
     </div>
     <div id='map-canvas'>
       <div class='map-placeholder' id='map-placeholder'>
@@ -1043,13 +1093,18 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
         <div style='font-size:12px;color:var(--text-3)'>يرجى الانتظار</div>
       </div>
     </div>
-    <div class='map-addr-bar'>
-      <span class='map-pin-icon'>📍</span>
-      <span class='map-addr-text' id='map-addr-text'>انقر على الخريطة لتحديد موقعك...</span>
+    <div class='mp-center-pin' aria-hidden='true'>
+      <svg viewBox='0 0 24 24'><path d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z'/></svg>
     </div>
-    <div class='map-footer'>
-      <button class='btn-use-location' onclick='useCurrentGPS()'>🎯 استخدم موقعي الحالي</button>
-      <button class='btn-confirm-map' id='btn-confirm-map' onclick='confirmMapLocation()'>&#9989; تأكيد هذا الموقع</button>
+    <button class='mp-locate' onclick='useCurrentGPS()' aria-label='موقعي الحالي'>
+      <svg viewBox='0 0 24 24'><path d='M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm8.94 3A8 8 0 0 0 13 3.06V1h-2v2.06A8 8 0 0 0 3.06 11H1v2h2.06A8 8 0 0 0 11 20.94V23h2v-2.06A8 8 0 0 0 20.94 13H23v-2h-2.06zM12 19a7 7 0 1 1 0-14 7 7 0 0 1 0 14z'/></svg>
+    </button>
+    <div class='mp-sheet'>
+      <div class='mp-addr-num' id='mp-addr-num'>حدّد موقعك</div>
+      <div class='mp-addr-detail' id='mp-addr-detail'>حرّك الخريطة لضبط الدبوس على موقعك بدقّة</div>
+      <button class='mp-go-details' onclick='confirmMapLocation()'>الانتقال إلى تفاصيل العنوان</button>
+      <div class='mp-or'><span>أو</span></div>
+      <button class='mp-manual' onclick='manualAddress()'>إدخال العنوان يدويًا <span>&#9662;</span></button>
     </div>
   </div>
 </div>
@@ -1290,7 +1345,7 @@ function checkFirstVisit() {
 }
 
 function selectAddrType(el, label) {
-  document.querySelectorAll('.addr-type-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.querySelectorAll('.aa-type').forEach(function(b) { b.classList.remove('active'); });
   el.classList.add('active');
   currentAddrType = label;
 }
@@ -1298,49 +1353,56 @@ function selectAddrType(el, label) {
 function openAddAddrModal(returnCtx) {
   addAddrReturnCtx = returnCtx || null;
   pendingMapLocation = null;
-  ['na-city','na-district','na-street','na-name','na-phone'].forEach(function(id) {
+  ['na-building','na-floor','na-landmark','na-national','na-city','na-region','na-province','na-name','na-phone'].forEach(function(id) {
     var el = document.getElementById(id); if (el) el.value = '';
   });
+  var pc = document.getElementById('na-primary'); if (pc) pc.checked = false;
+  var sm = document.getElementById('aa-map-summary'); if (sm) sm.textContent = 'اختر موقعك على الخريطة';
   var nameEl = document.getElementById('na-name');
-  if (nameEl && currentUser && !nameEl.value) nameEl.value = currentUser.name || '';
-  document.querySelectorAll('.addr-type-btn').forEach(function(b, i) { b.classList.toggle('active', i === 0); });
+  if (nameEl && currentUser && currentUser.name) nameEl.value = currentUser.name;
+  var phEl = document.getElementById('na-phone');
+  if (phEl && currentUser && currentUser.phone) phEl.value = currentUser.phone;
+  document.querySelectorAll('.aa-type').forEach(function(b, i) { b.classList.toggle('active', i === 0); });
   currentAddrType = '🏠 المنزل';
-  openModal('add-addr-modal');
+  if (hasMapsKey()) { openMapsModal(); } else { openModal('add-addr-modal'); }
 }
+
+function openDeliveryPicker() {
+  if (savedAddresses.length) { renderAddrList(); openModal('addr-select-modal'); }
+  else { openAddAddrModal(null); }
+}
+
+function manualAddress() { closeMapsModal(); openModal('add-addr-modal'); }
 
 function closeAddAddrModal() {
   closeModal('add-addr-modal');
 }
 
 function saveNewAddress() {
-  var city     = ((document.getElementById('na-city')     || {}).value || '').trim();
-  var district = ((document.getElementById('na-district') || {}).value || '').trim();
-  var street   = ((document.getElementById('na-street')   || {}).value || '').trim();
-  var name     = ((document.getElementById('na-name')     || {}).value || '').trim();
-  var phone    = ((document.getElementById('na-phone')    || {}).value || '').trim();
+  var g = function(id) { return ((document.getElementById(id) || {}).value || '').trim(); };
+  var building = g('na-building'), floor = g('na-floor'), landmark = g('na-landmark'), national = g('na-national');
+  var city = g('na-city'), region = g('na-region'), province = g('na-province'), name = g('na-name'), phone = g('na-phone');
+  var primary = !!((document.getElementById('na-primary') || {}).checked);
 
   if (!city && pendingMapLocation && pendingMapLocation.city) city = pendingMapLocation.city;
-  if (!street && pendingMapLocation && pendingMapLocation.formatted) street = pendingMapLocation.formatted;
+  if (!city) { toast('يرجى إدخال المدينة', 'warn'); return; }
+  if (!name) { toast('يرجى إدخال الاسم', 'warn'); return; }
+  if (!phone) { toast('يرجى إدخال رقم الجوال', 'warn'); return; }
 
-  if (!city) { toast('يرجى إدخال اسم المدينة', 'warn'); return; }
-  if (!name) { toast('يرجى إدخال اسم المستلم', 'warn'); return; }
-  if (!phone) { toast('يرجى إدخال رقم جوال المستلم', 'warn'); return; }
-
+  var detail = [building, floor, landmark].filter(Boolean).join('، ');
   var addr = {
     id: 'addr_' + Date.now(),
     label: currentAddrType,
-    name: name,
-    phone: phone,
-    city: city,
-    district: district,
-    street: street,
+    name: name, phone: phone,
+    building: building, floor: floor, landmark: landmark, national: national,
+    city: city, district: region, region: region, province: province, street: detail,
     lat: pendingMapLocation ? pendingMapLocation.lat : null,
     lng: pendingMapLocation ? pendingMapLocation.lng : null,
-    formatted: [street, district, city].filter(Boolean).join('، ')
+    formatted: [detail, national, region, city].filter(Boolean).join('، ') || (pendingMapLocation ? pendingMapLocation.formatted : '')
   };
 
   savedAddresses.push(addr);
-  selectedAddressIndex = savedAddresses.length - 1;
+  if (primary || savedAddresses.length === 1) selectedAddressIndex = savedAddresses.length - 1;
   persistAddresses();
   updateDeliveryDisplay();
   closeAddAddrModal();
@@ -1463,8 +1525,8 @@ function requireGoogleMaps(cb) {
 function openMapsModal() {
   if (!hasMapsKey()) { toast('خريطة تحديد الموقع غير مفعّلة. يرجى إدخال العنوان يدوياً.', 'warn'); return; }
   pendingMapLocation = null;
-  var addrText = document.getElementById('map-addr-text');
-  if (addrText) addrText.textContent = 'انقر على الخريطة لتحديد موقعك...';
+  var numEl = document.getElementById('mp-addr-num'); if (numEl) numEl.textContent = 'حدّد موقعك';
+  var detEl = document.getElementById('mp-addr-detail'); if (detEl) detEl.textContent = 'حرّك الخريطة لضبط الدبوس على موقعك بدقّة';
   openModal('maps-picker-modal');
   requireGoogleMaps(function() { setTimeout(initMapPicker, 150); });
 }
@@ -1481,27 +1543,24 @@ function initMapPicker() {
   var ph = document.getElementById('map-placeholder');
   if (ph) ph.remove();
 
-  var center = { lat: 24.7136, lng: 46.6753 };
   mapInstance = new google.maps.Map(canvas, {
-    center: center, zoom: 13,
-    streetViewControl: false, mapTypeControl: false,
-    fullscreenControl: false, gestureHandling: 'greedy'
+    center: { lat: 24.7136, lng: 46.6753 }, zoom: 15,
+    streetViewControl: false, mapTypeControl: false, fullscreenControl: false,
+    zoomControl: false, clickableIcons: false, gestureHandling: 'greedy'
   });
   mapGeocoder = new google.maps.Geocoder();
-  mapMarker = new google.maps.Marker({ map: mapInstance, draggable: true, animation: google.maps.Animation.DROP });
 
-  mapInstance.addListener('click', function(e) {
-    placeMapPin(e.latLng.lat(), e.latLng.lng());
-  });
-  mapMarker.addListener('dragend', function(e) {
-    doReverseGeocode(e.latLng.lat(), e.latLng.lng());
+  var t;
+  mapInstance.addListener('idle', function() {
+    var c = mapInstance.getCenter();
+    clearTimeout(t);
+    t = setTimeout(function() { doReverseGeocode(c.lat(), c.lng()); }, 140);
   });
 
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(function(pos) {
-      var ll = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-      mapInstance.setCenter(ll); mapInstance.setZoom(15);
-      placeMapPin(ll.lat, ll.lng);
+      mapInstance.setCenter({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      mapInstance.setZoom(16);
     }, function() {});
   }
 }
@@ -1515,60 +1574,53 @@ function placeMapPin(lat, lng) {
 }
 
 function doReverseGeocode(lat, lng) {
-  pendingMapLocation = { lat: lat, lng: lng, formatted: 'موقع GPS: ' + lat.toFixed(5) + ', ' + lng.toFixed(5), city: '', district: '' };
-  var addrText = document.getElementById('map-addr-text');
-  if (addrText) addrText.textContent = 'جاري تحديد العنوان...';
-  if (!mapGeocoder) {
-    if (addrText) addrText.textContent = pendingMapLocation.formatted;
-    return;
-  }
+  pendingMapLocation = { lat: lat, lng: lng, formatted: '', city: '', district: '', number: '' };
+  var numEl = document.getElementById('mp-addr-num');
+  var detEl = document.getElementById('mp-addr-detail');
+  if (detEl) detEl.textContent = 'جاري تحديد العنوان...';
+  if (!mapGeocoder) { if (detEl) detEl.textContent = 'موقع: ' + lat.toFixed(5) + ', ' + lng.toFixed(5); return; }
   mapGeocoder.geocode({ location: { lat: lat, lng: lng }, language: 'ar' }, function(results, status) {
     if (status === 'OK' && results && results[0]) {
-      var formatted = results[0].formatted_address;
-      pendingMapLocation.formatted = formatted;
-      if (addrText) addrText.textContent = formatted;
-      var comps = results[0].address_components || [];
+      var r = results[0], comps = r.address_components || [], num = '', route = '';
+      pendingMapLocation.formatted = r.formatted_address;
       comps.forEach(function(c) {
-        if (c.types.indexOf('locality') >= 0 || c.types.indexOf('administrative_area_level_2') >= 0) {
-          if (!pendingMapLocation.city) pendingMapLocation.city = c.long_name;
-        }
-        if (c.types.indexOf('sublocality') >= 0 || c.types.indexOf('neighborhood') >= 0) {
-          if (!pendingMapLocation.district) pendingMapLocation.district = c.long_name;
-        }
+        if (c.types.indexOf('street_number') >= 0) num = c.long_name;
+        if (c.types.indexOf('route') >= 0) route = c.long_name;
+        if ((c.types.indexOf('locality') >= 0 || c.types.indexOf('administrative_area_level_2') >= 0) && !pendingMapLocation.city) pendingMapLocation.city = c.long_name;
+        if ((c.types.indexOf('sublocality') >= 0 || c.types.indexOf('neighborhood') >= 0) && !pendingMapLocation.district) pendingMapLocation.district = c.long_name;
       });
+      pendingMapLocation.number = num;
+      if (numEl) numEl.textContent = num || route || pendingMapLocation.district || pendingMapLocation.city || 'موقع محدّد';
+      if (detEl) detEl.textContent = r.formatted_address;
     } else {
-      if (addrText) addrText.textContent = pendingMapLocation.formatted;
+      if (numEl) numEl.textContent = 'موقع محدّد';
+      if (detEl) detEl.textContent = 'موقع: ' + lat.toFixed(5) + ', ' + lng.toFixed(5);
     }
   });
 }
 
 function useCurrentGPS() {
-  var addrText = document.getElementById('map-addr-text');
   if (!navigator.geolocation) { toast('المتصفح لا يدعم تحديد الموقع', 'warn'); return; }
-  if (addrText) addrText.textContent = 'جاري تحديد موقعك...';
+  var detEl = document.getElementById('mp-addr-detail');
+  if (detEl) detEl.textContent = 'جاري تحديد موقعك...';
   navigator.geolocation.getCurrentPosition(function(pos) {
-    var lat = pos.coords.latitude, lng = pos.coords.longitude;
-    if (mapInstance && mapMarker) {
-      placeMapPin(lat, lng);
+    if (mapInstance) {
+      mapInstance.setCenter({ lat: pos.coords.latitude, lng: pos.coords.longitude });
       mapInstance.setZoom(16);
-    } else {
-      pendingMapLocation = { lat: lat, lng: lng, formatted: 'https://maps.google.com/?q=' + lat + ',' + lng, city: '', district: '' };
-      if (addrText) addrText.textContent = 'موقعك: ' + lat.toFixed(4) + ', ' + lng.toFixed(4);
-      toast('تم تحديد موقعك ✅', 'success');
     }
-  }, function() { toast('تعذّر تحديد الموقع. يرجى الإدخال يدوياً.', 'warn'); if (addrText) addrText.textContent = 'انقر على الخريطة لتحديد موقعك...'; });
+  }, function() { toast('تعذّر تحديد الموقع', 'warn'); if (detEl) detEl.textContent = 'حرّك الخريطة لضبط الدبوس على موقعك'; });
 }
 
 function confirmMapLocation() {
-  if (!pendingMapLocation) { toast('يرجى تحديد موقعك على الخريطة أولاً', 'warn'); return; }
-  var cityEl     = document.getElementById('na-city');
-  var districtEl = document.getElementById('na-district');
-  var streetEl   = document.getElementById('na-street');
-  if (cityEl     && pendingMapLocation.city)      cityEl.value     = pendingMapLocation.city;
-  if (districtEl && pendingMapLocation.district)  districtEl.value = pendingMapLocation.district;
-  if (streetEl   && pendingMapLocation.formatted) streetEl.value   = pendingMapLocation.formatted;
+  if (!pendingMapLocation) { toast('حرّك الخريطة لضبط موقعك أولاً', 'warn'); return; }
+  var setV = function(id, v) { var el = document.getElementById(id); if (el && v && !el.value) el.value = v; };
+  setV('na-city', pendingMapLocation.city);
+  setV('na-region', pendingMapLocation.district);
+  setV('na-building', pendingMapLocation.number);
+  var sm = document.getElementById('aa-map-summary');
+  if (sm) sm.textContent = pendingMapLocation.formatted || 'تم تحديد الموقع على الخريطة';
   closeMapsModal();
-  toast('تم تحديد الموقع ✅', 'success');
+  openModal('add-addr-modal');
 }
 
 function getLocation() {
