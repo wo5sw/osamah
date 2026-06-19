@@ -610,25 +610,32 @@ textarea.pro-input{resize:vertical;min-height:60px;margin-bottom:0;}
 .btn-use-location:hover{opacity:.88;}
 .btn-confirm-map{width:100%;padding:11px;background:var(--btn-yellow);border:1px solid var(--btn-yellow-border);color:var(--text);border-radius:var(--r-pill);font-weight:700;font-size:14px;font-family:'Cairo',sans-serif;cursor:pointer;transition:background var(--t);}
 .btn-confirm-map:hover{background:var(--btn-yellow-hover);}
-#addr-select-modal .modal-panel{max-width:500px;}
-.addr-list-body{flex:1;overflow-y:auto;padding:12px;background:var(--page-bg);overscroll-behavior:contain;}
-.addr-card{background:#fff;border:2px solid var(--border);border-radius:var(--r);padding:14px 14px 14px 50px;margin-bottom:10px;cursor:pointer;position:relative;transition:border-color var(--t),box-shadow var(--t);}
-.addr-card:hover{border-color:var(--border-strong);}
-.addr-card.selected{border-color:var(--amazon-blue);box-shadow:0 0 0 3px rgba(0,168,225,.18);}
-.addr-card-radio{position:absolute;top:50%;right:14px;transform:translateY(-50%);width:20px;height:20px;border-radius:50%;border:2px solid var(--border-strong);background:#fff;display:flex;align-items:center;justify-content:center;transition:var(--t);}
-.addr-card.selected .addr-card-radio{background:var(--amazon-blue);border-color:var(--amazon-blue);}
-.addr-card.selected .addr-card-radio::after{content:'';width:8px;height:8px;border-radius:50%;background:#fff;display:block;}
-.addr-type-tag{display:inline-flex;align-items:center;gap:4px;background:#e8f4ff;color:var(--amazon-blue);font-size:11px;font-weight:700;padding:2px 8px;border-radius:var(--r-pill);margin-bottom:6px;}
-.addr-card-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px;}
-.addr-card-detail{font-size:13px;color:var(--text-2);line-height:1.5;}
-.addr-card-phone{font-size:12px;color:var(--text-3);margin-top:2px;}
-.addr-card-delete{position:absolute;bottom:10px;left:14px;font-size:11px;color:var(--link);background:none;border:none;cursor:pointer;font-family:'Cairo',sans-serif;padding:2px 0;}
-.addr-card-delete:hover{color:var(--price-deal);text-decoration:underline;}
-.addr-select-footer{padding:12px 14px;border-top:1px solid var(--border);background:#fff;display:flex;flex-direction:column;gap:8px;flex-shrink:0;}
-.btn-add-new-addr{width:100%;padding:11px;border-radius:var(--r-pill);border:1.5px dashed var(--border-strong);background:#fff;color:var(--text-2);font-size:14px;font-family:'Cairo',sans-serif;cursor:pointer;transition:var(--t);}
-.btn-add-new-addr:hover{border-color:var(--btn-orange);color:var(--btn-orange);background:#fff8f0;}
-.btn-confirm-addr{width:100%;padding:12px;border-radius:var(--r-pill);background:var(--btn-yellow);border:1px solid var(--btn-yellow-border);color:var(--text);font-weight:800;font-size:15px;font-family:'Cairo',sans-serif;cursor:pointer;transition:background var(--t);}
-.btn-confirm-addr:hover{background:var(--btn-yellow-hover);}
+/* ===== Address picker — bottom sheet (Amazon-style) ===== */
+#addr-select-modal{background:rgba(15,17,17,.42);-webkit-backdrop-filter:blur(7px) saturate(120%);backdrop-filter:blur(7px) saturate(120%);}
+#addr-select-modal .modal-panel{background:#f6f7f9;max-width:520px;height:auto;max-height:86vh;max-height:86dvh;display:flex;flex-direction:column;overflow:visible;border-radius:26px 26px 0 0;padding:0 16px 18px;box-shadow:0 -10px 44px rgba(0,0,0,.22);}
+.sheet-float-close{position:absolute;top:-56px;left:50%;transform:translateX(-50%);width:44px;height:44px;border-radius:50%;background:#1c1c1e;color:#fff;border:none;font-size:17px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.4);transition:transform .15s,background .15s;z-index:2;}
+.sheet-float-close:hover{background:#000;}
+.sheet-float-close:active{transform:translateX(-50%) scale(.9);}
+.addr-sheet-title{font-size:19px;font-weight:800;color:var(--text);text-align:right;margin:0;padding:22px 4px 16px;flex-shrink:0;}
+.addr-add-card{width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:#fff;border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:18px;color:var(--amazon-blue);font-size:15px;font-weight:700;font-family:'Cairo',sans-serif;cursor:pointer;box-shadow:0 2px 10px rgba(15,23,42,.05);transition:transform .12s,box-shadow .15s,border-color .15s;flex-shrink:0;}
+.addr-add-card:hover{border-color:var(--amazon-blue);box-shadow:0 5px 16px rgba(0,168,225,.15);}
+.addr-add-card:active{transform:scale(.99);}
+.addr-add-plus{font-size:21px;font-weight:800;line-height:1;}
+.addr-saved-label{font-size:12.5px;font-weight:700;color:var(--text-3);text-align:right;margin:0 2px 11px;flex-shrink:0;}
+.addr-list-body{flex:1;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:10px;padding-bottom:6px;}
+.addr-card{position:relative;display:flex;align-items:flex-start;gap:12px;background:#fff;border:1px solid var(--border);border-radius:16px;padding:16px 16px 16px 14px;cursor:pointer;box-shadow:0 2px 10px rgba(15,23,42,.05);transition:border-color .15s,box-shadow .15s,transform .12s;}
+.addr-card:hover{box-shadow:0 7px 20px rgba(15,23,42,.11);}
+.addr-card:active{transform:scale(.995);}
+.addr-card.selected{border-color:#f5b301;box-shadow:0 0 0 2px rgba(245,179,1,.32),0 7px 20px rgba(245,179,1,.13);}
+.addr-pin{flex-shrink:0;width:26px;height:26px;fill:#f5a623;margin-top:1px;}
+.addr-card-main{flex:1;min-width:0;text-align:right;}
+.addr-card-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px;}
+.addr-card-name{font-size:15px;font-weight:800;color:var(--text);}
+.addr-badge-current{background:var(--btn-yellow);color:#5a4500;font-size:11px;font-weight:800;padding:3px 9px;border-radius:var(--r-pill);white-space:nowrap;}
+.addr-card-detail{font-size:13.5px;color:var(--text-2);line-height:1.55;word-break:break-word;}
+.addr-card-phone{font-size:12.5px;color:var(--text-3);margin-top:3px;}
+.addr-card-delete{position:absolute;bottom:9px;left:11px;width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--text-3);background:transparent;border:none;cursor:pointer;transition:background .15s,color .15s;}
+.addr-card-delete:hover{background:#fff0f0;color:#d92d20;}
 .selected-addr-preview{background:#e8f4ff;border:1px solid var(--amazon-blue);border-radius:var(--r-sm);padding:10px 12px;font-size:13px;color:var(--text);margin-bottom:8px;display:flex;align-items:flex-start;gap:8px;}
 .selected-addr-preview .pin{font-size:16px;flex-shrink:0;}
 .selected-addr-preview .change-addr{color:var(--link);font-size:12px;font-weight:700;background:none;border:none;cursor:pointer;padding:0;font-family:'Cairo',sans-serif;margin-top:2px;display:block;}
@@ -1047,17 +1054,13 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
   </div>
 </div>
 
-<div class='modal' id='addr-select-modal' onclick='backdropClose(event,&quot;addr-select-modal&quot;)'>
+<div class='modal bottom-sheet' id='addr-select-modal' onclick='backdropClose(event,&quot;addr-select-modal&quot;)'>
   <div class='modal-panel'>
-    <div class='modal-head'>
-      <h2>📍 اختر عنوان التوصيل</h2>
-      <button class='modal-close' onclick='closeModal(&quot;addr-select-modal&quot;)'>&#10005;</button>
-    </div>
-    <div class='addr-list-body' id='addr-list-body'/>
-    <div class='addr-select-footer'>
-      <button class='btn-add-new-addr' onclick='openAddAddrModal(&quot;addr-select-modal&quot;)'>+ إضافة عنوان جديد</button>
-      <button class='btn-confirm-addr' onclick='confirmSelectedAddress()'>&#9989; تأكيد العنوان والمتابعة</button>
-    </div>
+    <button class='sheet-float-close' onclick='closeModal(&quot;addr-select-modal&quot;)' aria-label='إغلاق'>&#10005;</button>
+    <h2 class='addr-sheet-title'>حدد عنوان التوصيل</h2>
+    <button class='addr-add-card' onclick='openAddAddrModal(&quot;addr-select-modal&quot;)'><span class='addr-add-plus'>+</span><span>إضافة عنوان جديد</span></button>
+    <div class='addr-saved-label'>العناوين المحفوظة</div>
+    <div class='addr-list-body' id='addr-list-body'></div>
   </div>
 </div>
 
@@ -1361,11 +1364,13 @@ function deleteAddress(id) {
   toast('تم حذف العنوان', 'warn');
 }
 
-function selectAddressCard(idx) {
+function chooseAddress(idx) {
   selectedAddressIndex = idx;
   persistAddresses();
-  renderAddrList();
+  updateDeliveryDisplay();
+  confirmSelectedAddress();   // النقر على العنوان يختاره ويتابع مباشرة للدفع
 }
+function selectAddressCard(idx) { chooseAddress(idx); }  // توافق خلفي
 
 function renderAddrList() {
   var body = document.getElementById('addr-list-body');
@@ -1374,18 +1379,22 @@ function renderAddrList() {
     body.innerHTML = '<div class="empty-state"><div class="icon">📍</div><h3>لا توجد عناوين محفوظة</h3><p>أضف عنواناً للتوصيل</p></div>';
     return;
   }
+  var pin = '<svg class="addr-pin" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>';
   var html = '';
   for (var i = 0; i < savedAddresses.length; i++) {
     var a = savedAddresses[i];
     var sel = (i === selectedAddressIndex);
-    var detail = [a.street, a.district, a.city].filter(Boolean).join('، ');
-    html += '<div class="addr-card' + (sel ? ' selected' : '') + '" onclick="selectAddressCard(' + i + ')">'
-      + '<div class="addr-card-radio"></div>'
-      + '<div class="addr-type-tag">' + (a.label || '📍 عنوان') + '</div>'
-      + '<div class="addr-card-name">' + escapeHtml(a.name) + '</div>'
-      + (detail ? '<div class="addr-card-detail">' + escapeHtml(detail) + '</div>' : '')
-      + (a.phone ? '<div class="addr-card-phone">📞 ' + escapeHtml(a.phone) + '</div>' : '')
-      + '<button class="addr-card-delete" onclick="event.stopPropagation();deleteAddress(\'' + a.id + '\')">حذف ✕</button>'
+    var detail = a.formatted || [a.street, a.district, a.city].filter(Boolean).join('، ');
+    var nm = escapeHtml(a.name || a.label || 'عنوان');
+    html += '<div class="addr-card' + (sel ? ' selected' : '') + '" onclick="chooseAddress(' + i + ')">'
+      + pin
+      + '<div class="addr-card-main">'
+      +   '<div class="addr-card-top"><span class="addr-card-name">' + nm + '</span>'
+      +   (sel ? '<span class="addr-badge-current">المحدد حاليًا</span>' : '') + '</div>'
+      +   (detail ? '<div class="addr-card-detail">' + escapeHtml(detail) + '</div>' : '')
+      +   (a.phone ? '<div class="addr-card-phone">📞 ' + escapeHtml(a.phone) + '</div>' : '')
+      + '</div>'
+      + '<button class="addr-card-delete" onclick="event.stopPropagation();deleteAddress(\'' + a.id + '\')" aria-label="حذف">&#128465;</button>'
       + '</div>';
   }
   body.innerHTML = html;
