@@ -664,6 +664,23 @@ textarea.pro-input{resize:vertical;min-height:60px;margin-bottom:0;}
 .addr-card-phone{font-size:12.5px;color:var(--text-3);margin-top:3px;}
 .addr-card-delete{position:absolute;bottom:9px;left:11px;width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--text-3);background:transparent;border:none;cursor:pointer;transition:background .15s,color .15s;}
 .addr-card-delete:hover{background:#fff0f0;color:#d92d20;}
+/* ===== Screen 4 — horizontal location switcher ===== */
+#loc-switch-modal .modal-panel{background:#fff;max-width:560px;height:auto;max-height:80vh;max-height:80dvh;display:flex;flex-direction:column;overflow:visible;border-radius:26px 26px 0 0;padding:0 0 14px;box-shadow:0 -10px 44px rgba(0,0,0,.22);}
+.ls-title{font-size:19px;font-weight:800;color:var(--text);text-align:right;margin:0;padding:22px 18px 4px;}
+.ls-sub{font-size:13px;color:var(--text-3);text-align:right;margin:0;padding:0 18px 14px;line-height:1.5;}
+.ls-scroll{display:flex;gap:12px;overflow-x:auto;padding:4px 18px 16px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;}
+.ls-scroll::-webkit-scrollbar{display:none;}
+.ls-card{flex:0 0 200px;scroll-snap-align:end;background:#fff;border:1.5px solid var(--border);border-radius:16px;padding:15px;cursor:pointer;transition:border-color .15s,box-shadow .15s;min-height:118px;display:flex;flex-direction:column;}
+.ls-card:hover{box-shadow:0 6px 18px rgba(15,23,42,.1);}
+.ls-card.selected{border-color:var(--btn-orange);border-width:2px;box-shadow:0 0 0 3px rgba(255,164,28,.14);}
+.ls-card-name{font-size:15px;font-weight:800;color:var(--text);margin-bottom:6px;}
+.ls-card-detail{font-size:12.5px;color:var(--text-2);line-height:1.55;flex:1;}
+.ls-card-main{font-size:12px;color:var(--text-3);font-weight:700;margin-top:10px;}
+.ls-actions{display:flex;flex-direction:column;padding:4px 10px 0;border-top:1px solid var(--border);margin-top:2px;}
+.ls-action{display:flex;align-items:center;gap:10px;background:none;border:none;color:var(--amazon-blue);font-size:14.5px;font-weight:700;font-family:'Cairo',sans-serif;cursor:pointer;padding:13px 10px;text-align:right;width:100%;border-radius:10px;}
+.ls-action svg{width:20px;height:20px;fill:var(--amazon-blue);flex-shrink:0;}
+.ls-action:active{background:var(--soft);}
+.ls-empty{padding:24px;color:var(--text-3);font-size:13px;text-align:center;width:100%;}
 .selected-addr-preview{background:#e8f4ff;border:1px solid var(--amazon-blue);border-radius:var(--r-sm);padding:10px 12px;font-size:13px;color:var(--text);margin-bottom:8px;display:flex;align-items:flex-start;gap:8px;}
 .selected-addr-preview .pin{font-size:16px;flex-shrink:0;}
 .selected-addr-preview .change-addr{color:var(--link);font-size:12px;font-weight:700;background:none;border:none;cursor:pointer;padding:0;font-family:'Cairo',sans-serif;margin-top:2px;display:block;}
@@ -1119,6 +1136,25 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
   </div>
 </div>
 
+<div class='modal bottom-sheet' id='loc-switch-modal' onclick='backdropClose(event,&quot;loc-switch-modal&quot;)'>
+  <div class='modal-panel'>
+    <button class='sheet-float-close' onclick='closeModal(&quot;loc-switch-modal&quot;)' aria-label='إغلاق'>&#10005;</button>
+    <h2 class='ls-title'>اختر موقع التوصيل</h2>
+    <p class='ls-sub'>قد تختلف خيارات وسرعة التوصيل وفقاً للموقع</p>
+    <div class='ls-scroll' id='ls-scroll'></div>
+    <div class='ls-actions'>
+      <button class='ls-action' onclick='lsAddNew()'>
+        <svg viewBox='0 0 24 24'><path d='M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm6.93 6h-2.95a15.7 15.7 0 0 0-1.38-3.56A8.03 8.03 0 0 1 18.93 8zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14a7.96 7.96 0 0 1 0-4h3.38a16.6 16.6 0 0 0 0 4H4.26zm.81 2h2.95c.32 1.25.78 2.45 1.38 3.56A8.03 8.03 0 0 1 5.07 16zm2.95-8H5.07a8.03 8.03 0 0 1 4.33-3.56A15.7 15.7 0 0 0 8.02 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82A13.7 13.7 0 0 1 12 19.96zM14.34 14H9.66a14.8 14.8 0 0 1 0-4h4.68a14.8 14.8 0 0 1 0 4zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95a8.03 8.03 0 0 1-4.33 3.56zM16.36 14a16.6 16.6 0 0 0 0-4h3.38a7.96 7.96 0 0 1 0 4h-3.38z'/></svg>
+        حدد مدينتك
+      </button>
+      <button class='ls-action' onclick='lsAddNew()'>
+        <svg viewBox='0 0 24 24'><path d='M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm8.94 3A8 8 0 0 0 13 3.06V1h-2v2.06A8 8 0 0 0 3.06 11H1v2h2.06A8 8 0 0 0 11 20.94V23h2v-2.06A8 8 0 0 0 20.94 13H23v-2h-2.06zM12 19a7 7 0 1 1 0-14 7 7 0 0 1 0 14z'/></svg>
+        استخدام موقعي الحالي
+      </button>
+    </div>
+  </div>
+</div>
+
 
 <script type='text/javascript'>
 //<![CDATA[
@@ -1368,9 +1404,35 @@ function openAddAddrModal(returnCtx) {
 }
 
 function openDeliveryPicker() {
-  if (savedAddresses.length) { renderAddrList(); openModal('addr-select-modal'); }
+  if (savedAddresses.length) { renderLocSwitch(); openModal('loc-switch-modal'); }
   else { openAddAddrModal(null); }
 }
+
+function renderLocSwitch() {
+  var box = document.getElementById('ls-scroll'); if (!box) return;
+  if (!savedAddresses.length) { box.innerHTML = '<div class="ls-empty">لا توجد عناوين محفوظة</div>'; return; }
+  var html = '';
+  for (var i = 0; i < savedAddresses.length; i++) {
+    var a = savedAddresses[i], sel = (i === selectedAddressIndex);
+    var detail = a.formatted || [a.street, a.district, a.city].filter(Boolean).join('، ');
+    html += '<div class="ls-card' + (sel ? ' selected' : '') + '" onclick="lsChoose(' + i + ')">'
+      + '<div class="ls-card-name">' + escapeHtml(a.name || a.label || 'عنوان') + '</div>'
+      + '<div class="ls-card-detail">' + escapeHtml(detail) + '</div>'
+      + (sel ? '<div class="ls-card-main">العنوان الرئيسي</div>' : '')
+      + '</div>';
+  }
+  box.innerHTML = html;
+}
+
+function lsChoose(idx) {
+  selectedAddressIndex = idx;
+  persistAddresses();
+  updateDeliveryDisplay();
+  renderLocSwitch();
+  setTimeout(function() { closeModal('loc-switch-modal'); }, 240);
+}
+
+function lsAddNew() { closeModal('loc-switch-modal'); setTimeout(function() { openAddAddrModal(null); }, 260); }
 
 function manualAddress() { closeMapsModal(); openModal('add-addr-modal'); }
 
@@ -3243,7 +3305,7 @@ function backdropClose(e, id) { if (e.target === e.currentTarget) closeModal(id)
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
     var cs = document.getElementById('cart-sheet'); if (cs && cs.classList.contains('show')) closeCartSheet();
-    ['product-modal','cart-modal','history-modal','contact-modal','merchant-join-modal','first-visit-modal','add-addr-modal','maps-picker-modal','addr-select-modal']
+    ['product-modal','cart-modal','history-modal','contact-modal','merchant-join-modal','first-visit-modal','add-addr-modal','maps-picker-modal','addr-select-modal','loc-switch-modal']
       .forEach(function(id) { var m = document.getElementById(id); if (m && m.classList.contains('show')) closeModal(id); });
     var zo = document.getElementById('zoom-overlay'); if (zo && zo.classList.contains('active')) closeZoom();
   }
