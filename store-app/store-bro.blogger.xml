@@ -2602,7 +2602,7 @@ function buyNowDirect(pid) {
     + (currentUser && currentUser.email ? '✉️ *الإيميل:* ' + currentUser.email + '\n' : '')
     + (addrStr ? '📍 *العنوان:* ' + addrStr + '\n' : '')
     + (sa && sa.phone ? '📱 *الجوال:* ' + sa.phone + '\n' : '');
-  window.location.href = 'https://wa.me/' + target + '?text=' + encodeURIComponent(msg);
+  openWhatsApp(target, msg);
 }
 
 var _drawerCurrentCid = null;
@@ -3139,7 +3139,7 @@ function finalizeOrder(name, addr, built) {
   cart = []; saveCart();
   checkoutFormVisible = false; checkoutPrefillAddr = null;
   closeCartSheet(); closeModal('cart-modal'); updateCartUI();
-  window.location.href = 'https://wa.me/' + (built.target || CONFIG.whatsapp) + '?text=' + encodeURIComponent(built.msg);
+  openWhatsApp(built.target || CONFIG.whatsapp, built.msg);
 }
 
 function submitOrder() {
@@ -3178,7 +3178,7 @@ function submitMerchantRequest() {
 
   closeModal('merchant-join-modal');
 
-  window.location.href = 'https://wa.me/' + CONFIG.whatsapp + '?text=' + encodeURIComponent(msg);
+  openWhatsApp(CONFIG.whatsapp, msg);
 }
 
 function openMerchantApp() {
@@ -3200,7 +3200,19 @@ function closeMerchantApp() {
 }
 
 function doCall()      { closeModal('contact-modal'); window.location.href = 'tel:' + CONFIG.phone; }
-function doWhatsapp()  { closeModal('contact-modal'); window.location.href = 'https://wa.me/' + CONFIG.whatsapp + '?text=' + encodeURIComponent('مرحباً، لدي استفسار بخصوص المتجر.'); }
+function openWhatsApp(number, text) {
+  var num = String(number || '').replace(/[^0-9]/g, '');
+  var enc = encodeURIComponent(text || '');
+  var waMe = 'https://wa.me/' + num + '?text=' + enc;
+  var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+  if (!isMobile) { var w = window.open(waMe, '_blank'); if (!w) window.location.href = waMe; return; }
+  // الجوال: افتح تطبيق واتساب مباشرة (يتجاوز صفحة api.whatsapp.com)، مع رجوع آمن لو لم يفتح
+  var done = false;
+  var fallback = setTimeout(function() { if (!done && !document.hidden) window.location.href = waMe; }, 1500);
+  document.addEventListener('visibilitychange', function() { if (document.hidden) { done = true; clearTimeout(fallback); } }, { once: true });
+  window.location.href = 'whatsapp://send?phone=' + num + '&text=' + enc;
+}
+function doWhatsapp()  { closeModal('contact-modal'); openWhatsApp(CONFIG.whatsapp, 'مرحباً، لدي استفسار بخصوص المتجر.'); }
 
 /* ============================================================
    GOOGLE AUTH
