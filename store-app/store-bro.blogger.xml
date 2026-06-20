@@ -1396,7 +1396,7 @@ function openAddAddrModal(returnCtx) {
   if (phEl && currentUser && currentUser.phone) phEl.value = currentUser.phone;
   document.querySelectorAll('.aa-type').forEach(function(b, i) { b.classList.toggle('active', i === 0); });
   currentAddrType = '🏠 المنزل';
-  if (hasMapsKey()) { openMapsModal(); } else { openModal('add-addr-modal'); }
+  openModal('add-addr-modal');  // نفتح النموذج مباشرة؛ الخريطة اختيارية عبر زر «حدد الموقع»
 }
 
 function openDeliveryPicker() {
