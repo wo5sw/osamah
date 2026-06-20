@@ -1051,12 +1051,6 @@ button:focus-visible,.pill:focus-visible,.h-item:focus-visible{outline:2px solid
       <button class='modal-close' onclick='closeAddAddrModal()'>&#10005;</button>
     </div>
     <div class='add-addr-body'>
-      <div class='aa-maphead' onclick='openMapsModal()'>
-        <div class='aa-mapthumb'><svg viewBox='0 0 24 24'><path d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z'/></svg></div>
-        <div class='aa-maphead-t'><b>حدد الموقع</b><span id='aa-map-summary'>اختر موقعك على الخريطة</span></div>
-        <span class='aa-chev'>&#8250;</span>
-      </div>
-
       <div class='aa-section'>
         <input class='pro-input' id='na-building' placeholder='اسم/رقم المبنى' type='text'/>
         <div class='aa-2col'>
@@ -1182,7 +1176,7 @@ var CONFIG = {
   defaultCategory: 'الكل',
   // SECURITY: a Maps key is necessarily public — restrict it by HTTP referrer
   // (your own domain) in Google Cloud Console so it cannot be reused elsewhere.
-  mapsApiKey: 'AIzaSyCWIpeIbxU8EQpjZuc-_-f01RhhKKg13VA',
+  mapsApiKey: '',
   googleClientId: '360615303745-h45ri50dd4mlfarff2rbu2tivmho822u.apps.googleusercontent.com',
   merchantAppUrl: 'https://broo1stoor.blogspot.com',
   // رابط نشر Apps Script (/exec) — يقرأ منه المتجر رقم كل قسم لحظيًا من قاعدة البيانات.
