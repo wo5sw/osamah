@@ -1552,26 +1552,8 @@ function showCheckoutFlow() {
    GOOGLE MAPS INTEGRATION
    ============================================================ */
 function requireGoogleMaps(cb) {
-  if (gmapsState === 'ready') { cb(); return; }
-  gmapsQueue.push(cb);
-  if (gmapsState === 'loading') return;
-  gmapsState = 'loading';
-  window.__gmapsReadyCB = function() {
-    gmapsState = 'ready';
-    var q = gmapsQueue.splice(0);
-    q.forEach(function(fn) { try { fn(); } catch(e) {} });
-  };
-  var s = document.createElement('script');
-  s.src = 'https://maps.googleapis.com/maps/api/js?key=' + CONFIG.mapsApiKey + '&callback=__gmapsReadyCB&language=ar&region=SA';
-  s.async = true; s.defer = true;
-  s.onerror = function() {
-    gmapsState = 'error';
-    gmapsQueue = [];
-    var ph = document.getElementById('map-placeholder');
-    if (ph) ph.innerHTML = '<div class="map-icon">⚠️</div><div>تعذّر تحميل الخريطة</div><div style="font-size:12px">تحقّق من مفتاح API أو الاتصال بالإنترنت</div>';
-    toast('تعذّر تحميل الخريطة. يمكنك إدخال العنوان يدوياً.', 'warn');
-  };
-  document.head.appendChild(s);
+  /* خرائط Google معطّلة نهائيًا — لا يُحمَّل أي سكربت خرائط، والإدخال يدوي فقط. */
+  return;
 }
 
 function openMapsModal() {
