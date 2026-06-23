@@ -391,6 +391,8 @@ header.hide-header{transform:translateY(-100%);}
 .z-btn:hover{background:var(--btn-orange);}
 #zoom-pct{color:rgba(255,255,255,.85);font-size:12px;min-width:38px;text-align:center;font-weight:700;}
 .modal{display:none;position:fixed;inset:0;background:rgba(15,17,17,.55);z-index:15000;justify-content:flex-end;opacity:0;transition:opacity .25s;}
+/* عناوين فوق السلة السفلية (cart-sheet z-index:1000000) لتظهر عند الضغط على «تغيير العنوان» */
+#addr-select-modal,#loc-switch-modal,#add-addr-modal,#maps-picker-modal{z-index:1000200;}
 #merchant-app-overlay{display:none;position:fixed;inset:0;z-index:1000500;background:var(--navy-deep);flex-direction:column;}
 #merchant-app-overlay.show{display:flex;}
 .mao-bar{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;background:var(--navy-deep);color:#fff;}
@@ -1521,8 +1523,11 @@ function confirmSelectedAddress() {
   var addr = savedAddresses[selectedAddressIndex];
   closeModal('addr-select-modal');
   setTimeout(function() {
+    var cartSheet = document.getElementById('cart-sheet');
     var cartModal = document.getElementById('cart-modal');
-    if (cartModal && cartModal.classList.contains('show')) {
+    if (cartSheet && cartSheet.classList.contains('show')) {
+      checkoutPrefillAddr = addr; cartSheetStep = 2; renderCheckoutStep();
+    } else if (cartModal && cartModal.classList.contains('show')) {
       showCartCheckoutForm(addr);
     } else {
       openModal('cart-modal');
@@ -1536,6 +1541,18 @@ function showCartCheckoutForm(addr) {
   checkoutPrefillAddr = addr || null;
   var subtotal = cart.reduce(function(s,i) { return s + i.price * i.qty; }, 0);
   renderCartBody(subtotal);
+}
+
+function proceedToPay() {
+  if (!cart.length) return;
+  var sa = checkoutPrefillAddr || (savedAddresses.length ? savedAddresses[selectedAddressIndex] : null);
+  if (sa) {
+    // عنوان مختار بالفعل: اكشف خطوة الإرسال مباشرة دون إعادة طلب البيانات
+    checkoutFormVisible = true;
+    renderCartBody(cart.reduce(function(s,i) { return s + i.price * i.qty; }, 0));
+  } else {
+    showCheckoutFlow();
+  }
 }
 
 function showCheckoutFlow() {
@@ -2900,6 +2917,11 @@ function renderCheckoutStep() {
   var subtotal = cart.reduce(function(s,i){return s+i.price*i.qty;},0);
   var shipping = subtotal >= CONFIG.freeShippingMin ? 0 : CONFIG.shippingFee;
   var total    = subtotal + shipping;
+  var sa = checkoutPrefillAddr || (savedAddresses.length ? savedAddresses[selectedAddressIndex] : null);
+  var saFmt = sa ? (sa.formatted || [sa.street, sa.district, sa.city].filter(Boolean).join('، ')) : '';
+  var addrBlock = sa
+    ? '<div class="selected-addr-preview"><span class="pin">📍</span><div><div style="font-weight:700">' + escapeHtml(sa.name || saFmt) + (sa.phone ? ' · ' + escapeHtml(sa.phone) : '') + '</div><div style="font-size:12px;color:var(--text-2)">' + escapeHtml(saFmt) + '</div><button class="change-addr" onclick="showCheckoutFlow()">تغيير العنوان</button></div></div>'
+    : '<h4 style="font-size:14px;font-weight:800;color:var(--text);margin:0 0 10px;">📍 بيانات التوصيل</h4>' + (!currentUser ? '<div id="cs-google-auth"></div><div class="guest-divider">أو أكمل كزائر</div>' : renderUserCard()) + '<input class="pro-input" id="cs-c-name" placeholder="الاسم الكامل *" required/><div class="loc-wrap"><input class="pro-input" id="cs-c-addr" placeholder="العنوان أو رابط الموقع *" required/><button class="btn-location" type="button" onclick="getLocation()" title="موقعي">📍</button></div>';
   var itemsList = cart.map(function(item, n) {
     var label = escapeHtml(item.title);
     if (item.variant && item.variant.trim()) label += ' – ' + escapeHtml(item.variant);
@@ -2916,11 +2938,7 @@ function renderCheckoutStep() {
     + itemsList + shipRow
     + '<div class="cs-order-total-row"><span>الإجمالي</span><span>' + total.toFixed(2) + ' ' + CONFIG.currency + '</span></div>'
     + '</div>'
-    + '<h4 style="font-size:14px;font-weight:800;color:var(--text);margin:0 0 10px;">&#128204; بيانات التوصيل</h4>'
-    + (!currentUser ? '<div id="cs-google-auth"></div><div class="guest-divider">&#10097; أو أكمل كزائر</div>' : renderUserCard())
-    + '<input class="pro-input" id="cs-c-name" placeholder="الاسم الكامل *" required/>'
-    + '<div class="loc-wrap"><input class="pro-input" id="cs-c-addr" placeholder="العنوان أو رابط الموقع *" required/>'
-    + '<button class="btn-location" type="button" onclick="getLocation()" title="&#128205;">&#128205;</button></div>'
+    + addrBlock
     + '<textarea class="pro-input" id="cs-c-notes" placeholder="ملاحظات (اختياري)" rows="2"></textarea>'
     + '<div class="cs-pay-note">&#128172; يتم الاتفاق على الدفع عبر رسالة واتساب بعد إرسال الطلب</div>';
   foot.innerHTML = '<button class="btn-cs-whatsapp" id="cs-btn-confirm" onclick="submitOrderFromSheet()">&#128172; إرسال الطلب عبر واتساب</button>';
@@ -2952,12 +2970,14 @@ function prefillCheckoutStep() {
 }
 
 function submitOrderFromSheet() {
-  var name  = ((document.getElementById('cs-c-name')  || {}).value || '').trim();
-  var addr  = ((document.getElementById('cs-c-addr')  || {}).value || '').trim();
+  var sa = checkoutPrefillAddr || (savedAddresses.length ? savedAddresses[selectedAddressIndex] : null);
+  var nameEl = document.getElementById('cs-c-name'), addrEl = document.getElementById('cs-c-addr');
+  var name  = nameEl ? nameEl.value.trim() : ((sa && sa.name) || (currentUser && currentUser.name) || '');
+  var addr  = addrEl ? addrEl.value.trim() : ((sa && (sa.formatted || [sa.street, sa.district, sa.city].filter(Boolean).join('، '))) || '');
   var notes = ((document.getElementById('cs-c-notes') || {}).value || '').trim();
 
+  if (!addr)  return toast('يرجى تحديد عنوان التوصيل', 'warn');
   if (!name)  return toast('يرجى إدخال الاسم الكامل', 'warn');
-  if (!addr)  return toast('يرجى إدخال العنوان أو مشاركة الموقع', 'warn');
 
   var btn = document.getElementById('cs-btn-confirm');
   var orig = btn ? btn.innerHTML : '';
@@ -3023,12 +3043,13 @@ function renderCartBody(subtotal) {
   var total    = subtotal + shipping;
   var need     = CONFIG.freeShippingMin - subtotal;
 
+  var sa = checkoutPrefillAddr || (savedAddresses.length > 0 ? savedAddresses[selectedAddressIndex] : null);
   var addrPreviewHtml = '';
-  if (savedAddresses.length > 0 && savedAddresses[selectedAddressIndex]) {
-    var sa = savedAddresses[selectedAddressIndex];
+  if (sa) {
     var saFormatted = sa.formatted || [sa.street, sa.district, sa.city].filter(Boolean).join('، ');
     addrPreviewHtml = '<div class="selected-addr-preview"><span class="pin">📍</span>'
-      + '<div><div>' + escapeHtml(sa.name || saFormatted) + '</div><div style="font-size:12px;color:var(--text-2)">' + escapeHtml(saFormatted) + '</div>'
+      + '<div><div style="font-weight:700">' + escapeHtml(sa.name || saFormatted) + (sa.phone ? ' · ' + escapeHtml(sa.phone) : '') + '</div>'
+      + '<div style="font-size:12px;color:var(--text-2)">' + escapeHtml(saFormatted) + '</div>'
       + '<button class="change-addr" onclick="showCheckoutFlow()">تغيير العنوان</button></div></div>';
   }
 
@@ -3039,13 +3060,15 @@ function renderCartBody(subtotal) {
     + '<div class="summary-row summary-total"><span>الإجمالي</span><span>' + total.toFixed(2) + ' ' + CONFIG.currency + '</span></div>'
     + (currentUser ? renderUserCard() : '')
     + addrPreviewHtml
-    + (!checkoutFormVisible ? '<button class="btn-checkout" id="checkout-btn" onclick="showCheckoutFlow()">المتابعة للدفع</button>' : '')
+    + (!checkoutFormVisible ? '<button class="btn-checkout" id="checkout-btn" onclick="proceedToPay()">المتابعة للدفع</button>' : '')
     + '<div class="' + (checkoutFormVisible ? 'checkout-form show' : 'checkout-form') + '" id="checkout-form">'
-    + '<h4>بيانات التوصيل</h4>'
-    + (!currentUser ? '<div id="google-auth-container"></div><div class="guest-divider">أو أكمل كزائر</div>' : '')
-    + '<input class="pro-input" id="c-name" placeholder="الاسم الكامل *" required/>'
-    + '<div class="loc-wrap"><input class="pro-input" id="c-addr" placeholder="العنوان أو رابط الموقع *" required/>'
-    + '<button class="btn-location" type="button" onclick="getLocation()" title="مشاركة موقعي الحالي">📍</button></div>'
+    + (sa ? '' :
+        '<h4>بيانات التوصيل</h4>'
+        + (!currentUser ? '<div id="google-auth-container"></div><div class="guest-divider">أو أكمل كزائر</div>' : '')
+        + '<input class="pro-input" id="c-name" placeholder="الاسم الكامل *" required/>'
+        + '<div class="loc-wrap"><input class="pro-input" id="c-addr" placeholder="العنوان أو رابط الموقع *" required/>'
+        + '<button class="btn-location" type="button" onclick="getLocation()" title="مشاركة موقعي الحالي">📍</button></div>'
+      )
     + '<textarea class="pro-input" id="c-notes" placeholder="ملاحظات (اختياري)" rows="2"></textarea>'
     + '<div class="cs-pay-note">💬 يتم الاتفاق على الدفع عبر رسالة واتساب بعد إرسال الطلب</div>'
     + '<button class="btn-confirm" id="btn-confirm-order" onclick="submitOrder()">إرسال الطلب عبر واتساب 💬</button>'
@@ -3119,12 +3142,14 @@ function finalizeOrder(name, addr, built) {
 }
 
 function submitOrder() {
-  var name  = ((document.getElementById('c-name')  || {}).value || '').trim();
-  var addr  = ((document.getElementById('c-addr')  || {}).value || '').trim();
+  var sa = checkoutPrefillAddr || (savedAddresses.length ? savedAddresses[selectedAddressIndex] : null);
+  var nameEl = document.getElementById('c-name'), addrEl = document.getElementById('c-addr');
+  var name  = nameEl ? nameEl.value.trim() : ((sa && sa.name) || (currentUser && currentUser.name) || '');
+  var addr  = addrEl ? addrEl.value.trim() : ((sa && (sa.formatted || [sa.street, sa.district, sa.city].filter(Boolean).join('، '))) || '');
   var notes = ((document.getElementById('c-notes') || {}).value || '').trim();
 
+  if (!addr)  return toast('يرجى تحديد عنوان التوصيل', 'warn');
   if (!name)  return toast('يرجى إدخال الاسم الكامل', 'warn');
-  if (!addr)  return toast('يرجى إدخال العنوان أو مشاركة الموقع', 'warn');
 
   var btn = document.getElementById('btn-confirm-order');
   var orig = btn ? btn.innerHTML : '';
