@@ -256,7 +256,7 @@
             <div class='hdr-brand'><div class='logo'>🛍&#65039;</div><div><h1>مساحة العمل</h1><p id='hdr-sub'>جاهز للنشر</p></div></div>
             <div class='hdr-right'>
               <button class='hdr-btn hidden' id='btn-admin' onclick='showAdmin()'>👑 الإدارة</button>
-              <button class='hdr-btn' id='btn-history' onclick='showHistory()'>📋 السجل</button>
+              <button class='hdr-btn' id='btn-history' onclick='showHistory()'>📋 منتجاتي</button>
               <span class='user-chip' id='user-badge'>مستخدم</span>
               <button class='hdr-btn' onclick='doLogout()'>&#8592; خروج</button>
             </div>
@@ -265,6 +265,7 @@
           <div class='main'>
 
             <div id='workspace-panel'>
+                <button class='btn btn-primary' onclick='addNewProductTab(true)' style='width:100%;padding:16px;margin-bottom:18px;font-size:16px;font-weight:800;'>➕ إضافة منتج جديد</button>
                 <div class='tabs-container'>
                     <div class='product-tabs-wrap' id='product-tabs'/>
                     <button class='btn btn-ghost' onclick='syncDraftToCloud()' style='padding:12px 20px;font-size:14px;border-color:var(--pr-border);color:var(--pr);font-weight:800;'>&#9729;&#65039; حفظ سحابي</button>
