@@ -215,6 +215,13 @@
 
   .filter-bar { display:flex; gap:14px; margin-bottom: 28px; flex-wrap:wrap;}
   .filter-bar input { flex:1; min-width:200px; }
+
+  .type-search{margin-bottom:14px;}
+  .type-chips{display:flex;flex-wrap:wrap;gap:10px;}
+  .type-chip{display:inline-flex;align-items:center;gap:8px;padding:12px 16px;border-radius:16px;border:1.5px solid var(--pr-border);background:rgba(0,122,255,0.04);color:var(--txt);font-size:14.5px;font-weight:700;cursor:pointer;transition:all .2s cubic-bezier(0.25,0.8,0.25,1);font-family:inherit;}
+  .type-chip:hover{background:var(--pr-light);border-color:var(--pr);transform:translateY(-2px);}
+  .type-chip .tc-ic{font-size:20px;}
+  .type-chip.active{background:linear-gradient(135deg,#007aff,#005bb5);color:#fff;border-color:transparent;box-shadow:0 6px 16px rgba(0,122,255,0.3);}
   ]]></b:skin>
 </head>
 <body>
@@ -261,6 +268,12 @@
                 <div class='tabs-container'>
                     <div class='product-tabs-wrap' id='product-tabs'/>
                     <button class='btn btn-ghost' onclick='syncDraftToCloud()' style='padding:12px 20px;font-size:14px;border-color:var(--pr-border);color:var(--pr);font-weight:800;'>&#9729;&#65039; حفظ سحابي</button>
+                </div>
+
+                <div class='card type-picker'>
+                  <div class='card-hd'><div class='card-icon'>✨</div><div><h2>ما المنتج الذي تريد إضافته؟</h2><p>اختر النوع لتظهر لك الخيارات المناسبة تلقائياً — وكلها قابلة للتعديل</p></div></div>
+                  <input class='type-search' id='type-search' onkeyup='renderTypeChips()' placeholder='ابحث عن نوع المنتج... (مثال: جوال، عطر، فستان، شيشة)' type='text'/>
+                  <div class='type-chips' id='type-chips'/>
                 </div>
 
                 <div class='card'>
@@ -473,6 +486,7 @@
           showToast('جاري استرداد البيانات...');
           loadSections();
           loadBloggerLabels();
+          renderTypeChips();
           try {
             var res = await fetch(DB_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'getUserWorkspace', username: currentUser.name, password: currentUser.pass, isAdmin: currentUser.isAdmin }) });
             var data = await res.json();
@@ -608,6 +622,47 @@
         function pickFile(i){$('file'+i).click();} function takePhoto(i){$('camera'+i).click();}
         function addSz(i){ var c=$('vc'+i+'-sizes'); var rid='s'+uid(); var r=document.createElement('div'); r.className='sr'; r.id=rid; r.innerHTML='<input type="text" placeholder="اسم الخيار" /><input type="number" placeholder="السعر" /><button class="btn btn-danger" onclick="document.getElementById(\''+rid+'\').remove()">✕</button>'; c.appendChild(r); }
         function addSpec(i){ var c=$('vc'+i+'-specs'); var rid='sp'+uid(); var r=document.createElement('div'); r.className='sr-spec'; r.id=rid; r.innerHTML='<input type="text" placeholder="الخاصية" /><input type="text" placeholder="القيمة" /><button class="btn btn-danger" onclick="document.getElementById(\''+rid+'\').remove()">✕</button>'; c.appendChild(r); }
+
+        /* ===== قوالب أنواع المنتجات الذكية: تملأ الخيارات المناسبة تلقائياً ===== */
+        var PRODUCT_TYPES = {
+          'جوال / هاتف':        { icon:'📱', example:'جوال آيفون 17 برو — 256 جيجا', optName:'اللون', specs:['الرام','المعالج','حجم الشاشة','البطارية','الكاميرا'], sizes:['128 جيجا','256 جيجا','512 جيجا'] },
+          'عطر':                { icon:'🧴', example:'عطر فاخر 100 مل', optName:'النوع', specs:['التركيز (EDP/EDT)','الفئة (رجالي/نسائي)','العائلة العطرية','الثبات'], sizes:['50 مل','100 مل','200 مل'] },
+          'ملابس / فستان':      { icon:'👗', example:'فستان ماكسي صيفي', optName:'اللون', specs:['الخامة','النمط','بلد الصنع'], sizes:['S','M','L','XL','XXL'] },
+          'أحذية':              { icon:'👟', example:'حذاء رياضي', optName:'اللون', specs:['الخامة','النوع'], sizes:['38','39','40','41','42','43','44'] },
+          'شيشة / معسل':        { icon:'💨', example:'شيشة + نكهة معسل', optName:'النكهة', specs:['نوع المعسل','السعة','النوع','بلد الصنع'], sizes:[] },
+          'ساعة':               { icon:'⌚', example:'ساعة ذكية', optName:'اللون', specs:['نوع السوار','مقاوم للماء','حجم الشاشة','البطارية'], sizes:[] },
+          'سماعات / إلكترونيات': { icon:'🎧', example:'سماعة لاسلكية', optName:'اللون', specs:['نوع الاتصال','عمر البطارية','إلغاء الضوضاء'], sizes:[] },
+          'مكياج / تجميل':      { icon:'💄', example:'منتج تجميل', optName:'الدرجة / اللون', specs:['النوع','الحجم','بلد الصنع'], sizes:[] },
+          'اكسسوارات':          { icon:'💍', example:'اكسسوار', optName:'اللون', specs:['الخامة','النوع'], sizes:[] },
+          'منتج عام':           { icon:'🛒', example:'اسم المنتج', optName:'الخيار', specs:[], sizes:[] }
+        };
+        var _activeType = '';
+        function renderTypeChips(){
+          var box = $('type-chips'); if(!box) return;
+          var q = ((($('type-search')||{}).value)||'').trim().toLowerCase();
+          var html = '';
+          Object.keys(PRODUCT_TYPES).forEach(function(k){
+            if(q && k.toLowerCase().indexOf(q)<0) return;
+            var t = PRODUCT_TYPES[k];
+            html += '<button type="button" class="type-chip'+(k===_activeType?' active':'')+'" onclick="applyProductType(\''+k.replace(/'/g,"\\'")+'\')"><span class="tc-ic">'+t.icon+'</span>'+esc(k)+'</button>';
+          });
+          if(!html) html = '<span style="color:var(--txt3);font-weight:600;">لا يوجد نوع مطابق — اكتب اسم المنتج في العنوان مباشرة.</span>';
+          box.innerHTML = html;
+        }
+        function applyProductType(key){
+          var t = PRODUCT_TYPES[key]; if(!t) return;
+          _activeType = key; renderTypeChips();
+          if(!document.querySelector('.vc-wrap')) addV();
+          var card = document.querySelector('.vc-wrap'); var i = parseInt(card.id.replace('v',''));
+          if($('ptitle')) $('ptitle').setAttribute('placeholder', 'مثال: ' + (t.example||''));
+          if($('vc'+i+'-optName')) $('vc'+i+'-optName').value = t.optName || 'الخيار';
+          var spBox = $('vc'+i+'-specs');
+          if(spBox){ spBox.innerHTML=''; (t.specs||[]).forEach(function(name){ addSpec(i); var rs=spBox.querySelectorAll('.sr-spec'); var last=rs[rs.length-1]; if(last){ var ins=last.querySelectorAll('input'); if(ins[0]) ins[0].value=name; } }); }
+          var szBox = $('vc'+i+'-sizes');
+          if(szBox){ szBox.innerHTML=''; if((t.sizes||[]).length){ t.sizes.forEach(function(lbl){ addSz(i); var rs=szBox.querySelectorAll('.sr'); var last=rs[rs.length-1]; if(last){ var ins=last.querySelectorAll('input'); if(ins[0]) ins[0].value=lbl; } }); } else { addSz(i); } }
+          syncCurrentToMemory();
+          showToast('✅ تم تجهيز خيارات: ' + key);
+        }
 
         function readAllSettings(){
           var data={v:'1',title:$('ptitle').value||'',cat:$('pcat').value||'',rating:$('prating').value||'',ratcount:$('pratcount').value||'',delivery:($('pdelivery')||{}).value||'',merchant:($('pmerchant')||{}).value||'',variants:[]};
